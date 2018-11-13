@@ -1,0 +1,11 @@
+version: '3'
+services:
+    truffle:
+        build:
+            context: ./docker
+        command: ganache-cli 
+        stdin_open: true
+        tty: true
+        volumes:
+        - ./:/src
+        

@@ -1,0 +1,16 @@
+{
+  "name": "batpay",
+  "version": "1.0.0",
+  "description": "a batch payments solution for ethereum",
+  "main": "",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
