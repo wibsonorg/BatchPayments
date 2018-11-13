@@ -6,6 +6,7 @@ import "./IERC20.sol";
 contract BatPay {
     uint constant public maxAccount = 2**32;
     uint constant public maxBulk = 2**16;
+    uint constant public newAccount = 2**256-1;
 
     struct Account {
         address addr;
@@ -30,6 +31,7 @@ contract BatPay {
 
     function bulkRegister(uint256 n, bytes32 rootHash) public {
         require(n < maxBulk);
+        require(accounts.length + n <= maxAccount);
 
         uint256 temp = n + maxBulk * bulkRegistrations.length;
         bytes32 hashValue = keccak256(abi.encodePacked(temp, rootHash));
@@ -42,7 +44,7 @@ contract BatPay {
     // Register a new account
 
     function register() public returns (uint32 ret) {
-        require(accounts.length < 0xffffffff, "no more accounts left");
+        require(accounts.length < maxAccount, "no more accounts left");
         ret = (uint32)(accounts.length);
         accounts.length += 1;
         accounts[ret] = Account(msg.sender, 0);
@@ -67,13 +69,16 @@ contract BatPay {
     }
 
     function deposit(uint64 amount, uint256 id) public {
-        require(id < accounts.length || id >= maxAccount, "invalid id");
+        require(id < accounts.length || id == newAccount, "invalid id");
         require(amount > 0, "amount should be positive");
-
         require(token.transferFrom(msg.sender, address(this), amount), "transfer failed");
-        
-        if (id < accounts.length)   
-        {   // existing account
+
+        if (id == newAccount)      
+        {   // new account
+            uint newId = register();
+            accounts[newId] = Account(msg.sender, amount);
+        } else {  
+            // existing account
             uint64 balance = accounts[id].balance;
             uint64 newBalance = balance + amount;
 
@@ -81,12 +86,7 @@ contract BatPay {
             require(balance <= newBalance); 
 
             accounts[id].balance = newBalance;
-        } else
-        if (id >= maxAccount)      
-        {   // new account
-            uint newId = register();
-            accounts[newId] = Account(msg.sender, amount);
-        } 
+       }
     }
 
     function balanceOf(uint id) public view returns (uint64) {

@@ -1,6 +1,7 @@
 var StandardToken = artifacts.require('StandardToken');
 var BatPay = artifacts.require('BatPay');
 var catchRevert = require('./exceptions').catchRevert;
+var BigNumber = web3.BigNumber;
 
 
 contract('BatPay', (addr)=>{
@@ -8,7 +9,9 @@ contract('BatPay', (addr)=>{
     let a1 = addr[1];
 
     let bp, tAddress, st;
-    const newAccount = 0x100000000;
+    const newAccount = new BigNumber(2).pow(256).minus(1);
+
+ 
 
     before(async ()=> {
         bp = await BatPay.deployed();
