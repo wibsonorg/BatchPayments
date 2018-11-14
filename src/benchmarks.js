@@ -1,4 +1,5 @@
-var lib = require('./utils.js')(artifacts, web3);
+var lib = require('../lib')(web3, artifacts);
+var bat = lib.bat;
 
 var StandardToken = artifacts.require('StandardToken');
 var BatPay = artifacts.require('BatPay');
@@ -6,7 +7,6 @@ var BatPay = artifacts.require('BatPay');
 var bp,st,id;
 
 const depositAmount = 1000;
-const newAccount = 0x100000000;
 
 var stats = {};
 
@@ -24,7 +24,7 @@ async function init() {
 
 async function deposit(amount) {
         let tx1 = await st.approve(bp.address, amount);
-        let tx2 = await bp.deposit(amount, newAccount);
+        let tx2 = await bp.deposit(amount, bat.newAccount);
         id = (await bp.accountsLength.call()).toNumber()-1;
 
         addStat("deposit", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
@@ -40,6 +40,7 @@ async function depositE(amount) {
     addStat("deposit-existing.token.approve", tx1.receipt.gasUsed);
     addStat("deposit-existing.batpay.deposit", tx2.receipt.gasUsed);
 }
+
 async function bulkReg(count) {
     let tx1 = await bp.bulkRegister(count, 0x1234);
     addStat("bulkRegister", tx1.receipt.gasUsed);

@@ -1,5 +1,6 @@
 const BatPay = artifacts.require('./BatPay');
 const StandardToken = artifacts.require('./StandardToken');
+const TestHelper = artifacts.require('./TestHelper');
 
 
 module.exports = function(deployer) {
@@ -9,6 +10,7 @@ module.exports = function(deployer) {
 
 		deployer.deploy(BatPay, i.address);
 		
+		deployer.deploy(TestHelper);
 	}
 	doDeploy(deployer);
 
