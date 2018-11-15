@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 import "./IERC20.sol";
-
+import "./Merkle.sol";
 
 
 contract BatPay {
@@ -13,10 +13,16 @@ contract BatPay {
         uint64  balance;
     }
 
+    struct BulkRecord {
+        bytes32 rootHash;
+        uint64  n;
+        uint64  minId;
+    }
+
     address public owner;
     IERC20 public token;
     Account[] public accounts;
-    bytes32[] public bulkRegistrations;
+    BulkRecord[] public bulkRegistrations;
 
     
     constructor(address _token) public {
@@ -33,15 +39,26 @@ contract BatPay {
         require(n < maxBulk);
         require(accounts.length + n <= maxAccount);
 
-        uint256 temp = n + maxBulk * bulkRegistrations.length;
-        bytes32 hashValue = keccak256(abi.encodePacked(temp, rootHash));
-
-        bulkRegistrations.push(hashValue);
+        bulkRegistrations.push(BulkRecord(rootHash, uint64(n), uint64(accounts.length)));
         accounts.length += n;
     }
 
 
     // Register a new account
+
+    function claimAddress(address addr, uint256[] proof, uint id, uint bulkId) public returns (bool) {
+        require(bulkId < bulkRegistrations.length);
+        uint minId = bulkRegistrations[bulkId].minId;
+        uint n = bulkRegistrations[bulkId].n;
+        bytes32 rootHash = bulkRegistrations[bulkId].rootHash;
+
+        bytes32 hash = Merkle.evalProof(proof, id, uint256(addr));
+        
+        require(id >= minId && id < minId+n);
+        require(hash == rootHash);
+
+        accounts[id].addr = addr;
+    }
 
     function register() public returns (uint32 ret) {
         require(accounts.length < maxAccount, "no more accounts left");

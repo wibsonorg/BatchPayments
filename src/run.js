@@ -1,10 +1,23 @@
 var lib = require('../lib')(web3, artifacts);
-var merkle = lib.merkle;
+const BatPay = artifacts.require('./BatPay');
+const StandardToken = artifacts.require('./StandardToken');
+const TestHelper = artifacts.require('./TestHelper');
 
+
+async function doStuff() {
+    try {
+    console.log("?");
+    let x = await lib.newInstances();
+    console.log(x);
+    } catch(e) {
+        console.log(e);
+    }
+}
 
 module.exports = function() {
-    var w = merkle.merkle([1,2,3,4]);
-
-    console.log(w);
-
+    try {
+    doStuff();
+    } catch(e) {
+        console.log(e);
+    }
 }

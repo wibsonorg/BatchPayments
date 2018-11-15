@@ -1,2 +1,2 @@
-docker exec -ti batpay_truffle_1 bash
+docker exec -ti batchpayments_truffle_1 bash
 
