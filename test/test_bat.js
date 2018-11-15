@@ -11,8 +11,6 @@ contract('BatPay', (addr)=>{
     let bp, tAddress, st;
     const newAccount = new BigNumber(2).pow(256).minus(1);
 
- 
-
     before(async ()=> {
         bp = await BatPay.deployed();
         tAddress = await bp.token.call();
@@ -79,7 +77,7 @@ contract('BatPay', (addr)=>{
             let y0 = await st.balanceOf.call(a0);
 
             let tx = await bp.withdraw(amount/2, id);
-
+            
             let x1 = await bp.balanceOf.call(id);
             let y1 = await st.balanceOf.call(a0);
 

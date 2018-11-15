@@ -16,7 +16,7 @@ async function doStuff() {
 
 module.exports = function() {
     try {
-    doStuff();
+        doStuff();
     } catch(e) {
         console.log(e);
     }
