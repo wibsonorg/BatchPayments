@@ -76,7 +76,6 @@ contract('BatPay', (addr)=>{
             let y0 = await st.balanceOf.call(a0);
 
             let tx = await bp.withdraw(amount/2, id);
-            console.log(tx);
             
             let x1 = await bp.balanceOf.call(id);
             let y1 = await st.balanceOf.call(a0);
