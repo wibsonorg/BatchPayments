@@ -9,9 +9,6 @@ module.exports = function(deployer) {
 		deployer.deploy(StandardToken, "Token", "TOK", 2, 10000);
 		let i = await StandardToken.deployed();
 
-		deployer.deploy(Merkle);
-		deployer.link(Merkle, BatPay);
-		
 		deployer.deploy(BatPay, i.address);
 		BatPay.deployed();
 		
