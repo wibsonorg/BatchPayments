@@ -6,7 +6,7 @@ library Merkle {
     }
 
     function evalProof(uint256[] proof, uint256 key, uint256 value) internal pure  returns(bytes32) {
-        bytes32 hash = bytes32(value);
+        bytes32 hash = keccak256(abi.encodePacked(value));
         uint256 k = key;
         for(uint i = 0; i<proof.length; i++) {
             uint256 bit = k % 2;

@@ -13,6 +13,10 @@ contract BatPay {
         uint64  balance;
     }
 
+    struct Payment {
+        bytes32 hash;
+    }
+
     struct BulkRecord {
         bytes32 rootHash;
         uint64  n;
@@ -104,6 +108,12 @@ contract BatPay {
 
             accounts[id].balance = newBalance;
        }
+    }
+
+    function send(uint id, uint amount, bytes paydata) public {
+        require(id < accounts.length);
+        require(accounts[id].addr == msg.sender);
+
     }
 
     function balanceOf(uint id) public view returns (uint64) {
