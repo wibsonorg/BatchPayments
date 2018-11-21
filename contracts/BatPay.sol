@@ -4,17 +4,23 @@ import "./Merkle.sol";
 
 
 contract BatPay {
-    uint constant public maxAccount = 2**32;
+    uint constant public maxAccount = 2**24-1;
     uint constant public maxBulk = 2**16;
     uint constant public newAccount = 2**256-1;
+    uint constant public bytesPerId = 3;
+    uint constant public maxBalance = 2**64-1;
 
     struct Account {
         address addr;
         uint64  balance;
+        uint32  claimIndex;
     }
 
     struct Payment {
         bytes32 hash;
+        uint64  amount;
+        uint32  minId;
+        uint32  maxId;
     }
 
     struct BulkRecord {
@@ -27,6 +33,7 @@ contract BatPay {
     IERC20 public token;
     Account[] public accounts;
     BulkRecord[] public bulkRegistrations;
+    Payment[] public payments;
 
     
     constructor(address _token) public {
@@ -68,7 +75,7 @@ contract BatPay {
         require(accounts.length < maxAccount, "no more accounts left");
         ret = (uint32)(accounts.length);
         accounts.length += 1;
-        accounts[ret] = Account(msg.sender, 0);
+        accounts[ret] = Account(msg.sender, 0, 0);
     } 
 
     function withdraw(uint64 amount, uint256 id) public {
@@ -97,7 +104,7 @@ contract BatPay {
         if (id == newAccount)      
         {   // new account
             uint newId = register();
-            accounts[newId] = Account(msg.sender, amount);
+            accounts[newId].balance = amount;
         } else {  
             // existing account
             uint64 balance = accounts[id].balance;
@@ -110,11 +117,32 @@ contract BatPay {
        }
     }
 
-    function send(uint id, uint amount, bytes paydata) public {
+    function transfer(uint id, uint64 amount, bytes payData, uint32 newCount, bytes32 roothash) public {
         require(id < accounts.length);
-        require(accounts[id].addr == msg.sender);
+         
+        address addr = accounts[id].addr;
+        uint64 balance = accounts[id].balance;
 
+        require(addr == msg.sender);
+        require(payData.length % bytesPerId == 0);
+        require(amount <= maxBalance);
+
+        uint total = amount * (newCount + payData.length/4);
+        
+        require (total <= balance);
+        accounts[id].balance = balance - uint64(total);
+
+        uint32 minId = uint32(accounts.length);
+        uint32 maxId = minId + newCount;
+        require(maxId >= minId);
+        
+        if (newCount > 0) bulkRegister(newCount, roothash);
+
+        bytes32 hash = keccak256(abi.encodePacked(payData));
+        payments.push(Payment(hash, amount, minId, maxId));
     }
+
+
 
     function balanceOf(uint id) public view returns (uint64) {
         require(id < accounts.length);

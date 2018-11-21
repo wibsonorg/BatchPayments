@@ -6,7 +6,7 @@ const Merkle = artifacts.require('./Merkle');
 
 module.exports = function(deployer) {
 	async function doDeploy(deployer) {
-		deployer.deploy(StandardToken, "Token", "TOK", 2, 10000);
+		deployer.deploy(StandardToken, "Token", "TOK", 2, 1000000);
 		let i = await StandardToken.deployed();
 
 		deployer.deploy(BatPay, i.address);

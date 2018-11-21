@@ -15,14 +15,14 @@ contract('StandardToken', async (accounts)=>{
         assert.notEqual(instance, undefined);
     });
 
-    it("TotalSupply should be 10000", async ()=> {
+    it("TotalSupply should be 1M", async ()=> {
         let value = await instance.totalSupply.call();
-        assert.equal(value.toNumber(), 10000);
+        assert.equal(value.toNumber(), 1000000);
     });
 
     it("Should assign initial balance to owner", async()=>{
         let value = await instance.balanceOf.call(a0);
-        assert.equal(value.toNumber(), 10000);
+        assert.equal(value.toNumber(), 1000000);
     });
 
     it("Should assign zero initial balance to non-owner", async()=>{
