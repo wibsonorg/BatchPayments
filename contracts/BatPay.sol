@@ -4,11 +4,11 @@ import "./Merkle.sol";
 
 
 contract BatPay {
-    uint constant public maxAccount = 2**24-1;
+    uint constant public maxAccount = 2**32-1;
     uint constant public maxBulk = 2**16;
     uint constant public newAccount = 2**256-1;
-    uint constant public bytesPerId = 3;
     uint constant public maxBalance = 2**64-1;
+    uint constant public maxTransfer = 100000;
 
     struct Account {
         address addr;
@@ -21,6 +21,7 @@ contract BatPay {
         uint64  amount;
         uint32  minId;
         uint32  maxId;
+        uint256 lock;
     }
 
     struct BulkRecord {
@@ -117,29 +118,42 @@ contract BatPay {
        }
     }
 
-    function transfer(uint id, uint64 amount, bytes payData, uint32 newCount, bytes32 roothash) public {
-        require(id < accounts.length);
-         
-        address addr = accounts[id].addr;
-        uint64 balance = accounts[id].balance;
+    function transfer(
+        uint fromId, 
+        uint amount, 
+        bytes payData, 
+        uint newCount, 
+        bytes32 roothash,
+        uint256 lock) 
+        public 
+    {
+        require(fromId < accounts.length);
+        uint bytesPerId = uint(payData[1]);
+
+        address addr = accounts[fromId].addr;
+        uint64 balance = accounts[fromId].balance;
 
         require(addr == msg.sender);
-        require(payData.length % bytesPerId == 0);
-        require(amount <= maxBalance);
+        require((payData.length-2) % bytesPerId == 0);
 
-        uint total = amount * (newCount + payData.length/4);
+        uint totalCount = (payData.length-2) / bytesPerId + newCount;
+        require(totalCount < maxTransfer);
         
+        uint total = amount * totalCount;
         require (total <= balance);
-        accounts[id].balance = balance - uint64(total);
 
-        uint32 minId = uint32(accounts.length);
-        uint32 maxId = minId + newCount;
-        require(maxId >= minId);
+        accounts[fromId].balance = balance - uint64(total);
+
+        uint minId = accounts.length;
+        uint maxId = minId + newCount;
+        require(maxId >= minId && maxId <= maxAccount);
         
         if (newCount > 0) bulkRegister(newCount, roothash);
-
-        bytes32 hash = keccak256(abi.encodePacked(payData));
-        payments.push(Payment(hash, amount, minId, maxId));
+        bytes32 hash = 0;
+        
+        hash = keccak256(payData);
+        
+        payments.push(Payment(hash, uint64(amount), uint32(minId), uint32(maxId), lock));
     }
 
 
