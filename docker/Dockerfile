@@ -1,5 +1,5 @@
 # Node image
-FROM node:latest
+FROM node:10
 
 # Create code directory
 RUN mkdir /src
@@ -8,6 +8,6 @@ RUN mkdir /src
 WORKDIR /src
 
 # Install Truffle
-RUN apt-get update && apt-get -y install vim curl wget git
-RUN npm install -g truffle ganache-cli
+RUN apt-get update && apt-get -y install vim curl wget git less
+RUN yarn global add truffle ganache-cli
 
