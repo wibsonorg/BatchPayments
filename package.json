@@ -13,5 +13,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {}
+  "dependencies": {
+    "ethereumjs-abi": "^0.6.5"
+  }
 }
