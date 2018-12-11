@@ -57,7 +57,7 @@ async function doStuff() {
     
     console.log("Transfer from "+id);
     
-    let v1 = await bp.transfer(id, 1, data, newIds, 0x1234, 0);
+    let v1 = await bp.transfer(id, 1, data, newIds, 0x1234, 0, 0);
     
     await v1;
     console.log(v1.receipt.gasUsed);

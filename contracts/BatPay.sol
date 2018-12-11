@@ -27,6 +27,7 @@ contract BatPay {
         uint32  totalCount;
         bytes32 lock;
         uint64  timestamp;
+        bytes32 metadata;
     }
 
     struct BulkRecord {
@@ -78,8 +79,6 @@ contract BatPay {
 
     // Reserve n accounts but delay assigning addresses
     // Accounts will be claimed later using merkleTree's rootHash
-    // Note: This should probably have some limitation to prevent
-    //   DOS (maybe only owner?)
 
     function bulkRegister(uint256 n, bytes32 rootHash) public {
         require(n < maxBulk, "Cannot register this number of ids simultaneously");
@@ -162,7 +161,8 @@ contract BatPay {
         bytes payData, 
         uint newCount, 
         bytes32 roothash,
-        bytes32 lock) 
+        bytes32 lock,
+        bytes32 metadata) 
         public 
     {
         Payment memory p;
@@ -188,6 +188,7 @@ contract BatPay {
 
         p.minId = uint32(accounts.length);
         p.maxId = uint32(p.minId + newCount);
+        p.metadata = metadata;
         require(p.maxId >= p.minId && p.maxId <= maxAccount, "invalid newCount");
         
         if (newCount > 0) bulkRegister(newCount, roothash);
@@ -264,7 +265,7 @@ contract BatPay {
         Account memory acc = accounts[delegate];
 
         require(toId <= accounts.length, "toId must be a valid account id");
-        Account storage tacc = accounts[toId];
+        Account memory tacc = accounts[toId];
 
         require(tacc.addr != 0, "account registration has to be completed");
         require(toPayId <= payments.length, "invalid toPayId");

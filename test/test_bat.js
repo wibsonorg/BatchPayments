@@ -175,7 +175,7 @@ contract('BatPay', (addr)=>{
             let v0 = await bp.bulkRegister(100, 0);
             await v0;
 
-            let v1 = await bp.transfer(id, 1, data, 0, 0x1234, 0);
+            let v1 = await bp.transfer(id, 1, data, 0, 0x1234, 0, 0);
 
             await v1;
         })
