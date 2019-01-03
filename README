@@ -1,7 +1,11 @@
 
-use:
+To get started use:
 	docker-compose up
+
 and in a different console:
-	./truffle.sh deploy
-	./truffle.sh test
-	./truffle.sh exec src/benchmarks.js
+	./docker-run.sh
+	npm install
+	truffle deploy
+	truffle test
+	truffle exec src/benchmarks.js
+	
