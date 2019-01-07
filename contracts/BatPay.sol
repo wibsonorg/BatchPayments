@@ -232,12 +232,41 @@ contract BatPay {
         accounts[from].balance += total;
     }
 
-    function recoverHelper(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal pure returns (address) {
+    function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
-        address addr = ecrecover(prefixedHash, v, r, s);
 
-        return addr;
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        // Check the signature length
+        if (_sig.length != 65) {
+            return (address(0));
+        }
+
+        // Divide the signature in r, s and v variables
+        // ecrecover takes the signature parameters, and the only way to get them
+        // currently is to use assembly.
+        // solium-disable-next-line security/no-inline-assembly
+        assembly {
+        r := mload(add(_sig, 32))
+        s := mload(add(_sig, 64))
+        v := byte(0, mload(add(_sig, 96)))
+        }
+
+        // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
+        if (v < 27) {
+            v += 27;
+        }
+
+        // If the version is correct return the signer address
+        if (v != 27 && v != 28) {
+            return address(0);
+        }
+
+        return ecrecover(prefixedHash, v, r, s);
+        
     }
 
     function _freeSlot(uint32 delegate, uint32 slot) internal returns(bool) {
@@ -259,9 +288,7 @@ contract BatPay {
         uint32 toId, 
         uint32 toPayId, 
         uint64 amount,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        bytes signature
         ) 
         public
         
@@ -276,7 +303,7 @@ contract BatPay {
         require(toPayId > tacc.collected, "toPayId is not a valid value");
         
         bytes32 hash = keccak256(abi.encodePacked(delegate, toId, tacc.collected, toPayId, amount)); // TODO: fee
-        address addr = recoverHelper(hash, v, r, s);
+        address addr = recoverHelper(hash, signature);
         require(addr == tacc.addr, "Bad user signature");
        
        

@@ -18,7 +18,7 @@ async function doStuff() {
     let st = x.token;
     let bp = x.bp;
 
-    const ids = 50;
+    const ids = 1000;
     const newIds = 50;
 
     const amount = ids+newIds;
@@ -67,9 +67,9 @@ async function doStuff() {
     console.log("collect for "+id1);
 
     let sign = utils.signCollect(web3.eth.accounts[0], delegate, id1, 0, 1, 1);
-    let {v,r,s} = sign;
+    
 
-    console.log("v="+v+" r="+r+" s="+s);
+    console.log("sign="+sign);
 
     console.log("topping delegate");
     let amount2 = 100000 + 100;
@@ -86,7 +86,7 @@ async function doStuff() {
         id1,        // to
         1,          // toPayId
         1,          // amount
-        v, r, s     // signature
+        sign     // signature
         );
     await v2;
     console.log(v2.receipt.gasUsed);
