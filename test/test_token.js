@@ -1,17 +1,17 @@
 var StandardToken = artifacts.require('StandardToken');
 
 
-contract('StandardToken', async (accounts)=>{
+contract('StandardToken', async (accounts)=> {
     let a0 = accounts[0];
     let a1 = accounts[1];
     let instance;
 
-    before(async ()=>{
+    before(async ()=> {
         instance = await StandardToken.deployed();
         return await instance;
     });
 
-    it("instance should be defined", async()=>{
+    it("instance should be defined", async()=> {
         assert.notEqual(instance, undefined);
     });
 
@@ -20,17 +20,17 @@ contract('StandardToken', async (accounts)=>{
         assert.equal(value.toNumber(), 1000000);
     });
 
-    it("Should assign initial balance to owner", async()=>{
+    it("Should assign initial balance to owner", async()=> {
         let value = await instance.balanceOf.call(a0);
         assert.equal(value.toNumber(), 1000000);
     });
 
-    it("Should assign zero initial balance to non-owner", async()=>{
+    it("Should assign zero initial balance to non-owner", async()=> {
         let value = await instance.balanceOf.call(a1);
         assert.equal(value.toNumber(), 0);
     });
 
-    it("Should handle simple transfers", async()=>{
+    it("Should handle simple transfers", async()=> {
         let v0 = await instance.balanceOf.call(a0);
         let v1 = await instance.balanceOf.call(a1);
 
@@ -51,5 +51,4 @@ contract('StandardToken', async (accounts)=>{
     })
     
 
-} );
-
+});
