@@ -1,12 +1,12 @@
 var lib = require('../lib')(web3, artifacts);
-var merkle = lib.merkle;
+const merkle = lib.merkle;
 var {sha3_1} = merkle;
 
 var BigNumber = web3.BigNumber;
 
 var TestHelper = artifacts.require('./TestHelper');
 
-describe('merkle lib', ()=>{
+describe('merkle lib', ()=> {
     var testhelper;
 
     before(async()=>{
@@ -14,14 +14,13 @@ describe('merkle lib', ()=>{
         return await testhelper;
     });
 
-    describe('sha3', ()=>{
-        it('should pass test vectors with uint256', async ()=>{
+    describe('sha3', ()=> {
+        it('should pass test vectors with uint256', async ()=> {
             let v0 = merkle.sha3_2(
                 "0xebe9dbca91a953d23b97064bcb43745fc1ddcd8d527f16bc04abe5151e45d504", 
                 "0x656e12c23977562f7e6d670a904415c6624227a00805bc9be064529a9f3d3a99");
             
             let v1 = merkle.sha3_2(
-        
                 "0x18b1894d6fbc6b3c6000bd16384f86be0e27f078dd6022c23ae4bac5292011ad", 
                 "0xc6564273d2fde1741bd00076de69436536bd1dbca8edd3d7cae231e0c6296e9a");
                 
@@ -29,27 +28,23 @@ describe('merkle lib', ()=>{
             assert.equal(v1, "0x0f2b81d13198e6f462303a1d1074bd4c4fe2780b7a37b909a240cbb9316ab69b");
         });
 
-        it('should match solidity\'s sha3', async ()=>{
+        it('should match solidity\'s sha3', async ()=> {
             let a = new BigNumber("0xebe9dbca91a953d23b97064bcb43745fc1ddcd8d527f16bc04abe5151e45d504");
             let b = new BigNumber("0x656e12c23977562f7e6d670a904415c6624227a00805bc9be064529a9f3d3a99");
 
             let v0 = merkle.sha3_2(a,b);
-            
-
             let v1 = await testhelper.getHash(a,b)
         
             assert.equal(v0, v1);
          });
 
-
-        it('should pass test vectors with BigNumbers', async ()=>{
+        it('should pass test vectors with BigNumbers', async ()=> {
         
             let v0 = merkle.sha3_2(
                 new BigNumber("0xebe9dbca91a953d23b97064bcb43745fc1ddcd8d527f16bc04abe5151e45d504"), 
                 new BigNumber("0x656e12c23977562f7e6d670a904415c6624227a00805bc9be064529a9f3d3a99"));
             
             let v1 = merkle.sha3_2(
-        
                 new BigNumber("0x18b1894d6fbc6b3c6000bd16384f86be0e27f078dd6022c23ae4bac5292011ad"), 
                 new BigNumber("0xc6564273d2fde1741bd00076de69436536bd1dbca8edd3d7cae231e0c6296e9a"));
                 
@@ -57,7 +52,7 @@ describe('merkle lib', ()=>{
             assert.equal(v1, "0x0f2b81d13198e6f462303a1d1074bd4c4fe2780b7a37b909a240cbb9316ab69b");
         });
 
-        it('should pass test vectors with uint32', async ()=>{
+        it('should pass test vectors with uint32', async ()=> {
         
             let v0 = merkle.sha3_2(
                 "0x0000000100000002000000030000000400000005000000060000000700000008",
@@ -81,6 +76,7 @@ describe('merkle lib', ()=>{
 
             assert.equal(v.roothash, w);
         });
+
         it('should calculate root hash for odd number of elements', async() => {
             let v=[1,2,3];
             v = merkle.merkle(v);
@@ -100,8 +96,8 @@ describe('merkle lib', ()=>{
                 let x = merkle.evalProof(proof, v[i]);
                 assert.equal(tree.roothash, x);
             }
-
         });
+
         it('should match solidity\'s eval proofs', async() => {
             let v=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19];
             let tree = merkle.merkle(v);
@@ -115,14 +111,11 @@ describe('merkle lib', ()=>{
                     key = key * 2;
                     if (proof[j].d == 'l') key = key + 1;
                 }
-  
 
                 let x = await testhelper.evalProof.call(pp, key, v[i]);
                 assert.equal(tree.roothash, x);
             }
-
         })
-
     });
 
 
