@@ -5,7 +5,7 @@ import "./Merkle.sol";
 contract BatPay {
     uint constant public maxAccount = 2**32-1;
     uint constant public maxBulk = 2**16;
-    uint constant public newAccount = 2**256-1;
+    uint constant public newAccount = 2**256-1; // special account id. It's NOT in the range of accounts
     uint constant public maxBalance = 2**64-1;
     uint constant public maxTransfer = 100000;
     uint constant public unlockTime = 2 hours; // Should this be a parameter of transfer() ?
@@ -78,16 +78,16 @@ contract BatPay {
     }
 
     // Reserve n accounts but delay assigning addresses
-    // Accounts will be claimed later using merkleTree's rootHash
+    // Accounts will be claimed later using MerkleTree's rootHash
 
     function bulkRegister(uint256 n, bytes32 rootHash) public {
+        require(n > 0, "Cannot register 0 ids");
         require(n < maxBulk, "Cannot register this number of ids simultaneously");
-        require(accounts.length + n <= maxAccount, "Not enough ids to register");
+        require(accounts.length + n <= maxAccount, "Cannot register: ran out of ids");
 
         bulkRegistrations.push(BulkRecord(rootHash, uint32(n), uint32(accounts.length)));
         accounts.length += n;
     }
-
 
     // Register a new account
 
@@ -101,9 +101,11 @@ contract BatPay {
         bytes32 hash = Merkle.evalProof(proof, id, uint256(addr));
         
         require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");
-        require(hash == rootHash, "Merkle proof invalid");
+        require(hash == rootHash, "invalid Merkle proof");
 
         accounts[id].addr = addr;
+
+        return true; // do we actually need to return a value?
     }
 
     function register() public returns (uint32 ret) {
@@ -111,6 +113,8 @@ contract BatPay {
         ret = (uint32)(accounts.length);
         accounts.length += 1;
         accounts[ret] = Account(msg.sender, 0, 0);
+
+        return ret;
     } 
 
     // TODO: add v,r,s (signature from owner of id)
@@ -295,7 +299,6 @@ contract BatPay {
      
         tacc.collected = uint32(toPayId);
         accounts[toId] = tacc;
-
     }
 
     function balanceOf(uint id) public view validId(id) returns (uint64) {

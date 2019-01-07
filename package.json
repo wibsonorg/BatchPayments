@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ethereumjs-abi": "^0.6.5"
+    "ethereumjs-abi": "^0.6.5",
+    "truffle-assertions": "^0.7.2"
   }
 }
