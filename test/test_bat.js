@@ -117,9 +117,6 @@ contract('BatPay', (addr)=> {
             let id = await bp.accountsLength.call();
             id = id.toNumber()-1;  // this is a dangerous way to obtain the ID of the newAccount, as many accounts c
 
-//            let balance = await bp.balanceOf(id);
-//            balance = balance.toNumber();
-
             await catchRevert(bp.withdraw(amount/2, id+1));
         });
 
@@ -132,7 +129,7 @@ contract('BatPay', (addr)=> {
             let id = await bp.accountsLength.call();
             id = id.toNumber()-1;
 
-            let balance = await bp.balanceOf.call(id);
+            let balance = await bp.balanceOf(id);
             balance = balance.toNumber();
 
             await catchRevert(bp.withdraw(balance+1, id));
@@ -150,7 +147,7 @@ contract('BatPay', (addr)=> {
             await bp.deposit(1, newAccount); 
             const v2 = await bp.accountsLength.call();
             
-            assert.equal(v2.toNumber() - v0.toNumber(), 2); // shouldn't this be 1 as well?
+            assert.equal(v2.toNumber() - v0.toNumber(), 2);
             assert.equal(v1.toNumber() - v0.toNumber(), 1);
         });
     
