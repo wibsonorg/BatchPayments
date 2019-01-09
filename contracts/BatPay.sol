@@ -358,6 +358,9 @@ contract BatPay {
         uint id = 0;
         uint collected = 0;
 
+        // Check if id is included in bulkRegistration within payment
+        if (s.to >= p.minId && s.to < p.maxId) collected += p.amount;
+
         // Process payData, inspecting the list of ids
         // payData includes 2 header bytes, followed by n bytesPerId-bytes entries
         // [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
@@ -412,7 +415,7 @@ contract BatPay {
         collects[delegate][slot] = s;
     }
 
-function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
+    function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
 
