@@ -10,7 +10,10 @@ contract BatPay {
     uint constant public maxTransfer = 100000;
     uint constant public unlockTime = 2 hours; // Should this be a parameter of transfer() ?
     uint constant public challengeTime = 2 days;
+    uint constant public challengeStep = 30 minutes;
+    uint constant public maxCollect = 1000;
     uint64 constant public collectBond = 100000;
+    uint64 constant public challengeBond = 10000;
 
     struct Account {
         address addr;
@@ -43,6 +46,10 @@ contract BatPay {
         uint32  to;
         uint64  timestamp;
         uint8   status;
+        uint32  challenger;
+        uint32  index;
+        uint64  challengeAmount;
+        bytes32 data;
     }
 
     mapping (uint32 => mapping (uint32 => CollectSlot)) collects;
@@ -178,6 +185,7 @@ contract BatPay {
         uint bytesPerId = uint(payData[1]);
         Account memory from = accounts[fromId];
     
+        require(bytesPerId > 0, "bytes per Id should be positive");
         require(from.addr == msg.sender, "only owner of id can transfer");
         require((payData.length-2) % bytesPerId == 0, "payData length is invalid");
 
@@ -202,21 +210,20 @@ contract BatPay {
         payments.push(p);
     }
 
-    function unlock(uint32 payId, bytes32 key) public returns(bool) {
+    function unlock(uint32 payId, bytes key) public returns(bool) {
         require(payId < payments.length, "invalid payId");
         require(now < payments[payId].timestamp + unlockTime, "Hash lock expired");
         bytes32 h = keccak256(abi.encodePacked(key));
-        if (h == payments[payId].hash)
-        {
-            payments[payId].hash = bytes32(0);
-            return true;
-        }
-        return false;
+        require(h == payments[payId].lock, "Invalid key");
+        
+        payments[payId].lock = bytes32(0);
+
+        return true;
     }
 
     function refund(uint payId) public returns (bool) {
         require(payId < payments.length, "invalid payment Id");
-        require(payments[payId].hash != 0, "payment is already unlocked");
+        require(payments[payId].lock != 0, "payment is already unlocked");
         require(now >= payments[payId].timestamp + unlockTime, "Hash lock has not expired yet");
         
         uint64 amount = payments[payId].amount;
@@ -232,7 +239,180 @@ contract BatPay {
         accounts[from].balance += total;
     }
 
-    function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
+    
+    
+
+    function getDataSum(bytes data) public pure returns (uint sum) {
+        uint n = data.length / 12;
+        uint modulus = maxBalance+1;
+
+        sum = 0;
+
+        // Get the sum of the stated amounts in data 
+        // Each entry in data is [8-bytes amount][4-bytes payId]
+
+        for(uint i = 0; i<n; i++) {
+            // solium-disable-next-line security/no-inline-assembly
+            assembly {
+                sum :=
+                    add(
+                        sum, 
+                        mod(
+                            mload(add(data, add(8, mul(i, 12)))), 
+                            modulus)
+                    )
+            }
+        }
+    }
+
+    function getDataAtIndex(bytes data, uint index) public pure returns (uint64 amount, uint32 payId) {
+        uint mod1 = maxBalance+1;
+        uint mod2 = maxAccount+1;
+        uint i = index*12;
+
+        require(i <= data.length-12);
+
+        // solium-disable-next-line security/no-inline-assembly
+        assembly
+            {
+                amount := mod(
+                    mload(add(data, add(8, i))), 
+                    mod1)           
+
+                 payId := mod(
+                    mload(add(data, add(12, i))),
+                    mod2)
+            }
+    }
+
+
+    function challenge_1(uint32 delegate, uint32 slot, uint32 challenger) public {
+        require(isValidId(delegate), "delegate must be a valid account id");
+        require(accounts[challenger].balance >= challengeBond, "not enough balance");
+
+        CollectSlot memory s = collects[delegate][slot];
+ 
+        require(s.status == 1, "slot is not available for challenge");      
+        require (now <= s.timestamp + challengeTime, "challenge time has passed");
+        s.status = 2;
+        s.challenger = challenger;
+        s.timestamp = uint64(now);
+
+        accounts[challenger].balance -= challengeBond;
+
+        collects[delegate][slot] = s;
+    }
+
+    function challenge_2(uint32 delegate, uint32 slot, bytes data) public {
+        require(isOwnerId(delegate), "only delegate can call challenge_1");
+
+        CollectSlot memory s = collects[delegate][slot];
+
+        require(s.status == 2, "wrong slot status");
+        require (now <= s.timestamp + challengeStep, "challenge time has passed");
+
+        require(data.length % 12 == 0, "wrong data format");
+        require (getDataSum(data) == s.amount, "data doesn't represent collected amount");
+
+        s.data = keccak256(data);
+        s.status = 3;
+        s.timestamp = uint64(now);
+
+        collects[delegate][slot] = s;
+    }
+
+
+    function challenge_3(uint32 delegate, uint32 slot, bytes data, uint32 index) public {
+        require(isValidId(delegate), "delegate should be a valid id");
+        CollectSlot memory s = collects[delegate][slot];
+        
+        require(s.status == 3);
+        require (now <= s.timestamp + challengeStep, "challenge time has passed");
+        require(isOwnerId(s.challenger), "only challenger can call challenge_2");
+     
+        
+        require(s.data == keccak256(data), "data mismatch");
+       
+        s.index = index;
+        s.status = 4;
+        s.timestamp = uint64(now);
+
+        collects[delegate][slot] = s;
+    }
+
+    function challenge_4(uint32 delegate, uint32 slot, bytes payData) public {
+        require(isOwnerId(delegate), "only delegate can call challenge_3");
+
+        CollectSlot memory s = collects[delegate][slot];
+        Payment memory p = payments[s.index];
+
+        require(s.status == 4);
+        require(now <= s.timestamp + challengeStep, "challenge time has passed");
+        require(s.index >= s.minPayId && s.index < s.maxPayId, "payment referenced is out of range");
+
+        require(keccak256(payData) == p.hash, "payData is incorrect");
+        
+        uint bytesPerId = uint(payData[1]);
+        uint modulus = 1 << (8*bytesPerId);
+
+        uint id = 0;
+        uint collected = 0;
+
+        // Process payData, inspecting the list of ids
+        // payData includes 2 header bytes, followed by n bytesPerId-bytes entries
+        // [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
+        for(uint i = 2; i < payData.length; i += bytesPerId) {
+            // Get next id delta from paydata 
+            // id += payData[2+i*bytesPerId]
+
+            // solium-disable-next-line security/no-inline-assembly
+            assembly {
+                id := add(
+                    id, 
+                    mod(
+                        mload(add(payData,add(i,bytesPerId))),
+                        modulus))
+            }
+            if (id == s.to) {
+                collected += p.amount;
+            }
+        }
+
+        require(collected == s.challengeAmount, "amount mismatch");
+
+        s.status = 5;
+        collects[delegate][slot] = s;
+
+        challenge_failed(delegate, slot);
+        
+    }
+
+    function challenge_success(uint32 delegate, uint32 slot) public {
+        CollectSlot memory s = collects[delegate][slot];
+        require((s.status == 2 || s.status == 4) && now > s.timestamp + challengeStep, "challenge not finished");
+
+        accounts[s.challenger].balance += collectBond;
+
+        collects[delegate][slot].status = 0;
+        
+    }
+
+    function challenge_failed(uint32 delegate, uint32 slot) public {
+        CollectSlot memory s = collects[delegate][slot];
+        require(s.status == 5 || s.status == 3 && now > s.timestamp + challengeStep, "challenge not completed");
+
+        // Challenge failed
+        // delegate wins bond
+        accounts[delegate].balance += challengeBond;
+
+        // reset slot to status=1, waiting for challenges
+        s.challenger = 0;
+        s.status = 1;
+        s.timestamp = uint64(now);
+        collects[delegate][slot] = s;
+    }
+
+function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
 
@@ -269,19 +449,22 @@ contract BatPay {
         
     }
 
-    function _freeSlot(uint32 delegate, uint32 slot) internal returns(bool) {
+    function freeSlot(uint32 delegate, uint32 slot) public {
+        require(isOwnerId(delegate), "only delegate can call");
+
         CollectSlot memory s = collects[delegate][slot];
 
-        if (s.amount == 0) return true;
-        require (now >= s.timestamp + challengeTime); // ???: Should we let him free this slot if it was successfully challenged?
-        if (s.status == 0) {
-            accounts[delegate].balance += s.amount + collectBond;
-        }
-        s.amount = 0;
-        collects[delegate][slot] = s;
-        return true;
-    }
+        if (s.status == 0) return;
 
+        require (s.status == 1 && now >= s.timestamp + challengeTime, "slot not available"); 
+    
+        // Refund bond 
+        accounts[delegate].balance += s.amount + collectBond;
+        
+        s.status = 0;
+        collects[delegate][slot] = s;
+    }
+    
     function collect(
         uint32 delegate,
         uint32 slot,
@@ -293,21 +476,28 @@ contract BatPay {
         public
         
     {
+        // Check delegate is valid
+        require(delegate < accounts.length, "delegate must be a valid account id");
         Account memory acc = accounts[delegate];
-
+        require(acc.addr != 0, "account registration has be to completed for delegate");
+        require(acc.addr == msg.sender, "only delegate can initiate collect");
+        
+        // Check toId is valid
         require(toId <= accounts.length, "toId must be a valid account id");
         Account memory tacc = accounts[toId];
-
         require(tacc.addr != 0, "account registration has to be completed");
+
+        // Check toPayId is valid
         require(toPayId <= payments.length, "invalid toPayId");
         require(toPayId > tacc.collected, "toPayId is not a valid value");
         
+        // Check that toId signed this transaction
         bytes32 hash = keccak256(abi.encodePacked(delegate, toId, tacc.collected, toPayId, amount)); // TODO: fee
         address addr = recoverHelper(hash, signature);
         require(addr == tacc.addr, "Bad user signature");
        
-       
-        require(_freeSlot(delegate, slot), "slot is not available");
+        // free slot if necessary
+        freeSlot(delegate, slot);
 
         tacc.balance += uint64(amount);
         require (acc.balance >= collectBond + amount, "not enough funds");
@@ -334,6 +524,10 @@ contract BatPay {
 
     function accountsLength() public view returns (uint) {
         return accounts.length;
+    }
+
+    function paymentsLength() public view returns (uint) {
+        return payments.length;
     }
 
     function bulkLength() public view returns (uint) {

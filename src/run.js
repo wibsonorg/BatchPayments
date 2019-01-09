@@ -89,8 +89,9 @@ async function doStuff() {
         sign     // signature
         );
     await v2;
-    console.log(v2.receipt.gasUsed);
 
+    console.log("gas used on collect="+v2.receipt.gasUsed);
+   
     } catch(e) {
         console.log(e);
     }
