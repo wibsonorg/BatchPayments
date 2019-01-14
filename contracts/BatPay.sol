@@ -61,12 +61,12 @@ contract BatPay {
     BulkRecord[] public bulkRegistrations;
     Payment[] public payments;
 
-    function isValidId(uint id) internal view returns (bool) {
+    function isValidId(uint id) public view returns (bool) {
         return (id < accounts.length);
     }
 
     // TODO: rename this function to something more meaningful
-    function isOwnerId(uint id) internal view returns (bool) {
+    function isOwnerId(uint id) public view returns (bool) {
         return isValidId(id) && msg.sender == accounts[id].addr;
     }
 

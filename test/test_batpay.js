@@ -300,7 +300,6 @@ contract('BatPay', (addr)=> {
             await assertRequire(bp.balanceOf(invalid_id+1), "id is not valid");
         })
 
-        // TODO: can not create test cases for isValidID() as it is declared as 'internal'
     });
 
 })
