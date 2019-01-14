@@ -232,14 +232,16 @@ contract BatPay {
         
         uint64 amount = payments[payId].amount;
         uint32 totalCount = payments[payId].totalCount;
+        uint64 fee = payments[payId].fee;
 
         require(totalCount > 0, "payment already refunded");
         
-        uint64 total = totalCount * amount;
+        uint64 total = totalCount * amount + fee;
         uint from = payments[payId].from;
 
         // Complete refund
         payments[payId].totalCount = 0;
+        payments[payId].fee = 0;
         accounts[from].balance += total;
     }
 
