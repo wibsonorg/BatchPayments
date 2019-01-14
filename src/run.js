@@ -18,7 +18,7 @@ async function doStuff() {
     let st = x.token;
     let bp = x.bp;
 
-    const ids = 1000;
+    const ids = 3000;
     const newIds = 50;
 
     const amount = ids+newIds;
@@ -57,7 +57,7 @@ async function doStuff() {
     
     console.log("Transfer from "+id);
     
-    let v1 = await bp.transfer(id, 1, data, newIds, 0x1234, 0, 0);
+    let v1 = await bp.transfer(id, 1, 0, data, newIds, 0x1234, 0, 0);
     
     await v1;
     console.log(v1.receipt.gasUsed);

@@ -30,6 +30,10 @@ function generateData(len)
     return data;
 }
 
+async function bpAccount(id) {
+    return await bp.accountOf.call(id);
+}
+
 async function tokenTransfer(from, to, amount) {
     let a = await st.transfer(to, amount, {from: from});
 }
@@ -49,20 +53,20 @@ async function bpBalance(id) {
     return balance;
 }
 
-async function bpTransfer(from, amount, list, lock) {
+async function bpTransfer(from, amount, fee, list, lock) {
     let data = utils.getPayData(list);
-    await bp.transfer(from, amount, data, 0, 0, lock, 0);
+    await bp.transfer(from, amount, fee, data, 0, 0, lock, 0);
     let payId = (await bp.paymentsLength.call()) - 1;
 
     return payId;
 }
 
-async function bpUnlock(payId, key) {
-    let t = await bp.unlock(payId, key);
-    console.log(t);
+async function bpUnlock(payId, unlocker, key) {
+    let t = await bp.unlock(payId, unlocker, key);
+    
 }
 
-async function bpCollect(delegate, slot, fromId, toId, amount) {
+async function bpCollect(delegate, slot, to, fromId, toId, amount) {
     let signature = utils.signCollect(ids[to], delegate, to, fromId, toId, amount);
 
     await bp.collect(delegate, slot, to, toId, amount, signature);
@@ -78,9 +82,14 @@ async function register(addr) {
 }
 
 async function showBalance() {
+    for(let i = 0; i<10; i++) {
+        let [addr,balance,collected] = await bpAccount(i);
+        let tb = await tokenBalance(ids[i]);
+        tb = tb.toString(10).padStart(9, " ");
+        balance = balance.toString(10).padStart(6, " ");
+        console.log(i+":"+tb+" "+balance+" "+collected+"\t"+addr);
+    }
     console.log("----------------");
-    for(let i = 0; i<10; i++)
-        console.log(i+":"+await tokenBalance(ids[i])+" "+await bpBalance(i));
 }
 
 async function testData() {
@@ -103,47 +112,63 @@ async function testData() {
 
 async function doStuff() {
     try {
-    console.log("Instantiate contacts");
-    let x = await lib.newInstances();
+        console.log("Instantiate contacts");
+        let x = await lib.newInstances();
 
-    st = x.token;
-    bp = x.bp;
+        st = x.token;
+        bp = x.bp;
 
-    let acc = web3.eth.accounts;
+        let acc = web3.eth.accounts;
 
 
-    for(let i=0; i<10; i++) await register(acc[i]);
+        console.log("registering");
+        for(let i=0; i<10; i++) await register(acc[i]);    
+        await showBalance();
 
+        console.log("transfering some tokens");
+        for(let i = 1; i<acc.length; i++)
+            await tokenTransfer(acc[0], acc[i], 1000);
     
+        await showBalance();
+        
+        console.log("deposit");
+        await bpDeposit(10000, 0);
+
+        await showBalance();
+        
+        let key = "hello world";
+        let p = [];
+        let m = 20;
+
+        let unlocker = 9;
+
+        console.log("doing "+m+" transfers");
+        for(let i = 0; i<m; i++)
+        {   
+            p.push( await bpTransfer(0,  10, 1, [1,2,3,4,5], utils.hashLock(unlocker, key)));
+        }
+        console.log(p);
+        console.log("doing unlock");
+        for(let i = 0; i<m; i++)
+        {
+            await bpUnlock(p[i], unlocker, key);
+        }
     
-    await showBalance();
-    for(let i = 1; i<acc.length; i++)
-        await tokenTransfer(acc[0], acc[i], 1000);
- 
-    await showBalance();
-    
-    await bpDeposit(10000, 0);
+        await showBalance();
 
-    await showBalance();
-    
-    let key = "hello world";
-    let p = [];
-    let m = 20;
+        console.log("collect");
 
-    for(let i = 0; i<m; i++)
-    {   
-        p.push( await bpTransfer(0,  10, [1,2,3,4,5], utils.hashLock(key)));
-    }
+        let max = Math.max.apply(null, p) + 1;
 
-    for(let i = 0; i<m; i++)
-    {
-        console.log(p[i]);
-        await bpUnlock(p[i], key);
-    }
-   // await showBalance();
+        for(let i = 1; i<=5; i++) {
+            let [addr, b, c] = await bpAccount(i);
 
-  
+            c = c.toNumber();
 
+            await bpCollect(0, i, i, c, max, m*10);
+        }
+
+        await showBalance();
     } catch(e) {
         console.log(e);
     }

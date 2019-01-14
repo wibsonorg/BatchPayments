@@ -12,8 +12,8 @@ contract BatPay {
     uint constant public challengeTime = 2 days;
     uint constant public challengeStep = 30 minutes;
     uint constant public maxCollect = 1000;
-    uint64 constant public collectBond = 100000;
-    uint64 constant public challengeBond = 10000;
+    uint64 constant public collectBond = 100;
+    uint64 constant public challengeBond = 100;
 
     struct Account {
         address addr;
@@ -23,13 +23,14 @@ contract BatPay {
 
     struct Payment {
         uint32  from;
-        bytes32 hash;
         uint64  amount;
+        uint64  fee;
         uint32  minId;  // ???: Use BulkRecordId instead??
         uint32  maxId;
         uint32  totalCount;
-        bytes32 lock;
         uint64  timestamp;
+        bytes32 hash;
+        bytes32 lock;
         bytes32 metadata;
     }
 
@@ -144,7 +145,6 @@ contract BatPay {
         token.transfer(addr, amount);        
     }
 
-     // Q: is there a way to support delegates for deposit?
     function deposit(uint64 amount, uint256 id) public {
         require(id < accounts.length || id == newAccount, "invalid id");
         require(amount > 0, "amount should be positive");
@@ -169,6 +169,7 @@ contract BatPay {
     function transfer(
         uint32 fromId, 
         uint64 amount, 
+        uint64 fee,
         bytes payData, 
         uint newCount, 
         bytes32 roothash,
@@ -179,6 +180,7 @@ contract BatPay {
         Payment memory p;
         p.from = fromId;
         p.amount = amount;
+        p.fee = fee;
         p.lock = lock;
         p.timestamp = uint64(now);
         require(fromId < accounts.length, "invalid fromId");
@@ -192,7 +194,7 @@ contract BatPay {
         p.totalCount = uint32((payData.length-2) / bytesPerId + newCount);
         require(p.totalCount < maxTransfer, "too many payees");
         
-        uint64 total = uint64(amount * p.totalCount); // TODO: check for overflow
+        uint64 total = uint64(amount * p.totalCount) + fee; // TODO: check for overflow
         require (total <= from.balance, "not enough funds");
 
         from.balance = from.balance - total;
@@ -210,13 +212,15 @@ contract BatPay {
         payments.push(p);
     }
 
-    function unlock(uint32 payId, bytes key) public returns(bool) {
+    function unlock(uint32 payId, uint32 unlockerId, bytes key) public returns(bool) {
         require(payId < payments.length, "invalid payId");
+        require(isValidId(unlockerId), "Invalid unlockerId");
         require(now < payments[payId].timestamp + unlockTime, "Hash lock expired");
-        bytes32 h = keccak256(abi.encodePacked(key));
+        bytes32 h = keccak256(abi.encodePacked(unlockerId, key));
         require(h == payments[payId].lock, "Invalid key");
         
         payments[payId].lock = bytes32(0);
+        accounts[unlockerId].balance += payments[payId].fee;
 
         return true;
     }
@@ -519,6 +523,13 @@ contract BatPay {
      
         tacc.collected = uint32(toPayId);
         accounts[toId] = tacc;
+    }
+
+    function accountOf(uint id) public view validId(id) returns (address addr, uint64 balance, uint32 collected) {
+        Account memory a = accounts[id];
+        addr = a.addr;
+        balance = a.balance;
+        collected = a.collected;
     }
 
     function balanceOf(uint id) public view validId(id) returns (uint64) {
