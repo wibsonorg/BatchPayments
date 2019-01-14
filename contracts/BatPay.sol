@@ -12,6 +12,7 @@ contract BatPay {
     uint constant public challengeBlocks = 300;     
     uint constant public challengeStepBlocks = 100;
     uint constant public maxCollect = 1000;
+    uint32 constant public instantSlot = 32768;
     uint64 constant public collectBond = 100;
     uint64 constant public challengeBond = 100;
 
@@ -44,6 +45,7 @@ contract BatPay {
         uint32  minPayId;
         uint32  maxPayId;
         uint64  amount;
+        uint64  delegateAmount;
         uint32  to;
         uint64  block;
         uint8   status;
@@ -467,8 +469,8 @@ contract BatPay {
         require (s.status == 1 && block.number >= s.block, "slot not available"); 
     
         // Refund bond 
-        accounts[delegate].balance += s.amount + collectBond;
-        
+        accounts[delegate].balance += s.delegateAmount + collectBond;
+        accounts[s.to].balance += s.amount - s.delegateAmount;
         s.status = 0;
         collects[delegate][slot] = s;
     }
@@ -477,8 +479,9 @@ contract BatPay {
         uint32 delegate,
         uint32 slot,
         uint32 toId, 
-        uint32 toPayId, 
+        uint32 toPayId,
         uint64 amount,
+        uint64 fee, 
         bytes signature
         ) 
         public
@@ -501,22 +504,37 @@ contract BatPay {
         require(toPayId > tacc.collected, "toPayId is not a valid value");
         require(payments[toPayId-1].block < block.number, "cannot collect payments that can be unlocked");
 
+        // Check if fee is valid
+        require (fee <= amount, "fee is too big");
+
         // Check that toId signed this transaction
-        bytes32 hash = keccak256(abi.encodePacked(delegate, toId, tacc.collected, toPayId, amount)); // TODO: fee
+        bytes32 hash = keccak256(abi.encodePacked(delegate, toId, tacc.collected, toPayId, amount, fee)); 
         address addr = recoverHelper(hash, signature);
         require(addr == tacc.addr, "Bad user signature");
        
         // free slot if necessary
         freeSlot(delegate, slot);
 
-        tacc.balance += uint64(amount);
-        require (acc.balance >= collectBond + amount, "not enough funds");
-        acc.balance -= collectBond + amount;
-        accounts[delegate] = acc;
-   
         CollectSlot memory sl;
         sl.minPayId = tacc.collected;
         sl.maxPayId = toPayId;
+
+        uint64 needed = collectBond;
+        // check if this is an instant collect
+        if (slot >= instantSlot) {
+            sl.delegateAmount = amount;
+            tacc.balance += uint64(amount-fee);
+            needed += amount-fee;
+        } else
+        {
+            sl.delegateAmount = fee;
+        }    
+
+        // Check amount & balance
+        require (acc.balance >= needed, "not enough funds");
+
+        acc.balance -= needed;
+        accounts[delegate] = acc;
         
         sl.amount = amount;
         sl.to = toId;
@@ -524,6 +542,7 @@ contract BatPay {
         sl.status = 1;
         collects[delegate][slot] = sl;
      
+        
         tacc.collected = uint32(toPayId);
         accounts[toId] = tacc;
     }

@@ -9,7 +9,7 @@ var sha3_1 = lib.merkle.sha3_1;
 
 var bp,st,testhelper;
 var ids = {}
-var unlockBlocks, challengeBlocks, challengeStepBlocks;
+var unlockBlocks, challengeBlocks, challengeStepBlocks, instantSlot;
 
 
 async function skipBlocks(n) {
@@ -20,7 +20,7 @@ async function skipBlocks(n) {
 
     for(let i = 0; i<n; i++)
         await v[i];
-        
+
 }
 
 function hexStr(n, len) {
@@ -78,10 +78,10 @@ async function bpUnlock(payId, unlocker, key) {
     
 }
 
-async function bpCollect(delegate, slot, to, fromId, toId, amount) {
-    let signature = utils.signCollect(ids[to], delegate, to, fromId, toId, amount);
+async function bpCollect(delegate, slot, to, fromId, toId, amount, fee) {
+    let signature = utils.signCollect(ids[to], delegate, to, fromId, toId, amount, fee);
 
-    await bp.collect(delegate, slot, to, toId, amount, signature);
+    await bp.collect(delegate, slot, to, toId, amount, fee, signature);
 
 }
 
@@ -139,8 +139,9 @@ async function doStuff() {
         unlockBlocks = (await bp.unlockBlocks.call()).toNumber();
         challengeBlocks = (await bp.challengeBlocks.call()).toNumber();
         challengeStepBlocks = (await bp.challengeStepBlocks.call()).toNumber();
+        instantSlot = (await bp.instantSlot.call()).toNumber();
         
-        console.log({unlockBlocks, challengeBlocks, challengeStepBlocks});
+        console.log({unlockBlocks, challengeBlocks, challengeStepBlocks, instantSlot});
 
         let acc = web3.eth.accounts;
 
@@ -162,19 +163,14 @@ async function doStuff() {
         
         let key = "hello world";
         let p = [];
-        let m = 10;
+        let m = 20;
 
         let unlocker = 9;
 
-        console.log("doing "+m+" transfers");
+        console.log("doing "+m+" transfers & unlocks");
         for(let i = 0; i<m; i++)
         {   
             p.push( await bpTransfer(0,  10, 1, [1,2,3,4,5], utils.hashLock(unlocker, key)));
-        }
-        console.log(p);
-        console.log("doing unlock");
-        for(let i = 0; i<m; i++)
-        {
             await bpUnlock(p[i], unlocker, key);
         }
     
@@ -182,16 +178,16 @@ async function doStuff() {
         await skipBlocks(unlockBlocks);
 
 
-        console.log("collect");
+        let max = p[(p.length / 2) - 1]+1;
 
-        let max = Math.max.apply(null, p) + 1;
+        console.log("collect without instant slot. toPayId="+max);
 
         for(let i = 1; i<=5; i++) {
             let [addr, b, c] = await bpAccount(i);
 
             c = c.toNumber();
 
-            await bpCollect(0, i, i, c, max, m*10);
+            await bpCollect(0, i, i, c, max, m*10/2, 2);
         }
 
         await showBalance();
@@ -201,6 +197,28 @@ async function doStuff() {
             await bpFreeSlot(0, i);
         }
         await showBalance();
+
+
+        
+        max = p[p.length - 1]+1;
+        console.log("collect with instant slot. toPayId="+max);
+
+        for(let i = 1; i<=5; i++) {
+            let [addr, b, c] = await bpAccount(i);
+
+            c = c.toNumber();
+
+            await bpCollect(0, i+instantSlot, i, c, max, m*10/2, 1);
+        }
+
+        await showBalance();
+        await skipBlocks(challengeBlocks);
+        console.log("Freeing collect slots");
+        for(let i = 1; i<=5; i++) {
+            await bpFreeSlot(0, i+instantSlot);
+        }
+        await showBalance();
+        
 
     } catch(e) {
         console.log(e);
