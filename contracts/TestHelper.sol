@@ -6,6 +6,9 @@ contract TestHelper  {
     constructor() public {
     }
 
+    function skip() public {
+    }
+
     function hash(bytes x) public pure returns(bytes32) {
         return keccak256(abi.encodePacked(x));
     }

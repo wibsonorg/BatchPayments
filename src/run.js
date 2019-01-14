@@ -4,6 +4,18 @@ const StandardToken = artifacts.require('./StandardToken');
 const TestHelper = artifacts.require('./TestHelper');
 var utils = lib.utils;
 
+var test;
+
+async function skipBlocks(n) {
+    console.log("skipping "+n+" blocks");
+    let v = [];
+    for(let i = 0; i<n; i++)
+        v.push(test.skip());
+
+    for(let i = 0; i<n; i++)
+        await v[i];
+        
+}
 
 function calcSignature() {
 
@@ -13,7 +25,7 @@ async function doStuff() {
     try {
     console.log("Instantiate contacts");
     let x = await lib.newInstances();
-    let test = await TestHelper.new();
+    test = await TestHelper.new();
  
     let st = x.token;
     let bp = x.bp;
@@ -63,6 +75,9 @@ async function doStuff() {
     console.log(v1.receipt.gasUsed);
     console.log(v1.receipt.gasUsed/(ids));
     console.log(v1.receipt.gasUsed/(ids+newIds));
+
+    console.log("skipping some blocks");
+    skipBlocks(30);
     
     console.log("collect for "+id1);
 

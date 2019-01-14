@@ -492,13 +492,15 @@ contract BatPay {
         
         // Check toId is valid
         require(toId <= accounts.length, "toId must be a valid account id");
+
         Account memory tacc = accounts[toId];
         require(tacc.addr != 0, "account registration has to be completed");
 
         // Check toPayId is valid
-        require(toPayId <= payments.length, "invalid toPayId");
+        require(toPayId > 0 && toPayId <= payments.length, "invalid toPayId");
         require(toPayId > tacc.collected, "toPayId is not a valid value");
-        
+        require(payments[toPayId-1].block < block.number, "cannot collect payments that can be unlocked");
+
         // Check that toId signed this transaction
         bytes32 hash = keccak256(abi.encodePacked(delegate, toId, tacc.collected, toPayId, amount)); // TODO: fee
         address addr = recoverHelper(hash, signature);
@@ -519,7 +521,7 @@ contract BatPay {
         sl.amount = amount;
         sl.to = toId;
         sl.block = uint64(block.number + challengeBlocks);
-        sl.status = 0;
+        sl.status = 1;
         collects[delegate][slot] = sl;
      
         tacc.collected = uint32(toPayId);

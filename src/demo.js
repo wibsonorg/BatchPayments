@@ -7,9 +7,21 @@ var sha3_1 = lib.merkle.sha3_1;
 
 
 
-var bp,st;
+var bp,st,testhelper;
 var ids = {}
+var unlockBlocks, challengeBlocks, challengeStepBlocks;
 
+
+async function skipBlocks(n) {
+    console.log("skipping "+n+" blocks");
+    let v = [];
+    for(let i = 0; i<n; i++)
+        v.push(testhelper.skip());
+
+    for(let i = 0; i<n; i++)
+        await v[i];
+        
+}
 
 function hexStr(n, len) {
     let s = n.toString(16);
@@ -73,6 +85,11 @@ async function bpCollect(delegate, slot, to, fromId, toId, amount) {
 
 }
 
+async function bpFreeSlot(delegate, slot) {
+    let tx = await bp.freeSlot(delegate, slot);
+
+}
+
 async function register(addr) {
     let t = await bp.register({from: addr});
     let id = await bp.accountsLength.call() - 1;
@@ -117,6 +134,13 @@ async function doStuff() {
 
         st = x.token;
         bp = x.bp;
+        testhelper = await TestHelper.new();
+
+        unlockBlocks = (await bp.unlockBlocks.call()).toNumber();
+        challengeBlocks = (await bp.challengeBlocks.call()).toNumber();
+        challengeStepBlocks = (await bp.challengeStepBlocks.call()).toNumber();
+        
+        console.log({unlockBlocks, challengeBlocks, challengeStepBlocks});
 
         let acc = web3.eth.accounts;
 
@@ -155,6 +179,8 @@ async function doStuff() {
         }
     
         await showBalance();
+        await skipBlocks(unlockBlocks);
+
 
         console.log("collect");
 
@@ -169,6 +195,13 @@ async function doStuff() {
         }
 
         await showBalance();
+        await skipBlocks(challengeBlocks);
+        console.log("Freeing collect slots");
+        for(let i = 1; i<=5; i++) {
+            await bpFreeSlot(0, i);
+        }
+        await showBalance();
+
     } catch(e) {
         console.log(e);
     }
