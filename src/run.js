@@ -78,10 +78,10 @@ async function doStuff() {
 
     console.log("skipping some blocks");
     skipBlocks(30);
-    
+
     console.log("collect for "+id1);
 
-    let sign = utils.signCollect(web3.eth.accounts[0], delegate, id1, 0, 1, 1);
+    let sign = utils.signCollect(web3.eth.accounts[0], delegate, id1, 0, 1, 1, 0);
     
 
     console.log("sign="+sign);
@@ -101,7 +101,8 @@ async function doStuff() {
         id1,        // to
         1,          // toPayId
         1,          // amount
-        sign     // signature
+        0,          // fee
+        sign        // signature
         );
     await v2;
 
