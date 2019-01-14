@@ -8,9 +8,9 @@ contract BatPay {
     uint constant public newAccount = 2**256-1; // special account id. It's NOT in the range of accounts
     uint constant public maxBalance = 2**64-1;
     uint constant public maxTransfer = 100000;
-    uint constant public unlockTime = 2 hours; // Should this be a parameter of transfer() ?
-    uint constant public challengeTime = 2 days;
-    uint constant public challengeStep = 30 minutes;
+    uint constant public unlockBlocks = 20; 
+    uint constant public challengeBlocks = 300;     
+    uint constant public challengeStepBlocks = 100;
     uint constant public maxCollect = 1000;
     uint64 constant public collectBond = 100;
     uint64 constant public challengeBond = 100;
@@ -28,7 +28,7 @@ contract BatPay {
         uint32  minId;  // ???: Use BulkRecordId instead??
         uint32  maxId;
         uint32  totalCount;
-        uint64  timestamp;
+        uint64  block;
         bytes32 hash;
         bytes32 lock;
         bytes32 metadata;
@@ -45,7 +45,7 @@ contract BatPay {
         uint32  maxPayId;
         uint64  amount;
         uint32  to;
-        uint64  timestamp;
+        uint64  block;
         uint8   status;
         uint32  challenger;
         uint32  index;
@@ -182,7 +182,7 @@ contract BatPay {
         p.amount = amount;
         p.fee = fee;
         p.lock = lock;
-        p.timestamp = uint64(now);
+        p.block = uint64(block.number + unlockBlocks);
         require(fromId < accounts.length, "invalid fromId");
         uint bytesPerId = uint(payData[1]);
         Account memory from = accounts[fromId];
@@ -215,7 +215,7 @@ contract BatPay {
     function unlock(uint32 payId, uint32 unlockerId, bytes key) public returns(bool) {
         require(payId < payments.length, "invalid payId");
         require(isValidId(unlockerId), "Invalid unlockerId");
-        require(now < payments[payId].timestamp + unlockTime, "Hash lock expired");
+        require(block.number < payments[payId].block, "Hash lock expired");
         bytes32 h = keccak256(abi.encodePacked(unlockerId, key));
         require(h == payments[payId].lock, "Invalid key");
         
@@ -228,7 +228,7 @@ contract BatPay {
     function refund(uint payId) public returns (bool) {
         require(payId < payments.length, "invalid payment Id");
         require(payments[payId].lock != 0, "payment is already unlocked");
-        require(now >= payments[payId].timestamp + unlockTime, "Hash lock has not expired yet");
+        require(block.number >= payments[payId].block, "Hash lock has not expired yet");
         
         uint64 amount = payments[payId].amount;
         uint32 totalCount = payments[payId].totalCount;
@@ -299,10 +299,10 @@ contract BatPay {
         CollectSlot memory s = collects[delegate][slot];
  
         require(s.status == 1, "slot is not available for challenge");      
-        require (now <= s.timestamp + challengeTime, "challenge time has passed");
+        require (block.number < s.block, "challenge time has passed");
         s.status = 2;
         s.challenger = challenger;
-        s.timestamp = uint64(now);
+        s.block = uint64(block.number + challengeStepBlocks);
 
         accounts[challenger].balance -= challengeBond;
 
@@ -315,14 +315,14 @@ contract BatPay {
         CollectSlot memory s = collects[delegate][slot];
 
         require(s.status == 2, "wrong slot status");
-        require (now <= s.timestamp + challengeStep, "challenge time has passed");
+        require (block.number < s.block, "challenge time has passed");
 
         require(data.length % 12 == 0, "wrong data format");
         require (getDataSum(data) == s.amount, "data doesn't represent collected amount");
 
         s.data = keccak256(data);
         s.status = 3;
-        s.timestamp = uint64(now);
+        s.block = uint64(block.number + challengeStepBlocks);
 
         collects[delegate][slot] = s;
     }
@@ -333,7 +333,7 @@ contract BatPay {
         CollectSlot memory s = collects[delegate][slot];
         
         require(s.status == 3);
-        require (now <= s.timestamp + challengeStep, "challenge time has passed");
+        require (block.number < s.block, "challenge time has passed");
         require(isOwnerId(s.challenger), "only challenger can call challenge_2");
      
         
@@ -341,7 +341,7 @@ contract BatPay {
        
         s.index = index;
         s.status = 4;
-        s.timestamp = uint64(now);
+        s.block = uint64(block.number + challengeStepBlocks);
 
         collects[delegate][slot] = s;
     }
@@ -353,7 +353,7 @@ contract BatPay {
         Payment memory p = payments[s.index];
 
         require(s.status == 4);
-        require(now <= s.timestamp + challengeStep, "challenge time has passed");
+        require(block.number < s.block, "challenge time has passed");
         require(s.index >= s.minPayId && s.index < s.maxPayId, "payment referenced is out of range");
 
         require(keccak256(payData) == p.hash, "payData is incorrect");
@@ -393,12 +393,11 @@ contract BatPay {
         collects[delegate][slot] = s;
 
         challenge_failed(delegate, slot);
-        
     }
 
     function challenge_success(uint32 delegate, uint32 slot) public {
         CollectSlot memory s = collects[delegate][slot];
-        require((s.status == 2 || s.status == 4) && now > s.timestamp + challengeStep, "challenge not finished");
+        require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
 
         accounts[s.challenger].balance += collectBond;
 
@@ -408,7 +407,7 @@ contract BatPay {
 
     function challenge_failed(uint32 delegate, uint32 slot) public {
         CollectSlot memory s = collects[delegate][slot];
-        require(s.status == 5 || s.status == 3 && now > s.timestamp + challengeStep, "challenge not completed");
+        require(s.status == 5 || (s.status == 3 && block.number >= s.block), "challenge not completed");
 
         // Challenge failed
         // delegate wins bond
@@ -417,7 +416,7 @@ contract BatPay {
         // reset slot to status=1, waiting for challenges
         s.challenger = 0;
         s.status = 1;
-        s.timestamp = uint64(now);
+        s.block = uint64(block.number + challengeBlocks);
         collects[delegate][slot] = s;
     }
 
@@ -465,7 +464,7 @@ contract BatPay {
 
         if (s.status == 0) return;
 
-        require (s.status == 1 && now >= s.timestamp + challengeTime, "slot not available"); 
+        require (s.status == 1 && block.number >= s.block, "slot not available"); 
     
         // Refund bond 
         accounts[delegate].balance += s.amount + collectBond;
@@ -519,7 +518,7 @@ contract BatPay {
         
         sl.amount = amount;
         sl.to = toId;
-        sl.timestamp = uint64(now);
+        sl.block = uint64(block.number + challengeBlocks);
         sl.status = 0;
         collects[delegate][slot] = sl;
      
