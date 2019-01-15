@@ -10,17 +10,38 @@ const TestHelper = artifacts.require('./TestHelper');
 const merkle = lib.merkle;
 
 
+var test;
+var unlockBlocks, challengeBlocks, challengeStepBlocks, instantSlot;
+
+
+
+async function skipBlocks(n) {
+    let v = [];
+    for(let i = 0; i<n; i++)
+        v.push(test.skip());
+
+    for(let i = 0; i<n; i++)
+        await v[i];
+}
+
+
 contract('BatPay', (addr)=> {
     let a0 = addr[0];
     let a1 = addr[1];
 
     let bp, tAddress, st;
     const newAccount = new BigNumber(2).pow(256).minus(1);
-
+    
     before(async ()=> {
         bp = await BatPay.deployed();
         tAddress = await bp.token.call();
         st = await StandardToken.at(tAddress);
+        test = await TestHelper.new();
+
+        unlockBlocks = (await bp.unlockBlocks.call()).toNumber();
+        challengeBlocks = (await bp.challengeBlocks.call()).toNumber();
+        challengeStepBlocks = (await bp.challengeStepBlocks.call()).toNumber();
+        instantSlot = (await bp.instantSlot.call()).toNumber();
     });
 
     describe('deposits', ()=> {
@@ -136,6 +157,7 @@ contract('BatPay', (addr)=> {
         });
     });
 
+
     describe('registration', ()=> {
         it('deposit() should register new accounts', async() => {
             let v0 = await bp.accountsLength.call();
@@ -215,8 +237,8 @@ contract('BatPay', (addr)=> {
     });
 
     describe("transfer", ()=> {
-        it('should support up to 1000 ids', async ()=> {
-            let list = utils.randomIds(1000, 50000);
+        it('should support up 100s of ids', async ()=> {
+            let list = utils.randomIds(100, 50000);
             let data = utils.getPayData(list);
 
             const fee = 10;
@@ -233,7 +255,103 @@ contract('BatPay', (addr)=> {
             let v1 = await bp.transfer(id, 1, 10, data, 0, 0x1234, 0, 0);
 
             await v1;
-        })
+        });
+     
+    
+        it('should accept transfer+unlock with good key', async ()=> {
+            let list = utils.randomIds(100, 50000);
+            let data = utils.getPayData(list);
+
+            const fee = 10;
+            const amount = list.length + fee;
+            let key = "x1234";
+            let hash = utils.hashLock(0, key);
+
+            await st.approve(bp.address, amount);
+            let t0 = await bp.deposit(amount, newAccount); 
+            await t0;
+            let id = await bp.accountsLength.call() - 1;
+            
+            let v0 = await bp.bulkRegister(100, 0);
+            await v0;
+
+            let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
+            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+
+            let v2 = await bp.unlock(payId, 0, key);
+            await v2;
+        });
+        it('should reject transfer+unlock with bad key', async ()=> {
+            let list = utils.randomIds(100, 50000);
+            let data = utils.getPayData(list);
+
+            const fee = 10;
+            const amount = list.length + fee;
+            let key = "this-is-the-key";
+            let hash = utils.hashLock(0, key);
+
+            await st.approve(bp.address, amount);
+            let t0 = await bp.deposit(amount, newAccount); 
+            await t0;
+            let id = await bp.accountsLength.call() - 1;
+            
+            let v0 = await bp.bulkRegister(100, 0);
+            await v0;
+
+            let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
+            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+
+            await assertRequire(bp.unlock(payId, 0, "not-the-key"), "Invalid key");
+        
+        });
+        it('should accept transfer+refund after timeout', async ()=> {
+            let list = utils.randomIds(100, 50000);
+            let data = utils.getPayData(list);
+
+            const fee = 10;
+            const amount = list.length + fee;
+            let key = "this-is-the-key";
+            let hash = utils.hashLock(0, key);
+
+            await st.approve(bp.address, amount);
+            let t0 = await bp.deposit(amount, newAccount); 
+            await t0;
+            let id = await bp.accountsLength.call() - 1;
+            
+            let v0 = await bp.bulkRegister(100, 0);
+            await v0;
+
+            let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
+            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+            await skipBlocks(unlockBlocks);
+            let v2 = await bp.refund(payId);
+            let v3 = await bp.balanceOf.call(id);
+            assert.equal(v3.toNumber(),  amount); 
+        });
+        it('should reject transfer+refund before timeout', async ()=> {
+            let list = utils.randomIds(100, 50000);
+            let data = utils.getPayData(list);
+
+            const fee = 10;
+            const amount = list.length + fee;
+            let key = "this-is-the-key";
+            let hash = utils.hashLock(0, key);
+
+            await st.approve(bp.address, amount);
+            let t0 = await bp.deposit(amount, newAccount); 
+            await t0;
+            let id = await bp.accountsLength.call() - 1;
+            
+            let v0 = await bp.bulkRegister(100, 0);
+            await v0;
+
+            let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
+            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+            await assertRequire(bp.refund(payId,), "Hash lock has not expired yet");
+        
+         });
+
+
     });
 
     describe ("claim", ()=> {
