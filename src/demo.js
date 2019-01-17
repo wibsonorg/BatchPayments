@@ -68,13 +68,13 @@ async function bpBalance(id) {
 async function bpTransfer(from, amount, fee, list, lock) {
     let data = utils.getPayData(list);
     await bp.transfer(from, amount, fee, data, 0, 0, lock, 0);
-    let payId = (await bp.paymentsLength.call()) - 1;
+    let payIndex = (await bp.paymentsLength.call()) - 1;
 
-    return payId;
+    return payIndex;
 }
 
-async function bpUnlock(payId, unlocker, key) {
-    let t = await bp.unlock(payId, unlocker, key);
+async function bpUnlock(payIndex, unlocker, key) {
+    let t = await bp.unlock(payIndex, unlocker, key);
     
 }
 
@@ -180,7 +180,7 @@ async function doStuff() {
 
         let max = p[(p.length / 2) - 1]+1;
 
-        console.log("collect without instant slot. toPayId="+max);
+        console.log("collect without instant slot. payIndex="+max);
 
         for(let i = 1; i<=5; i++) {
             let [addr, b, c] = await bpAccount(i);
@@ -201,7 +201,7 @@ async function doStuff() {
 
         
         max = p[p.length - 1]+1;
-        console.log("collect with instant slot. toPayId="+max);
+        console.log("collect with instant slot. payIndex="+max);
 
         for(let i = 1; i<=5; i++) {
             let [addr, b, c] = await bpAccount(i);

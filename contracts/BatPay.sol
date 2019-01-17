@@ -42,8 +42,8 @@ contract BatPay {
     }
 
     struct CollectSlot {
-        uint32  minPayId;
-        uint32  maxPayId;
+        uint32  minPayIndex;
+        uint32  maxPayIndex;
         uint64  amount;
         uint64  delegateAmount;
         uint32  to;
@@ -214,36 +214,36 @@ contract BatPay {
         payments.push(p);
     }
 
-    function unlock(uint32 payId, uint32 unlockerId, bytes key) public returns(bool) {
-        require(payId < payments.length, "invalid payId");
+    function unlock(uint32 payIndex, uint32 unlockerId, bytes key) public returns(bool) {
+        require(payIndex < payments.length, "invalid payIndex");
         require(isValidId(unlockerId), "Invalid unlockerId");
-        require(block.number < payments[payId].block, "Hash lock expired");
+        require(block.number < payments[payIndex].block, "Hash lock expired");
         bytes32 h = keccak256(abi.encodePacked(unlockerId, key));
-        require(h == payments[payId].lock, "Invalid key");
+        require(h == payments[payIndex].lock, "Invalid key");
         
-        payments[payId].lock = bytes32(0);
-        accounts[unlockerId].balance += payments[payId].fee;
+        payments[payIndex].lock = bytes32(0);
+        accounts[unlockerId].balance += payments[payIndex].fee;
 
         return true;
     }
 
-    function refund(uint payId) public returns (bool) {
-        require(payId < payments.length, "invalid payment Id");
-        require(payments[payId].lock != 0, "payment is already unlocked");
-        require(block.number >= payments[payId].block, "Hash lock has not expired yet");
+    function refund(uint payIndex) public returns (bool) {
+        require(payIndex < payments.length, "invalid payment Id");
+        require(payments[payIndex].lock != 0, "payment is already unlocked");
+        require(block.number >= payments[payIndex].block, "Hash lock has not expired yet");
         
-        uint64 amount = payments[payId].amount;
-        uint32 totalCount = payments[payId].totalCount;
-        uint64 fee = payments[payId].fee;
+        uint64 amount = payments[payIndex].amount;
+        uint32 totalCount = payments[payIndex].totalCount;
+        uint64 fee = payments[payIndex].fee;
 
         require(totalCount > 0, "payment already refunded");
         
         uint64 total = totalCount * amount + fee;
-        uint from = payments[payId].from;
+        uint from = payments[payIndex].from;
 
         // Complete refund
-        payments[payId].totalCount = 0;
-        payments[payId].fee = 0;
+        payments[payIndex].totalCount = 0;
+        payments[payIndex].fee = 0;
         accounts[from].balance += total;
     }
 
@@ -257,7 +257,7 @@ contract BatPay {
         sum = 0;
 
         // Get the sum of the stated amounts in data 
-        // Each entry in data is [8-bytes amount][4-bytes payId]
+        // Each entry in data is [8-bytes amount][4-bytes payIndex]
 
         for(uint i = 0; i<n; i++) {
             // solium-disable-next-line security/no-inline-assembly
@@ -273,7 +273,7 @@ contract BatPay {
         }
     }
 
-    function getDataAtIndex(bytes data, uint index) public pure returns (uint64 amount, uint32 payId) {
+    function getDataAtIndex(bytes data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
         uint mod1 = maxBalance+1;
         uint mod2 = maxAccount+1;
         uint i = index*12;
@@ -287,7 +287,7 @@ contract BatPay {
                     mload(add(data, add(8, i))), 
                     mod1)           
 
-                 payId := mod(
+                 payIndex := mod(
                     mload(add(data, add(12, i))),
                     mod2)
             }
@@ -356,7 +356,7 @@ contract BatPay {
 
         require(s.status == 4);
         require(block.number < s.block, "challenge time has passed");
-        require(s.index >= s.minPayId && s.index < s.maxPayId, "payment referenced is out of range");
+        require(s.index >= s.minPayIndex && s.index < s.maxPayIndex, "payment referenced is out of range");
 
         require(keccak256(payData) == p.hash, "payData is incorrect");
         
@@ -478,8 +478,8 @@ contract BatPay {
     function collect(
         uint32 delegate,
         uint32 slot,
-        uint32 toId, 
-        uint32 toPayId,
+        uint32 to, 
+        uint32 payIndex,
         uint64 amount,
         uint64 fee, 
         bytes signature
@@ -493,22 +493,22 @@ contract BatPay {
         require(acc.addr != 0, "account registration has be to completed for delegate");
         require(acc.addr == msg.sender, "only delegate can initiate collect");
         
-        // Check toId is valid
-        require(toId <= accounts.length, "toId must be a valid account id");
+        // Check to is valid
+        require(to <= accounts.length, "to must be a valid account id");
 
-        Account memory tacc = accounts[toId];
+        Account memory tacc = accounts[to];
         require(tacc.addr != 0, "account registration has to be completed");
 
-        // Check toPayId is valid
-        require(toPayId > 0 && toPayId <= payments.length, "invalid toPayId");
-        require(toPayId > tacc.collected, "toPayId is not a valid value");
-        require(payments[toPayId-1].block < block.number, "cannot collect payments that can be unlocked");
+        // Check toPayIndex is valid
+        require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex");
+        require(payIndex > tacc.collected, "payIndex is not a valid value");
+        require(payments[payIndex-1].block < block.number, "cannot collect payments that can be unlocked");
 
         // Check if fee is valid
         require (fee <= amount, "fee is too big");
 
-        // Check that toId signed this transaction
-        bytes32 hash = keccak256(abi.encodePacked(delegate, toId, tacc.collected, toPayId, amount, fee)); 
+        // Check that id to signed this transaction
+        bytes32 hash = keccak256(abi.encodePacked(delegate, to, tacc.collected, payIndex, amount, fee)); 
         address addr = recoverHelper(hash, signature);
         require(addr == tacc.addr, "Bad user signature");
        
@@ -516,8 +516,8 @@ contract BatPay {
         freeSlot(delegate, slot);
 
         CollectSlot memory sl;
-        sl.minPayId = tacc.collected;
-        sl.maxPayId = toPayId;
+        sl.minPayIndex = tacc.collected;
+        sl.maxPayIndex = payIndex;
 
         uint64 needed = collectBond;
         // check if this is an instant collect
@@ -537,14 +537,14 @@ contract BatPay {
         accounts[delegate] = acc;
         
         sl.amount = amount;
-        sl.to = toId;
+        sl.to = to;
         sl.block = uint64(block.number + challengeBlocks);
         sl.status = 1;
         collects[delegate][slot] = sl;
      
         
-        tacc.collected = uint32(toPayId);
-        accounts[toId] = tacc;
+        tacc.collected = uint32(payIndex);
+        accounts[to] = tacc;
     }
 
     function accountOf(uint id) public view validId(id) returns (address addr, uint64 balance, uint32 collected) {
