@@ -13,8 +13,8 @@ contract BatPay {
     uint constant public challengeStepBlocks = 100;
     uint constant public maxCollect = 1000;
     uint32 constant public instantSlot = 32768;
-    uint64 constant public collectBond = 100;
-    uint64 constant public challengeBond = 100;
+    uint64 constant public collectStake = 100;
+    uint64 constant public challengeStake = 100;
 
     struct Account {
         address addr;
@@ -296,7 +296,7 @@ contract BatPay {
 
     function challenge_1(uint32 delegate, uint32 slot, uint32 challenger) public {
         require(isValidId(delegate), "delegate must be a valid account id");
-        require(accounts[challenger].balance >= challengeBond, "not enough balance");
+        require(accounts[challenger].balance >= challengeStake, "not enough balance");
 
         CollectSlot memory s = collects[delegate][slot];
  
@@ -306,7 +306,7 @@ contract BatPay {
         s.challenger = challenger;
         s.block = uint64(block.number + challengeStepBlocks);
 
-        accounts[challenger].balance -= challengeBond;
+        accounts[challenger].balance -= challengeStake;
 
         collects[delegate][slot] = s;
     }
@@ -401,7 +401,7 @@ contract BatPay {
         CollectSlot memory s = collects[delegate][slot];
         require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
 
-        accounts[s.challenger].balance += collectBond;
+        accounts[s.challenger].balance += collectStake;
 
         collects[delegate][slot].status = 0;
         
@@ -412,8 +412,8 @@ contract BatPay {
         require(s.status == 5 || (s.status == 3 && block.number >= s.block), "challenge not completed");
 
         // Challenge failed
-        // delegate wins bond
-        accounts[delegate].balance += challengeBond;
+        // delegate wins Stake
+        accounts[delegate].balance += challengeStake;
 
         // reset slot to status=1, waiting for challenges
         s.challenger = 0;
@@ -468,8 +468,8 @@ contract BatPay {
 
         require (s.status == 1 && block.number >= s.block, "slot not available"); 
     
-        // Refund bond 
-        accounts[delegate].balance += s.delegateAmount + collectBond;
+        // Refund Stake 
+        accounts[delegate].balance += s.delegateAmount + collectStake;
         accounts[s.to].balance += s.amount - s.delegateAmount;
         s.status = 0;
         collects[delegate][slot] = s;
@@ -519,7 +519,7 @@ contract BatPay {
         sl.minPayIndex = tacc.collected;
         sl.maxPayIndex = payIndex;
 
-        uint64 needed = collectBond;
+        uint64 needed = collectStake;
         // check if this is an instant collect
         if (slot >= instantSlot) {
             sl.delegateAmount = amount;

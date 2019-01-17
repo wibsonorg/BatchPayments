@@ -276,9 +276,9 @@ contract('BatPay', (addr)=> {
             await v0;
 
             let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+            let payIndex = (await bp.paymentsLength.call()).toNumber() - 1;
 
-            let v2 = await bp.unlock(payId, 0, key);
+            let v2 = await bp.unlock(payIndex, 0, key);
             await v2;
         });
         it('should reject transfer+unlock with bad key', async ()=> {
@@ -299,9 +299,9 @@ contract('BatPay', (addr)=> {
             await v0;
 
             let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+            let payIndex = (await bp.paymentsLength.call()).toNumber() - 1;
 
-            await assertRequire(bp.unlock(payId, 0, "not-the-key"), "Invalid key");
+            await assertRequire(bp.unlock(payIndex, 0, "not-the-key"), "Invalid key");
         
         });
         it('should accept transfer+refund after timeout', async ()=> {
@@ -322,9 +322,9 @@ contract('BatPay', (addr)=> {
             await v0;
 
             let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+            let payIndex = (await bp.paymentsLength.call()).toNumber() - 1;
             await skipBlocks(unlockBlocks);
-            let v2 = await bp.refund(payId);
+            let v2 = await bp.refund(payIndex);
             let v3 = await bp.balanceOf.call(id);
             assert.equal(v3.toNumber(),  amount); 
         });
@@ -346,8 +346,8 @@ contract('BatPay', (addr)=> {
             await v0;
 
             let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
-            await assertRequire(bp.refund(payId,), "Hash lock has not expired yet");
+            let payIndex = (await bp.paymentsLength.call()).toNumber() - 1;
+            await assertRequire(bp.refund(payIndex), "Hash lock has not expired yet");
         
          });
 
