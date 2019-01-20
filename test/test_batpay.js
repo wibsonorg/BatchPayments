@@ -9,10 +9,8 @@ var { utils } = lib;
 const TestHelper = artifacts.require('./TestHelper');
 const merkle = lib.merkle;
 
-
 var test;
 var unlockBlocks, challengeBlocks, challengeStepBlocks, instantSlot;
-
 
 
 async function skipBlocks(n) {
@@ -31,7 +29,7 @@ contract('BatPay', (addr)=> {
 
     let bp, tAddress, st;
     const newAccount = new BigNumber(2).pow(256).minus(1);
-    
+
     before(async ()=> {
         bp = await BatPay.deployed();
         tAddress = await bp.token.call();
@@ -49,21 +47,21 @@ contract('BatPay', (addr)=> {
             const amount = 100;
             await st.approve(bp.address, amount-1);
             await catchRevert(bp.deposit(amount, newAccount));
-    
+
             await st.approve(bp.address, 0);
             await catchRevert(bp.deposit(amount, newAccount));
         });
-    
+
         it('Should accept deposits for new accounts', async ()=> {
             const initial = await st.balanceOf.call(a0);
             const amount = 100;
-    
+
             let r0 = await st.approve(bp.address, amount);
-            let r1 = await bp.deposit(amount, newAccount); 
-    
+            let r1 = await bp.deposit(amount, newAccount);
+
             let v0 = await st.balanceOf.call(a0);
             let v1 = await st.balanceOf.call(bp.address);
-    
+
             assert.equal(v0.toNumber(), initial - amount);
             assert.equal(v1.toNumber(), amount);
         });
@@ -82,22 +80,7 @@ contract('BatPay', (addr)=> {
             assert.equal(v1.toNumber() - v0.toNumber(), amount);
             assert.equal(v1.toNumber(), 2*amount);
         });
-/*
-        it('Should accept deposit with decimals', async ()=> {
-            const initial = await st.balanceOf.call(a0);
-            const amount = 1.1;
 
-            let r0 = await st.approve(bp.address, amount);
-            let r1 = await bp.deposit(amount, newAccount);
-
-            let v0 = await bp.balanceOf.call(0);
-            await bp.deposit(amount, 0);
-            let v1 = await bp.balanceOf.call(0);
-
-            assert.equal(v1.toNumber() - v0.toNumber(), amount);
-            assert.equal(v1.toNumber(), amount);
-        });
-*/
         it('Should reject 0-token deposits', async ()=> {
             await assertRequire(bp.deposit(0, newAccount), "amount should be positive");
         });
@@ -138,7 +121,8 @@ contract('BatPay', (addr)=> {
             let id = await bp.accountsLength.call();
             id = id.toNumber()-1;  // this is a dangerous way to obtain the ID of the newAccount, as many accounts c
 
-            await catchRevert(bp.withdraw(amount/2, id+1));
+            await bp.withdraw(1, id); // make sure we can actually do a withdraw using a valid id
+            await catchRevert(bp.withdraw(amount/2, id+1)); // try with invalid id
         });
 
         it('Should reject withdrawals for sums larger than balance', async ()=> {
@@ -153,8 +137,49 @@ contract('BatPay', (addr)=> {
             let balance = await bp.balanceOf(id);
             balance = balance.toNumber();
 
-            await catchRevert(bp.withdraw(balance+1, id));
+            await assertRequire(bp.withdraw(balance+1, id), "insufficient funds");
         });
+
+//        it('Should reject withdrawals for ids that have not been claimed yet', async ()=> {
+//            const amount = 100;
+//
+//            await st.approve(bp.address, amount);
+//            await bp.deposit(amount, newAccount);
+//
+//            let id = await bp.accountsLength.call();
+//            id = id.toNumber()-1;
+//
+//            let balance = await bp.balanceOf(id);
+//            balance = balance.toNumber();
+//
+//            // TODO: complete
+//            invalid_addr = 0;
+//            proof = [0];
+//            bulkId = 1;
+//            id = 1;
+//            bp.claimId(invalid_addr, proof, id, bulkId);
+//
+//            await assertRequire(bp.withdraw(balance, id), "Id registration not completed. Use claimId() first");
+//        });
+
+        it('Should reject withdrawals for $0', async ()=> {
+            const amount = 100;
+
+            await st.approve(bp.address, amount);
+            await bp.deposit(amount, newAccount);
+
+            let id = await bp.accountsLength.call();
+            id = id.toNumber()-1;
+
+            let balance = await bp.balanceOf(id);
+            balance = balance.toNumber();
+
+            await assertRequire(bp.withdraw(0, id), "amount should be nonzero");
+        });
+
+
+//        require(msg.sender == addr, "only owner can withdraw");
+
     });
 
 
@@ -162,41 +187,41 @@ contract('BatPay', (addr)=> {
         it('deposit() should register new accounts', async() => {
             let v0 = await bp.accountsLength.call();
             const amount = 100;
-    
+
             await st.approve(bp.address, amount);
-            await bp.deposit(1, newAccount); 
+            await bp.deposit(1, newAccount);
             const v1 = await bp.accountsLength.call();
-            await bp.deposit(1, newAccount); 
+            await bp.deposit(1, newAccount);
             const v2 = await bp.accountsLength.call();
-            
+
             assert.equal(v2.toNumber() - v0.toNumber(), 2);
             assert.equal(v1.toNumber() - v0.toNumber(), 1);
         });
-    
+
         it('Bulk registration should reserve new accounts', async()=> {
             let v0 = await bp.accountsLength.call();
             const amount = 100;
             const rootHash = web3.fromUtf8("1234");
-    
-            await bp.bulkRegister(amount, rootHash); 
+
+            await bp.bulkRegister(amount, rootHash);
             const v1 = await bp.accountsLength.call();
-            await bp.bulkRegister(1, rootHash); 
+            await bp.bulkRegister(1, rootHash);
             const v2 = await bp.accountsLength.call();
-            
+
             assert.equal(v2.toNumber() - v0.toNumber(), 1+amount);
             assert.equal(v1.toNumber() - v0.toNumber(), amount);
         });
-    
+
         it('Bulk registration root hashes should be stored', async()=> {
             let v0 = await bp.bulkLength.call();
             const amount = 100;
             const rootHash = web3.fromUtf8("1234");
-    
-            await bp.bulkRegister(amount, rootHash); 
+
+            await bp.bulkRegister(amount, rootHash);
             const v1 = await bp.bulkLength.call();
-            await bp.bulkRegister(1, rootHash); 
+            await bp.bulkRegister(1, rootHash);
             const v2 = await bp.bulkLength.call();
-            
+
             assert.equal(v2.toNumber() - v0.toNumber(), 2);
             assert.equal(v1.toNumber() - v0.toNumber(), 1);
         });
@@ -237,121 +262,145 @@ contract('BatPay', (addr)=> {
     });
 
     describe("transfer", ()=> {
+        const rootHash = 0x1234;
+        const new_count = 0;
+        const metadata = 0;
+        const fee = 10;
+        let unlocker_id = 0;
+        const amount_each = 1;
+        let list;
+        let pay_data;
+        let total_amount;
+        let v0;
+        let from_id;
+        let t0;
+        let key;
+        let lock;
+        let b0;
+
+        beforeEach(async ()=> {
+            // create a list of 100 random ids
+            list = utils.randomIds(100, 50000);
+            pay_data = utils.getPayData(list);
+            total_amount = amount_each * list.length + fee;
+
+            // put enough funds to transfer and bulk register ids
+            await st.approve(bp.address, total_amount);
+            t0 = await bp.deposit(total_amount, newAccount);
+            from_id = await bp.accountsLength.call() - 1;
+            v0 = await bp.bulkRegister(list.length, rootHash);
+
+            // create lock
+            key = "this-is-the-key";
+            lock = utils.hashLock(0, key);
+
+            // initial balance
+            b0 = (await bp.balanceOf.call(from_id)).toNumber();
+        })
+
         it('should support up 100s of ids', async ()=> {
-            let list = utils.randomIds(100, 50000);
-            let data = utils.getPayData(list);
+            // transfer(fromId, amount, fee, payData, newCount, roothash, lock, metadata)
+            await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
 
-            const fee = 10;
-            const amount = list.length + fee;
-    
-            await st.approve(bp.address, amount);
-            let t0 = await bp.deposit(amount, newAccount); 
-            await t0;
-            let id = await bp.accountsLength.call() - 1;
-            
-            let v0 = await bp.bulkRegister(100, 0);
-            await v0;
-
-            let v1 = await bp.transfer(id, 1, 10, data, 0, 0x1234, 0, 0);
-
-            await v1;
+            // check balance
+            let b1 = (await bp.balanceOf.call(from_id)).toNumber();
+            assert.equal(b0, b1 + total_amount);
         });
-     
-    
+
         it('should accept transfer+unlock with good key', async ()=> {
-            let list = utils.randomIds(100, 50000);
-            let data = utils.getPayData(list);
-
-            const fee = 10;
-            const amount = list.length + fee;
-            let key = "x1234";
-            let hash = utils.hashLock(0, key);
-
-            await st.approve(bp.address, amount);
-            let t0 = await bp.deposit(amount, newAccount); 
-            await t0;
-            let id = await bp.accountsLength.call() - 1;
-            
-            let v0 = await bp.bulkRegister(100, 0);
-            await v0;
-
-            let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
+            let v1 = await bp.transfer(from_id, 1, fee, pay_data, new_count, rootHash, lock, metadata);
             let payId = (await bp.paymentsLength.call()).toNumber() - 1;
 
-            let v2 = await bp.unlock(payId, 0, key);
-            await v2;
+            await bp.unlock(payId, unlocker_id, key);
+
+            // check balance
+            let b1 = (await bp.balanceOf.call(from_id)).toNumber();
+            assert.equal(b0, b1 + total_amount);
         });
+
         it('should reject transfer+unlock with bad key', async ()=> {
-            let list = utils.randomIds(100, 50000);
-            let data = utils.getPayData(list);
-
-            const fee = 10;
-            const amount = list.length + fee;
-            let key = "this-is-the-key";
-            let hash = utils.hashLock(0, key);
-
-            await st.approve(bp.address, amount);
-            let t0 = await bp.deposit(amount, newAccount); 
-            await t0;
-            let id = await bp.accountsLength.call() - 1;
-            
-            let v0 = await bp.bulkRegister(100, 0);
-            await v0;
-
-            let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
+            let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
             let payId = (await bp.paymentsLength.call()).toNumber() - 1;
 
-            await assertRequire(bp.unlock(payId, 0, "not-the-key"), "Invalid key");
-        
+            await assertRequire(bp.unlock(payId, unlocker_id, "not-the-key"), "Invalid key");
+
+            // check balance
+            let b1 = (await bp.balanceOf.call(from_id)).toNumber();
+            assert.equal(b0, b1 + total_amount);
         });
+
         it('should accept transfer+refund after timeout', async ()=> {
-            let list = utils.randomIds(100, 50000);
-            let data = utils.getPayData(list);
-
-            const fee = 10;
-            const amount = list.length + fee;
-            let key = "this-is-the-key";
-            let hash = utils.hashLock(0, key);
-
-            await st.approve(bp.address, amount);
-            let t0 = await bp.deposit(amount, newAccount); 
-            await t0;
-            let id = await bp.accountsLength.call() - 1;
-            
-            let v0 = await bp.bulkRegister(100, 0);
-            await v0;
-
-            let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
+            let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
             let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+
             await skipBlocks(unlockBlocks);
             let v2 = await bp.refund(payId);
-            let v3 = await bp.balanceOf.call(id);
-            assert.equal(v3.toNumber(),  amount); 
+
+            // check original balance didn't change
+            let b1 = (await bp.balanceOf.call(from_id)).toNumber();
+            assert.equal(b0, b1);
         });
+
         it('should reject transfer+refund before timeout', async ()=> {
-            let list = utils.randomIds(100, 50000);
-            let data = utils.getPayData(list);
-
-            const fee = 10;
-            const amount = list.length + fee;
-            let key = "this-is-the-key";
-            let hash = utils.hashLock(0, key);
-
-            await st.approve(bp.address, amount);
-            let t0 = await bp.deposit(amount, newAccount); 
-            await t0;
-            let id = await bp.accountsLength.call() - 1;
-            
-            let v0 = await bp.bulkRegister(100, 0);
-            await v0;
-
-            let v1 = await bp.transfer(id, 1, 10, data, 0, 0, hash, 0);
+            let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
             let payId = (await bp.paymentsLength.call()).toNumber() - 1;
-            await assertRequire(bp.refund(payId,), "Hash lock has not expired yet");
-        
-         });
 
+            await assertRequire(bp.refund(payId), "Hash lock has not expired yet");
 
+            // check balance
+            let b1 = (await bp.balanceOf.call(from_id)).toNumber();
+            assert.equal(b0, b1 + total_amount);
+        });
+
+        it('should reject transfer if bytes per id is 0', async ()=> {
+            const bytesPerId = 0;
+            pay_data = new web3.BigNumber("0xff" + utils.hex(bytesPerId));
+
+            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata), "revert bytes per Id should be positive");
+
+            // check original balance didn't change
+            let b1 = (await bp.balanceOf.call(from_id)).toNumber();
+            assert.equal(b0, b1);
+        });
+
+        it('should reject transfer if bytes payData length is invalid', async ()=> {
+            const bytesPerId = 4;
+            const data = "0000005"
+            pay_data = new web3.BigNumber("0xff" + utils.hex(bytesPerId) + data);
+
+            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata), "payData length is invalid");
+
+            // check original balance didn't change
+            let b1 = (await bp.balanceOf.call(from_id)).toNumber();
+            assert.equal(b0, b1);
+        });
+
+        it('should reject transfer if there are too many payees', async ()=> {
+            // NOTE: there are 2 checks that depend on newCount:
+            //   1. (payData.length-2) / bytesPerId + newCount < maxTransfer = 100000
+            //   2. accounts.length + newCount < maxAccount = 2 ** 32
+            //
+            // because 100000 < 2 ** 32 we can only trigger the first condition
+            let toobig_count = 100000; // this should actually be bp.maxTransfer, however it crashes
+
+            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, toobig_count, rootHash, lock, metadata), "too many payees");
+
+            // check original balance didn't change
+            let b1 = (await bp.balanceOf.call(from_id)).toNumber();
+            assert.equal(b0, b1);
+        });
+
+        it('should reject transfer if balance is not enough', async ()=> {
+            let balance = await bp.balanceOf(from_id);
+            let new_count = list.length;
+            let invalid_amount = balance + 1;
+
+            await assertRequire(bp.transfer(from_id, invalid_amount, fee, pay_data, new_count, rootHash, lock, metadata), "not enough funds");
+
+            // check original balance didn't change
+            let b1 = (await bp.balanceOf.call(from_id)).toNumber();
+            assert.equal(b0, b1);
+        });
     });
 
     describe ("claim", ()=> {
