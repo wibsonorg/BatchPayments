@@ -171,7 +171,6 @@ contract BatPay {
         require(addr != 0, "Id registration not completed. Use claimId() first");
         require(balance >= amount, "insufficient funds");
         require(amount > 0, "amount should be nonzero");
-
         require(msg.sender == addr, "only owner can withdraw");
 
         balance -= amount;
@@ -206,7 +205,7 @@ contract BatPay {
         uint64 amount, 
         uint64 fee,
         bytes payData, 
-        uint newCount, 
+        uint newCount, // futo: what is the purpose of this parameter? maybe put a more meaningful name
         bytes32 roothash,
         bytes32 lock,
         bytes32 metadata) 
@@ -218,7 +217,8 @@ contract BatPay {
         p.fee = fee;
         p.lock = lock;
         p.block = uint64(block.number + unlockBlocks);
-        require(fromId < accounts.length, "invalid fromId");
+
+        require(isValidId(fromId), "invalid fromId");
         uint bytesPerId = uint(payData[1]);
         Account memory from = accounts[fromId];
     
@@ -240,10 +240,11 @@ contract BatPay {
         p.metadata = metadata;
         require(p.maxId >= p.minId && p.maxId <= maxAccount, "invalid newCount");
         
-        if (newCount > 0) bulkRegister(newCount, roothash);
+        if (newCount > 0) {
+            bulkRegister(newCount, roothash);
+        }
         
         p.hash = keccak256(abi.encodePacked(payData));
-
         payments.push(p);
     }
 
@@ -279,9 +280,6 @@ contract BatPay {
         payments[payIndex].fee = 0;
         accounts[from].balance += total;
     }
-
-    
-    
 
     function getDataSum(bytes data) public pure returns (uint sum) {
         uint n = data.length / 12;
@@ -364,7 +362,7 @@ contract BatPay {
 
 
     function challenge_3(uint32 delegate, uint32 slot, bytes data, uint32 index) public {
-        require(isValidId(delegate), "delegate should be a valid id");
+        require(isValidId(delegate), "invalid delegate id");
         CollectSlot memory s = collects[delegate][slot];
         
         require(s.status == 3);
@@ -601,6 +599,8 @@ contract BatPay {
         addr = a.addr;
         balance = a.balance;
         collected = a.collected;
+
+        // futo: are we missing a return here?
     }
 
     function balanceOf(uint id) public view validId(id) returns (uint64) {
