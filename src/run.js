@@ -23,7 +23,7 @@ function calcSignature() {
 
 async function doStuff() {
     try {
-    console.log("Instantiate contacts");
+    console.log("Instantiate contracts");
     let x = await lib.newInstances();
     test = await TestHelper.new();
  
