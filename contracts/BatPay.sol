@@ -52,6 +52,7 @@ contract BatPay {
         uint32  challenger;
         uint32  index;
         uint64  challengeAmount;
+        address addr;
         bytes32 data;
     }
 
@@ -72,6 +73,10 @@ contract BatPay {
         return isValidId(id) && msg.sender == accounts[id].addr;
     }
 
+    function isClaimedId(uint id) public view returns (bool) {
+        return isValidId(id) && accounts[id].addr != 0;
+    }
+
     modifier validId(uint id) {
         require(isValidId(id), "id is not valid");
         _;
@@ -82,6 +87,11 @@ contract BatPay {
         _;
     }
     
+    modifier claimedId(uint id) {
+        require(isClaimedId(id), "account has no associated address");
+        _;
+    }
+
     constructor(address _token) public {
         owner = msg.sender;
         token = IERC20(_token);
@@ -127,7 +137,30 @@ contract BatPay {
         return ret;
     } 
 
-    // TODO: add v,r,s (signature from owner of id)
+/*
+    function withdrawTo(
+        uint32 delegate,
+        uint32 id,  
+        uint64 amount, 
+        uint64 fee,
+        address destination,
+        bytes signature) 
+        public 
+        onlyOwnerId(delegate) 
+        claimedId(id)
+    {
+        bytes32 hash = keccak256(abi.encodePacked(delegate, id, amount, fee, destination));
+        
+        require(recoverHelper(hash, signature) == accounts[id].addr, "invalid signature");
+        require(accounts[id].balance >= amount, "not enough founds");
+        require(fee <= amount, "invalid fee");
+
+        accounts[id].balance -= amount;
+        accounts[delegate].balance += fee;
+        token.transfer(destination, amount - fee);
+    }
+
+*/
     function withdraw(uint64 amount, uint256 id) 
     public
     onlyOwnerId(id) 
@@ -470,7 +503,13 @@ contract BatPay {
     
         // Refund Stake 
         accounts[delegate].balance += s.delegateAmount + collectStake;
-        accounts[s.to].balance += s.amount - s.delegateAmount;
+        uint64 balance = accounts[s.to].balance + s.amount - s.delegateAmount;
+
+        if (s.addr != address(0)) {
+            token.transfer(s.addr, balance);
+            balance = 0;
+        } 
+        accounts[s.to].balance = balance;
         s.status = 0;
         collects[delegate][slot] = s;
     }
@@ -482,6 +521,7 @@ contract BatPay {
         uint32 payIndex,
         uint64 amount,
         uint64 fee, 
+        address destination,
         bytes signature
         ) 
         public
@@ -499,7 +539,7 @@ contract BatPay {
         Account memory tacc = accounts[to];
         require(tacc.addr != 0, "account registration has to be completed");
 
-        // Check toPayIndex is valid
+        // Check payIndex is valid
         require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex");
         require(payIndex > tacc.collected, "payIndex is not a valid value");
         require(payments[payIndex-1].block < block.number, "cannot collect payments that can be unlocked");
@@ -507,15 +547,15 @@ contract BatPay {
         // Check if fee is valid
         require (fee <= amount, "fee is too big");
 
-        // Check that id to signed this transaction
-        bytes32 hash = keccak256(abi.encodePacked(delegate, to, tacc.collected, payIndex, amount, fee)); 
-        address addr = recoverHelper(hash, signature);
-        require(addr == tacc.addr, "Bad user signature");
-       
+        CollectSlot memory sl;
+     
+        // Check that "to" signed this transaction
+        bytes32 hash = keccak256(abi.encodePacked(delegate, to, tacc.collected, payIndex, amount, fee, destination)); 
+        require(recoverHelper(hash, signature) == tacc.addr, "Bad user signature");
+        
         // free slot if necessary
         freeSlot(delegate, slot);
-
-        CollectSlot memory sl;
+        
         sl.minPayIndex = tacc.collected;
         sl.maxPayIndex = payIndex;
 
@@ -524,9 +564,18 @@ contract BatPay {
         if (slot >= instantSlot) {
             sl.delegateAmount = amount;
             tacc.balance += uint64(amount-fee);
+
+            // check if the user is withdrawing its balance
+            if (destination != address(0)) {
+                token.transfer(destination, tacc.balance);
+                tacc.balance = 0;
+            }
+
+            sl.addr = address(0);
             needed += amount-fee;
         } else
         {
+            sl.addr = destination;
             sl.delegateAmount = fee;
         }    
 

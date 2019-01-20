@@ -78,10 +78,10 @@ async function bpUnlock(payIndex, unlocker, key) {
     
 }
 
-async function bpCollect(delegate, slot, to, fromId, toId, amount, fee) {
-    let signature = utils.signCollect(ids[to], delegate, to, fromId, toId, amount, fee);
+async function bpCollect(delegate, slot, to, fromId, toId, amount, fee, addr) {
+    let signature = utils.signCollect(ids[to], delegate, to, fromId, toId, amount, fee, addr);
 
-    await bp.collect(delegate, slot, to, toId, amount, fee, signature);
+    await bp.collect(delegate, slot, to, toId, amount, fee, addr, signature);
 
 }
 
@@ -129,7 +129,7 @@ async function testData() {
 
 async function doStuff() {
     try {
-        console.log("Instantiate contacts");
+        console.log("Instantiate contracts");
         let x = await lib.newInstances();
 
         st = x.token;
@@ -186,8 +186,10 @@ async function doStuff() {
             let [addr, b, c] = await bpAccount(i);
 
             c = c.toNumber();
+            addr = 0;
+            if (i == 5) addr = ids[6]; // #5 withdraw to #6
 
-            await bpCollect(0, i, i, c, max, m*10/2, 2);
+            await bpCollect(0, i, i, c, max, m*10/2, 2, addr);
         }
 
         await showBalance();
@@ -207,8 +209,10 @@ async function doStuff() {
             let [addr, b, c] = await bpAccount(i);
 
             c = c.toNumber();
+            addr = 0;
+            if (i == 5) addr = ids[6]; // #5 withdraw to #6
 
-            await bpCollect(0, i+instantSlot, i, c, max, m*10/2, 1);
+            await bpCollect(0, i+instantSlot, i, c, max, m*10/2, 1, addr);
         }
 
         await showBalance();

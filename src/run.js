@@ -81,7 +81,7 @@ async function doStuff() {
 
     console.log("collect for "+id1);
 
-    let sign = utils.signCollect(web3.eth.accounts[0], delegate, id1, 0, 1, 1, 0);
+    let sign = utils.signCollect(web3.eth.accounts[0], delegate, id1, 0, 1, 1, 0, 0);
     
 
     console.log("sign="+sign);
@@ -97,11 +97,12 @@ async function doStuff() {
 
     let v2 = await bp.collect(
         delegate,   // delegate 
-        0,          // slot 
+        40000,          // slot 
         id1,        // to
-        1,          // toPayId
+        1,          // payIndex
         1,          // amount
         0,          // fee
+        0,          // withdrawAddr
         sign        // signature
         );
     await v2;
