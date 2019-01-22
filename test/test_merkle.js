@@ -82,7 +82,7 @@ describe('merkle lib', ()=> {
             v = merkle.merkle(v);
             let w = merkle.sha3_2(
                 merkle.sha3_2(sha3_1(1),sha3_1(2)), 
-                sha3_1(3));
+                merkle.sha3_2(sha3_1(3), 0));
 
                 assert.equal(v.roothash, w);
         });
@@ -92,7 +92,7 @@ describe('merkle lib', ()=> {
             let tree = merkle.merkle(v);
 
             for(let i = 0; i<v.length; i++) {
-                let proof = merkle.getProof(tree, v[i]);
+                let proof = merkle.getProof(tree, i);
                 let x = merkle.evalProof(proof, v[i]);
                 assert.equal(tree.roothash, x);
             }
@@ -103,7 +103,7 @@ describe('merkle lib', ()=> {
             let tree = merkle.merkle(v);
 
             for(let i = 0; i<v.length; i++) {
-                let proof = merkle.getProof(tree, v[i]);
+                let proof = merkle.getProof(tree, i);
                 let key = 0;
                 let pp = proof.map(x=>{return x.v});
 

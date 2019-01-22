@@ -3,6 +3,7 @@ const BatPay = artifacts.require('./BatPay');
 const StandardToken = artifacts.require('./StandardToken');
 const TestHelper = artifacts.require('./TestHelper');
 var utils = lib.utils;
+var merkle = lib.merkle;
 var sha3_1 = lib.merkle.sha3_1;
 
 
@@ -98,6 +99,26 @@ async function register(addr) {
     return id;
 }
 
+async function bulkRegister(list) {
+    let nbulk = list.length;
+    let tree = merkle.merkle(list);
+    await bp.bulkRegister(nbulk, tree.roothash);
+    let minId = (await bp.accountsLength.call()) - nbulk;
+    let bulkId = await bp.bulkLength.call() - 1;
+
+    return { tree, minId, bulkId } ;
+
+}
+
+async function claimId(bulk, addr, id) {
+
+    let i = id - bulk.minId;
+    let proof = merkle.getProof(bulk.tree, i);
+    proof = proof.map(x=>x.v);
+    await bp.claimId(addr, proof, id, bulk.bulkId); 
+}
+
+
 async function showBalance() {
     for(let i = 0; i<10; i++) {
         let [addr,balance,collected] = await bpAccount(i);
@@ -150,6 +171,17 @@ async function doStuff() {
         for(let i=0; i<10; i++) await register(acc[i]);    
         await showBalance();
 
+        console.log("bulkRegistering accounts");
+        let list = [];
+        let nbulk = 100;
+        for(let i = 0; i<nbulk; i++) list.push(acc[i%10]);
+        
+        let bulk = await bulkRegister(list);
+        console.log("claiming "+nbulk+" accounts");
+        for(let i = 0; i<nbulk; i++) await claimId(bulk, list[i], i+bulk.minId);
+        
+        return;
+        
         console.log("transfering some tokens");
         for(let i = 1; i<acc.length; i++)
             await tokenTransfer(acc[0], acc[i], 1000);

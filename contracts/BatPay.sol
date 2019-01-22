@@ -111,21 +111,18 @@ contract BatPay {
 
     // Register a new account
 
-    function claimId(address addr, uint256[] proof, uint id, uint bulkId) public returns (bool) {
+    function claimId(address addr, uint256[] proof, uint id, uint bulkId) public {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
         uint minId = bulkRegistrations[bulkId].minId;
         uint n = bulkRegistrations[bulkId].n;
         bytes32 rootHash = bulkRegistrations[bulkId].rootHash;
 
-        // should be id - minId
-        bytes32 hash = Merkle.evalProof(proof, id, uint256(addr));
+        bytes32 hash = Merkle.evalProof(proof, id - minId, uint256(addr));
         
         require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");
         require(hash == rootHash, "invalid Merkle proof");
 
         accounts[id].addr = addr;
-
-        return true; // do we actually need to return a value?
     }
 
     function register() public returns (uint32 ret) {
