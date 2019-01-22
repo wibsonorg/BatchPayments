@@ -1,8 +1,10 @@
 var StandardToken = artifacts.require('StandardToken');
 var BatPay = artifacts.require('BatPay');
 const catchRevert = require('./exceptions').catchRevert;
-const assertRequire = require('truffle-assertions').reverts;
-const assertPasses = require('truffle-assertions').passes;
+const truffleAssertions = require('truffle-assertions');
+const assertRequire = truffleAssertions.reverts;
+const assertPasses = truffleAssertions.passes;
+const eventEmitted = truffleAssertions.eventEmitted; 
 var BigNumber = web3.BigNumber;
 var lib = require('../lib')(web3, artifacts);
 var { utils } = lib;
@@ -189,11 +191,14 @@ contract('BatPay', (addr)=> {
             const amount = 100;
 
             await st.approve(bp.address, amount);
-            await bp.deposit(1, newAccount);
+            let tx1 = await bp.deposit(1, newAccount);
             const v1 = await bp.accountsLength.call();
-            await bp.deposit(1, newAccount);
+            let tx2 = await bp.deposit(1, newAccount);
             const v2 = await bp.accountsLength.call();
 
+            eventEmitted(tx1, 'Register');
+            eventEmitted(tx2, 'Register');
+            
             assert.equal(v2.toNumber() - v0.toNumber(), 2);
             assert.equal(v1.toNumber() - v0.toNumber(), 1);
         });
@@ -255,7 +260,14 @@ contract('BatPay', (addr)=> {
 
             assert.equal(l2 - l0, 2);
             assert.equal(l1 - l0, 1);
-        })
+        });
+
+        it('register() emits Register event', async () => {
+            let tx = await await bp.register();
+            let l0 = await bp.accountsLength.call();
+            await eventEmitted(tx, 'Register', ev=>ev.id==l0-1);
+            
+        });
 
         // TODO: check case we registered a lot of accounts
         // accounts.length < maxAccount, "no more accounts left");

@@ -179,9 +179,7 @@ async function doStuff() {
         let bulk = await bulkRegister(list);
         console.log("claiming "+nbulk+" accounts");
         for(let i = 0; i<nbulk; i++) await claimId(bulk, list[i], i+bulk.minId);
-        
-        return;
-        
+
         console.log("transfering some tokens");
         for(let i = 1; i<acc.length; i++)
             await tokenTransfer(acc[0], acc[i], 1000);

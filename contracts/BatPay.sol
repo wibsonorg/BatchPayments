@@ -99,17 +99,17 @@ contract BatPay {
 
     // Reserve n accounts but delay assigning addresses
     // Accounts will be claimed later using MerkleTree's rootHash
+    event BulkRegister(uint n, uint minId, uint bulkId );
 
     function bulkRegister(uint256 n, bytes32 rootHash) public {
         require(n > 0, "Cannot register 0 ids");
         require(n < maxBulk, "Cannot register this number of ids simultaneously");
         require(accounts.length + n <= maxAccount, "Cannot register: ran out of ids");
 
+        emit BulkRegister(n, accounts.length, bulkRegistrations.length);
         bulkRegistrations.push(BulkRecord(rootHash, uint32(n), uint32(accounts.length)));
         accounts.length += n;
     }
-
-    // Register a new account
 
     function claimId(address addr, uint256[] proof, uint id, uint bulkId) public {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
@@ -121,16 +121,20 @@ contract BatPay {
         
         require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");
         require(hash == rootHash, "invalid Merkle proof");
+        emit Register(id, addr);
 
         accounts[id].addr = addr;
     }
+
+    // Register a new account
+    event Register(uint id, address addr);
 
     function register() public returns (uint32 ret) {
         require(accounts.length < maxAccount, "no more accounts left");
         ret = (uint32)(accounts.length);
         accounts.length += 1;
         accounts[ret] = Account(msg.sender, 0, 0);
-
+        emit Register(ret, msg.sender);
         return ret;
     } 
 
