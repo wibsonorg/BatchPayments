@@ -82,7 +82,7 @@ async function bpUnlock(payIndex, unlocker, key) {
 async function bpCollect(delegate, slot, to, fromId, toId, amount, fee, addr) {
     let signature = utils.signCollect(ids[to], delegate, to, fromId, toId, amount, fee, addr);
 
-    await bp.collect(delegate, slot, to, toId, amount, fee, addr, signature);
+    let tx = await bp.collect(delegate, slot, to, toId, amount, fee, addr, signature);
 
 }
 
@@ -91,9 +91,18 @@ async function bpFreeSlot(delegate, slot) {
 
 }
 
+function findEvent(array, eventName) {
+    let x = array.find(ev=>ev.event == eventName);
+    if (x) return x.args;
+    throw new Error(eventName+' not found');
+}
+
 async function register(addr) {
     let t = await bp.register({from: addr});
-    let id = await bp.accountsLength.call() - 1;
+    let recp = await t.receipt;
+    
+    let log = findEvent(t.logs, 'Register');
+    let id = log.id.toNumber();
     ids[id] = addr;
 
     return id;
@@ -102,20 +111,24 @@ async function register(addr) {
 async function bulkRegister(list) {
     let nbulk = list.length;
     let tree = merkle.merkle(list);
-    await bp.bulkRegister(nbulk, tree.roothash);
-    let minId = (await bp.accountsLength.call()) - nbulk;
-    let bulkId = await bp.bulkLength.call() - 1;
+    let tx = await bp.bulkRegister(nbulk, tree.roothash);
+    await tx.receipt;
+    let z = findEvent(tx.logs, 'BulkRegister');
 
+    let minId = z.minId.toNumber();
+    let bulkId = z.bulkId.toNumber();
+    
     return { tree, minId, bulkId } ;
 
 }
 
 async function claimId(bulk, addr, id) {
-
     let i = id - bulk.minId;
     let proof = merkle.getProof(bulk.tree, i);
     proof = proof.map(x=>x.v);
-    await bp.claimId(addr, proof, id, bulk.bulkId); 
+    let tx = await bp.claimId(addr, proof, id, bulk.bulkId); 
+    await tx.receipt;
+    findEvent(tx.logs, 'Register');
 }
 
 
