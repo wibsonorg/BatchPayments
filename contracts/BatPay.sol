@@ -16,6 +16,18 @@ contract BatPay {
     uint64 constant public collectStake = 100;
     uint64 constant public challengeStake = 100;
 
+    event BulkRegister(uint n, uint minId, uint bulkId );
+    event Register(uint id, address addr);
+    event Transfer(uint payIndex, uint from, uint totalCount, uint amount);
+    event Unlock(uint payIndex, bytes key);
+    event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
+    event Challenge_1(uint delegate, uint slot, uint challenger);
+    event Challenge_2(uint delegate, uint slot);
+    event Challenge_3(uint delegate, uint slot, uint index);
+    event Challenge_4(uint delegate, uint slot);
+    event Challenge_sucess(uint delegate, uint slot);
+    event Challenge_failed(uint delegate, uint slot);    
+
     struct Account {
         address addr;
         uint64  balance;
@@ -99,8 +111,7 @@ contract BatPay {
 
     // Reserve n accounts but delay assigning addresses
     // Accounts will be claimed later using MerkleTree's rootHash
-    event BulkRegister(uint n, uint minId, uint bulkId );
-
+   
     function bulkRegister(uint256 n, bytes32 rootHash) public {
         require(n > 0, "Cannot register 0 ids");
         require(n < maxBulk, "Cannot register this number of ids simultaneously");
@@ -127,8 +138,7 @@ contract BatPay {
     }
 
     // Register a new account
-    event Register(uint id, address addr);
-
+ 
     function register() public returns (uint32 ret) {
         require(accounts.length < maxAccount, "no more accounts left");
         ret = (uint32)(accounts.length);
@@ -247,6 +257,8 @@ contract BatPay {
         
         p.hash = keccak256(abi.encodePacked(payData));
         payments.push(p);
+  
+        emit Transfer(payments.length-1, p.from, p.totalCount, p.amount);
     }
 
     function unlock(uint32 payIndex, uint32 unlockerId, bytes key) public returns(bool) {
@@ -259,6 +271,7 @@ contract BatPay {
         payments[payIndex].lock = bytes32(0);
         accounts[unlockerId].balance += payments[payIndex].fee;
 
+        emit Unlock(payIndex, key);
         return true;
     }
 
@@ -341,6 +354,7 @@ contract BatPay {
         accounts[challenger].balance -= challengeStake;
 
         collects[delegate][slot] = s;
+        emit Challenge_1(delegate, slot, challenger);
     }
 
     function challenge_2(uint32 delegate, uint32 slot, bytes data) public {
@@ -359,6 +373,7 @@ contract BatPay {
         s.block = uint64(block.number + challengeStepBlocks);
 
         collects[delegate][slot] = s;
+        emit Challenge_2(delegate, slot);
     }
 
 
@@ -369,8 +384,6 @@ contract BatPay {
         require(s.status == 3);
         require (block.number < s.block, "challenge time has passed");
         require(isOwnerId(s.challenger), "only challenger can call challenge_2");
-     
-        
         require(s.data == keccak256(data), "data mismatch");
        
         s.index = index;
@@ -378,6 +391,7 @@ contract BatPay {
         s.block = uint64(block.number + challengeStepBlocks);
 
         collects[delegate][slot] = s;
+        emit Challenge_3(delegate, slot, index);
     }
 
     function challenge_4(uint32 delegate, uint32 slot, bytes payData) public {
@@ -436,6 +450,7 @@ contract BatPay {
         accounts[s.challenger].balance += collectStake;
 
         collects[delegate][slot].status = 0;
+        emit Challenge_sucess(delegate, slot);
         
     }
 
@@ -452,6 +467,7 @@ contract BatPay {
         s.status = 1;
         s.block = uint64(block.number + challengeBlocks);
         collects[delegate][slot] = s;
+        emit Challenge_failed(delegate, slot);
     }
 
     function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
