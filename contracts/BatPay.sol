@@ -1,6 +1,8 @@
 pragma solidity ^0.4.24;
 import "./IERC20.sol";
 import "./Merkle.sol";
+import "./Challenge.sol";
+import "./Account.sol";
 
 contract BatPay {
     uint constant public maxAccount = 2**32-1;
@@ -9,31 +11,20 @@ contract BatPay {
     uint constant public maxBalance = 2**64-1;
     uint constant public maxTransfer = 100000;
     uint constant public unlockBlocks = 20; 
-    uint constant public challengeBlocks = 300;     
-    uint constant public challengeStepBlocks = 100;
     uint constant public maxCollect = 1000;
     uint32 constant public instantSlot = 32768;
+    uint constant public challengeBlocks = 300;     
+    uint constant public challengeStepBlocks = 100;
     uint64 constant public collectStake = 100;
     uint64 constant public challengeStake = 100;
 
-    event BulkRegister(uint n, uint minId, uint bulkId );
-    event Register(uint id, address addr);
+
     event Transfer(uint payIndex, uint from, uint totalCount, uint amount);
     event Unlock(uint payIndex, bytes key);
     event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
-    event Challenge_1(uint delegate, uint slot, uint challenger);
-    event Challenge_2(uint delegate, uint slot);
-    event Challenge_3(uint delegate, uint slot, uint index);
-    event Challenge_4(uint delegate, uint slot);
-    event Challenge_sucess(uint delegate, uint slot);
-    event Challenge_failed(uint delegate, uint slot);    
+  
 
-    struct Account {
-        address addr;
-        uint64  balance;
-        uint32  collected;
-    }
-
+  
     struct Payment {
         uint32  from;
         uint64  amount;
@@ -47,33 +38,17 @@ contract BatPay {
         bytes32 metadata;
     }
 
-    struct BulkRecord {
-        bytes32 rootHash;
-        uint32  n;
-        uint32  minId;
-    }
+    
+    event BulkRegister(uint n, uint minId, uint bulkId );
+    event Register(uint id, address addr);
 
-    struct CollectSlot {
-        uint32  minPayIndex;
-        uint32  maxPayIndex;
-        uint64  amount;
-        uint64  delegateAmount;
-        uint32  to;
-        uint64  block;
-        uint8   status;
-        uint32  challenger;
-        uint32  index;
-        uint64  challengeAmount;
-        address addr;
-        bytes32 data;
-    }
 
-    mapping (uint32 => mapping (uint32 => CollectSlot)) collects;
+    mapping (uint32 => mapping (uint32 => Challenge.CollectSlot)) collects;
 
     address public owner;
     IERC20 public token;
-    Account[] public accounts;
-    BulkRecord[] public bulkRegistrations;
+    Account.Record[] public accounts;
+    Account.BulkRecord[] public bulkRegistrations;
     Payment[] public payments;
 
     function isValidId(uint id) public view returns (bool) {
@@ -118,8 +93,9 @@ contract BatPay {
         require(accounts.length + n <= maxAccount, "Cannot register: ran out of ids");
 
         emit BulkRegister(n, accounts.length, bulkRegistrations.length);
-        bulkRegistrations.push(BulkRecord(rootHash, uint32(n), uint32(accounts.length)));
+        bulkRegistrations.push(Account.BulkRecord(rootHash, uint32(n), uint32(accounts.length)));
         accounts.length += n;
+        
     }
 
     function claimId(address addr, uint256[] proof, uint id, uint bulkId) public {
@@ -143,7 +119,7 @@ contract BatPay {
         require(accounts.length < maxAccount, "no more accounts left");
         ret = (uint32)(accounts.length);
         accounts.length += 1;
-        accounts[ret] = Account(msg.sender, 0, 0);
+        accounts[ret].addr = msg.sender;
         emit Register(ret, msg.sender);
         return ret;
     } 
@@ -231,7 +207,7 @@ contract BatPay {
 
         require(isValidId(fromId), "invalid fromId");
         uint bytesPerId = uint(payData[1]);
-        Account memory from = accounts[fromId];
+        Account.Record memory from = accounts[fromId];
     
         require(bytesPerId > 0, "bytes per Id should be positive");
         require(from.addr == msg.sender, "only owner of id can transfer");
@@ -295,181 +271,10 @@ contract BatPay {
         accounts[from].balance += total;
     }
 
-    function getDataSum(bytes data) public pure returns (uint sum) {
-        uint n = data.length / 12;
-        uint modulus = maxBalance+1;
-
-        sum = 0;
-
-        // Get the sum of the stated amounts in data 
-        // Each entry in data is [8-bytes amount][4-bytes payIndex]
-
-        for(uint i = 0; i<n; i++) {
-            // solium-disable-next-line security/no-inline-assembly
-            assembly {
-                sum :=
-                    add(
-                        sum, 
-                        mod(
-                            mload(add(data, add(8, mul(i, 12)))), 
-                            modulus)
-                    )
-            }
-        }
-    }
-
-    function getDataAtIndex(bytes data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
-        uint mod1 = maxBalance+1;
-        uint mod2 = maxAccount+1;
-        uint i = index*12;
-
-        require(i <= data.length-12);
-
-        // solium-disable-next-line security/no-inline-assembly
-        assembly
-            {
-                amount := mod(
-                    mload(add(data, add(8, i))), 
-                    mod1)           
-
-                 payIndex := mod(
-                    mload(add(data, add(12, i))),
-                    mod2)
-            }
-    }
 
 
-    function challenge_1(uint32 delegate, uint32 slot, uint32 challenger) public {
-        require(isValidId(delegate), "delegate must be a valid account id");
-        require(accounts[challenger].balance >= challengeStake, "not enough balance");
 
-        CollectSlot memory s = collects[delegate][slot];
- 
-        require(s.status == 1, "slot is not available for challenge");      
-        require (block.number < s.block, "challenge time has passed");
-        s.status = 2;
-        s.challenger = challenger;
-        s.block = uint64(block.number + challengeStepBlocks);
-
-        accounts[challenger].balance -= challengeStake;
-
-        collects[delegate][slot] = s;
-        emit Challenge_1(delegate, slot, challenger);
-    }
-
-    function challenge_2(uint32 delegate, uint32 slot, bytes data) public {
-        require(isOwnerId(delegate), "only delegate can call challenge_1");
-
-        CollectSlot memory s = collects[delegate][slot];
-
-        require(s.status == 2, "wrong slot status");
-        require (block.number < s.block, "challenge time has passed");
-
-        require(data.length % 12 == 0, "wrong data format");
-        require (getDataSum(data) == s.amount, "data doesn't represent collected amount");
-
-        s.data = keccak256(data);
-        s.status = 3;
-        s.block = uint64(block.number + challengeStepBlocks);
-
-        collects[delegate][slot] = s;
-        emit Challenge_2(delegate, slot);
-    }
-
-
-    function challenge_3(uint32 delegate, uint32 slot, bytes data, uint32 index) public {
-        require(isValidId(delegate), "invalid delegate id");
-        CollectSlot memory s = collects[delegate][slot];
-        
-        require(s.status == 3);
-        require (block.number < s.block, "challenge time has passed");
-        require(isOwnerId(s.challenger), "only challenger can call challenge_2");
-        require(s.data == keccak256(data), "data mismatch");
-       
-        s.index = index;
-        s.status = 4;
-        s.block = uint64(block.number + challengeStepBlocks);
-
-        collects[delegate][slot] = s;
-        emit Challenge_3(delegate, slot, index);
-    }
-
-    function challenge_4(uint32 delegate, uint32 slot, bytes payData) public {
-        require(isOwnerId(delegate), "only delegate can call challenge_3");
-
-        CollectSlot memory s = collects[delegate][slot];
-        Payment memory p = payments[s.index];
-
-        require(s.status == 4);
-        require(block.number < s.block, "challenge time has passed");
-        require(s.index >= s.minPayIndex && s.index < s.maxPayIndex, "payment referenced is out of range");
-
-        require(keccak256(payData) == p.hash, "payData is incorrect");
-        
-        uint bytesPerId = uint(payData[1]);
-        uint modulus = 1 << (8*bytesPerId);
-
-        uint id = 0;
-        uint collected = 0;
-
-        // Check if id is included in bulkRegistration within payment
-        if (s.to >= p.minId && s.to < p.maxId) collected += p.amount;
-
-        // Process payData, inspecting the list of ids
-        // payData includes 2 header bytes, followed by n bytesPerId-bytes entries
-        // [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
-        for(uint i = 2; i < payData.length; i += bytesPerId) {
-            // Get next id delta from paydata 
-            // id += payData[2+i*bytesPerId]
-
-            // solium-disable-next-line security/no-inline-assembly
-            assembly {
-                id := add(
-                    id, 
-                    mod(
-                        mload(add(payData,add(i,bytesPerId))),
-                        modulus))
-            }
-            if (id == s.to) {
-                collected += p.amount;
-            }
-        }
-
-        require(collected == s.challengeAmount, "amount mismatch");
-
-        s.status = 5;
-        collects[delegate][slot] = s;
-
-        challenge_failed(delegate, slot);
-    }
-
-    function challenge_success(uint32 delegate, uint32 slot) public {
-        CollectSlot memory s = collects[delegate][slot];
-        require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
-
-        accounts[s.challenger].balance += collectStake;
-
-        collects[delegate][slot].status = 0;
-        emit Challenge_sucess(delegate, slot);
-        
-    }
-
-    function challenge_failed(uint32 delegate, uint32 slot) public {
-        CollectSlot memory s = collects[delegate][slot];
-        require(s.status == 5 || (s.status == 3 && block.number >= s.block), "challenge not completed");
-
-        // Challenge failed
-        // delegate wins Stake
-        accounts[delegate].balance += challengeStake;
-
-        // reset slot to status=1, waiting for challenges
-        s.challenger = 0;
-        s.status = 1;
-        s.block = uint64(block.number + challengeBlocks);
-        collects[delegate][slot] = s;
-        emit Challenge_failed(delegate, slot);
-    }
-
+   
     function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
@@ -510,7 +315,7 @@ contract BatPay {
     function freeSlot(uint32 delegate, uint32 slot) public {
         require(isOwnerId(delegate), "only delegate can call");
 
-        CollectSlot memory s = collects[delegate][slot];
+        Challenge.CollectSlot memory s = collects[delegate][slot];
 
         if (s.status == 0) return;
 
@@ -544,14 +349,14 @@ contract BatPay {
     {
         // Check delegate is valid
         require(delegate < accounts.length, "delegate must be a valid account id");
-        Account memory acc = accounts[delegate];
+        Account.Record memory acc = accounts[delegate];
         require(acc.addr != 0, "account registration has be to completed for delegate");
         require(acc.addr == msg.sender, "only delegate can initiate collect");
         
         // Check to is valid
         require(to <= accounts.length, "to must be a valid account id");
 
-        Account memory tacc = accounts[to];
+        Account.Record memory tacc = accounts[to];
         require(tacc.addr != 0, "account registration has to be completed");
 
         // Check payIndex is valid
@@ -562,8 +367,9 @@ contract BatPay {
         // Check if fee is valid
         require (fee <= amount, "fee is too big");
 
-        CollectSlot memory sl;
+        Challenge.CollectSlot memory sl;
      
+        sl.delegate = delegate;
         // Check that "to" signed this transaction
         bytes32 hash = keccak256(abi.encodePacked(delegate, to, tacc.collected, payIndex, amount, fee, destination)); 
         require(recoverHelper(hash, signature) == tacc.addr, "Bad user signature");
@@ -612,7 +418,7 @@ contract BatPay {
     }
 
     function accountOf(uint id) public view validId(id) returns (address addr, uint64 balance, uint32 collected) {
-        Account memory a = accounts[id];
+        Account.Record memory a = accounts[id];
         addr = a.addr;
         balance = a.balance;
         collected = a.collected;

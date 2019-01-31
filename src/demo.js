@@ -83,7 +83,6 @@ async function bpCollect(delegate, slot, to, fromId, toId, amount, fee, addr) {
     let signature = utils.signCollect(ids[to], delegate, to, fromId, toId, amount, fee, addr);
 
     let tx = await bp.collect(delegate, slot, to, toId, amount, fee, addr, signature);
-
 }
 
 async function bpFreeSlot(delegate, slot) {
@@ -143,23 +142,6 @@ async function showBalance() {
     console.log("----------------");
 }
 
-async function testData() {
-
-    let d= generateData(1000);
-    console.log(d);
-
-    let sum = await bp.getDataSum.call(d);
-    console.log("Sum="+sum);
-
-    for(let i = 990; i<1000; i++) {
-        let i1 = await bp.getDataAtIndex.call(d, i);
-        console.log("("+i+")="+i1);
-    }
-}
-
-
-
-
 
 async function doStuff() {
     try {
@@ -190,6 +172,7 @@ async function doStuff() {
         for(let i = 0; i<nbulk; i++) list.push(acc[i%10]);
         
         let bulk = await bulkRegister(list);
+        console.log(bulk.bulkId);
         console.log("claiming "+nbulk+" accounts");
         for(let i = 0; i<nbulk; i++) await claimId(bulk, list[i], i+bulk.minId);
 

@@ -78,9 +78,9 @@ contract TestHelper  {
         return keccak256(abi.encodePacked(delegate, toId, fromPay, toPay, amount)); 
     }
 
-    function recoverHelper(bytes32 hash, uint8 v, bytes32 r, bytes32 s) public pure returns (address) {
+    function recoverHelper(bytes32 hashv, uint8 v, bytes32 r, bytes32 s) public pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
+        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hashv));
         address addr = ecrecover(prefixedHash, v, r, s);
 
         return addr;
@@ -90,19 +90,19 @@ contract TestHelper  {
         return Merkle.getHash(a,b);
     }
 
-    function evalProof(uint256[] proof, uint256 key, uint256 value) public pure  returns(bytes32) {
+    function evalProof(uint256[] memory proof, uint256 key, uint256 value) public pure  returns(bytes32) {
         return Merkle.evalProof(proof, key, value);
     }
 
-    function test(uint y, bytes x) public returns (uint256) {
-        uint256 ret = 0;
+    function test(uint y, bytes memory x) public returns (uint256) {
+        uint256 ret = y;
         for(uint i = 0; i<x.length && i < 32; i++) ret = ret * 256 + uint(x[i]);
 
         return ret;
     }
 
-    function testlen(uint y, bytes x) public returns (uint256) {
-        
+    function testlen(uint y, bytes memory x) public returns (uint256) {
+        if (y==1234) return 0;
         return x.length;
     }
 }
