@@ -354,10 +354,14 @@ contract BatPay {
         Challenge.CollectSlot memory sl;
      
         sl.delegate = delegate;
-        // Check that "to" signed this transaction
-        bytes32 hash = keccak256(abi.encodePacked(delegate, to, tacc.collected, payIndex, amount, fee, destination)); 
-        require(recoverHelper(hash, signature) == tacc.addr, "Bad user signature");
-        
+
+        if (delegate != to) {
+            // Check that "to" != delegate, check who signed this transaction
+            bytes32 hash = keccak256(abi.encodePacked(delegate, to, tacc.collected, payIndex, amount, fee, destination)); 
+            
+            require(recoverHelper(hash, signature) == tacc.addr, "Bad user signature");
+        }
+
         // free slot if necessary
         freeSlot(delegate, slot);
         
