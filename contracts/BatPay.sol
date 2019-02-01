@@ -22,30 +22,22 @@ contract BatPay {
     event Transfer(uint payIndex, uint from, uint totalCount, uint amount);
     event Unlock(uint payIndex, bytes key);
     event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
-  
-    struct Payment {
-        uint32  from;
-        uint64  amount;
-        uint64  fee;
-        uint32  minId;  // ???: Use BulkRecordId instead??
-        uint32  maxId;
-        uint32  totalCount;
-        uint64  block;
-        bytes32 hash;
-        bytes32 lock;
-        bytes32 metadata;
-    }
-
     event BulkRegister(uint n, uint minId, uint bulkId );
     event Register(uint id, address addr);
+    event Challenge_1(uint delegate, uint slot, uint challenger);
+    event Challenge_2(uint delegate, uint slot);
+    event Challenge_3(uint delegate, uint slot, uint index);
+    event Challenge_4(uint delegate, uint slot);
+    event Challenge_sucess(uint delegate, uint slot);
+    event Challenge_failed(uint delegate, uint slot);  
 
-    mapping (uint32 => mapping (uint32 => Challenge.CollectSlot)) collects;
+    mapping (uint32 => mapping (uint32 => Challenge.CollectSlot)) public collects;
 
     address public owner;
     IERC20 public token;
     Account.Record[] public accounts;
     Account.BulkRecord[] public bulkRegistrations;
-    Payment[] public payments;
+    Challenge.Payment[] public payments;
 
     function isValidId(uint id) public view returns (bool) {
         return (id < accounts.length);
@@ -181,7 +173,7 @@ contract BatPay {
         bytes32 metadata) 
         public 
     {
-        Payment memory p;
+        Challenge.Payment memory p;
         p.from = fromId;
         p.amount = amount;
         p.fee = fee;
@@ -239,7 +231,7 @@ contract BatPay {
         require(payIndex < payments.length, "invalid payment Id");
         require(payments[payIndex].lock != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].block, "Hash lock has not expired yet");
-        Payment memory p = payments[payIndex];
+        Challenge.Payment memory p = payments[payIndex];
         
         require(p.totalCount > 0, "payment already refunded");
         
@@ -406,6 +398,84 @@ contract BatPay {
         tacc.collected = uint32(payIndex);
         accounts[to] = tacc;
     }
+
+    function challenge_1(
+        uint32 delegate, 
+        uint32 slot, 
+        uint32 challenger) 
+        validId(delegate)
+        public
+        onlyOwnerId(challenger) 
+    {
+        Challenge.challenge_1(collects[delegate][slot], accounts, challenger);
+        emit Challenge_1(delegate, slot, challenger);
+    }
+
+    function challenge_2(
+        uint32 delegate, 
+        uint32 slot, 
+        bytes memory data)
+        public  
+        onlyOwnerId(delegate)
+    {
+        Challenge.challenge_2(collects[delegate][slot], data);
+        emit Challenge_2(delegate, slot);
+    }
+
+
+    function challenge_3(
+        uint32 delegate,
+        uint32 slot, 
+        bytes memory data, 
+        uint32 index)
+        validId(delegate) 
+        public 
+    {
+        require(isOwnerId(collects[delegate][slot].challenger), "only challenger can call challenge_2");
+        
+        Challenge.challenge_3(collects[delegate][slot], data, index);
+        emit Challenge_3(delegate, slot, index);
+    }
+
+    function challenge_4(
+        uint32 delegate,
+        uint32 slot,
+        bytes memory payData) 
+        public 
+        onlyOwnerId(delegate) 
+    {
+        Challenge.challenge_4(
+            collects[delegate][slot], 
+            accounts, 
+            payments,
+            payData
+            );
+  
+        emit Challenge_4(delegate, slot);
+    }
+
+
+    function challenge_success(
+        uint32 delegate,
+        uint32 slot
+        )
+        public
+        validId(delegate) 
+    {
+        Challenge.challenge_success(collects[delegate][slot], accounts);
+        emit Challenge_sucess(delegate, slot);
+    }
+
+    function challenge_failed(
+        uint32 delegate,
+        uint32 slot)
+        public
+        validId(delegate) 
+    {
+        Challenge.challenge_failed(collects[delegate][slot], accounts);
+        emit Challenge_failed(delegate, slot);
+    }
+
 
     function balanceAdd(uint id, uint64 diff) private validId(id) {
         accounts[id].balance = SafeMath.add64(accounts[id].balance, diff);

@@ -9,13 +9,7 @@ library Challenge {
     uint64 constant public collectStake = 100;
     uint64 constant public challengeStake = 100;
 
-    event Challenge_1(uint delegate, uint slot, uint challenger);
-    event Challenge_2(uint delegate, uint slot);
-    event Challenge_3(uint delegate, uint slot, uint index);
-    event Challenge_4(uint delegate, uint slot);
-    event Challenge_sucess(uint delegate, uint slot);
-    event Challenge_failed(uint delegate, uint slot);  
-
+  
     struct CollectSlot {
         uint32  minPayIndex;
         uint32  maxPayIndex;
@@ -30,6 +24,19 @@ library Challenge {
         uint64  challengeAmount;
         address addr;
         bytes32 data;
+    }
+
+    struct Payment {
+        uint32  from;
+        uint64  amount;
+        uint64  fee;
+        uint32  minId;  
+        uint32  maxId;
+        uint32  totalCount;
+        uint64  block;
+        bytes32 hash;
+        bytes32 lock;
+        bytes32 metadata;
     }
 
     function futureBlock(uint delta) private view returns(uint64) {
@@ -81,7 +88,6 @@ library Challenge {
     }
 
     function challenge_1(CollectSlot storage s, Account.Record[] storage accounts, uint32 challenger) public {
-//        require(isValidId(delegate), "delegate must be a valid account id");
         require(accounts[challenger].balance >= challengeStake, "not enough balance");
  
         require(s.status == 1, "slot is not available for challenge");      
@@ -91,13 +97,9 @@ library Challenge {
         s.block = futureBlock(challengeStepBlocks);
         
         accounts[challenger].balance -= challengeStake;
-
-     
-        //emit Challenge_1(delegate, slot, challenger);
     }
 
     function challenge_2(CollectSlot storage s, bytes memory data) public {
-        // require(isOwnerId(delegate), "only delegate can call challenge_1");
         require(s.status == 2, "wrong slot status");
         require (block.number < s.block, "challenge time has passed");
 
@@ -107,35 +109,31 @@ library Challenge {
         s.data = keccak256(data);
         s.status = 3;
         s.block = futureBlock(challengeStepBlocks);
-
-        // emit Challenge_2(delegate, slot);
     }
 
 
-    function challenge_3(CollectSlot storage s, bytes memory data, uint32 index) public {
-        
+    function challenge_3(CollectSlot storage s, bytes memory data, uint32 index) public {  
         require(s.status == 3);
+        require(index < data.length/12);
         require (block.number < s.block, "challenge time has passed");
-//        require(isOwnerId(s.challenger), "only challenger can call challenge_2");
         require(s.data == keccak256(data), "data mismatch");
-       
+        (s.challengeAmount, s.index) = getDataAtIndex(data, index);
         s.index = index;
         s.status = 4;
         s.block = futureBlock(challengeStepBlocks);
-
-        // emit Challenge_3(delegate, slot, index);
     }
 
-  /*  function challenge_4(CollectSlot memory s, Account.Record[] storage accounts, bytes memory payData) public {
-        require(isOwnerId(delegate), "only delegate can call challenge_3");
-
-        // CollectSlot memory s = collects[delegate][slot];
-        Payment memory p = payments[s.index];
-
+    function challenge_4(
+        CollectSlot storage s, 
+        Account.Record[] storage accounts, 
+        Payment[] storage payments, 
+        bytes memory payData) 
+        public 
+    {
         require(s.status == 4);
         require(block.number < s.block, "challenge time has passed");
         require(s.index >= s.minPayIndex && s.index < s.maxPayIndex, "payment referenced is out of range");
-
+        Payment memory p = payments[s.index];
         require(keccak256(payData) == p.hash, "payData is incorrect");
         
         uint bytesPerId = uint(payData[1]);
@@ -170,11 +168,7 @@ library Challenge {
         require(collected == s.challengeAmount, "amount mismatch");
 
         s.status = 5;
-        collects[delegate][slot] = s;
-
-        challenge_failed(delegate, slot);
     }
-*/
 
     function challenge_success(CollectSlot storage s, Account.Record[] storage accounts) public {
         require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
@@ -184,8 +178,6 @@ library Challenge {
             collectStake);
 
         s.status = 0;
-    //    emit Challenge_sucess(delegate, slot);
-        
     }
 
     function challenge_failed(CollectSlot storage s, Account.Record[] storage accounts) public {
@@ -201,7 +193,6 @@ library Challenge {
         s.challenger = 0;
         s.status = 1;
         s.block = futureBlock(challengeBlocks);
-  //      emit Challenge_failed(delegate, slot);
     }
 
 }
