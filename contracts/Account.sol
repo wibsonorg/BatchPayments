@@ -12,7 +12,5 @@ library Account {
         uint32  n;
         uint32  minId;
     }
-
-
-    
+ 
 }

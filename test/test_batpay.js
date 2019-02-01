@@ -395,7 +395,7 @@ contract('BatPay', (addr)=> {
             // because 100000 < 2 ** 32 we can only trigger the first condition
             let toobig_count = 100000; // this should actually be bp.maxTransfer, however it crashes
 
-            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, toobig_count, rootHash, lock, metadata), "too many payees");
+            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, toobig_count, rootHash, lock, metadata), "Cannot register this number of ids simultaneously");
 
             // check original balance didn't change
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();

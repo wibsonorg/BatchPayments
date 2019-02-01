@@ -1,5 +1,6 @@
 pragma solidity ^0.4.24;
 import "./Account.sol";
+import "./SafeMath.sol";
 
 
 library Challenge {
@@ -31,6 +32,11 @@ library Challenge {
         bytes32 data;
     }
 
+    function futureBlock(uint delta) private view returns(uint64) {
+        return SafeMath.add64(block.number, delta);
+    }    
+
+    
     function getDataSum(bytes memory data) public pure returns (uint sum) {
         uint n = data.length / 12;
         uint modulus = 2**64;
@@ -82,8 +88,8 @@ library Challenge {
         require (block.number < s.block, "challenge time has passed");
         s.status = 2;
         s.challenger = challenger;
-        s.block = uint64(block.number + challengeStepBlocks);
-
+        s.block = futureBlock(challengeStepBlocks);
+        
         accounts[challenger].balance -= challengeStake;
 
      
@@ -100,7 +106,7 @@ library Challenge {
 
         s.data = keccak256(data);
         s.status = 3;
-        s.block = uint64(block.number + challengeStepBlocks);
+        s.block = futureBlock(challengeStepBlocks);
 
         // emit Challenge_2(delegate, slot);
     }
@@ -115,7 +121,7 @@ library Challenge {
        
         s.index = index;
         s.status = 4;
-        s.block = uint64(block.number + challengeStepBlocks);
+        s.block = futureBlock(challengeStepBlocks);
 
         // emit Challenge_3(delegate, slot, index);
     }
@@ -173,7 +179,9 @@ library Challenge {
     function challenge_success(CollectSlot storage s, Account.Record[] storage accounts) public {
         require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
 
-        accounts[s.challenger].balance += collectStake;
+        accounts[s.challenger].balance = SafeMath.add64(
+            accounts[s.challenger].balance,
+            collectStake);
 
         s.status = 0;
     //    emit Challenge_sucess(delegate, slot);
@@ -185,12 +193,14 @@ library Challenge {
 
         // Challenge failed
         // delegate wins Stake
-        accounts[s.delegate].balance += challengeStake;
+        accounts[s.delegate].balance = SafeMath.add64(
+            accounts[s.delegate].balance,
+            challengeStake);
 
         // reset slot to status=1, waiting for challenges
         s.challenger = 0;
         s.status = 1;
-        s.block = uint64(block.number + challengeBlocks);
+        s.block = futureBlock(challengeBlocks);
   //      emit Challenge_failed(delegate, slot);
     }
 

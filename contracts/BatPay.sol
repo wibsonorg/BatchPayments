@@ -3,6 +3,7 @@ import "./IERC20.sol";
 import "./Merkle.sol";
 import "./Challenge.sol";
 import "./Account.sol";
+import "./SafeMath.sol";
 
 contract BatPay {
     uint constant public maxAccount = 2**32-1;
@@ -18,12 +19,9 @@ contract BatPay {
     uint64 constant public collectStake = 100;
     uint64 constant public challengeStake = 100;
 
-
     event Transfer(uint payIndex, uint from, uint totalCount, uint amount);
     event Unlock(uint payIndex, bytes key);
     event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
-  
-
   
     struct Payment {
         uint32  from;
@@ -38,10 +36,8 @@ contract BatPay {
         bytes32 metadata;
     }
 
-    
     event BulkRegister(uint n, uint minId, uint bulkId );
     event Register(uint id, address addr);
-
 
     mapping (uint32 => mapping (uint32 => Challenge.CollectSlot)) collects;
 
@@ -90,20 +86,18 @@ contract BatPay {
     function bulkRegister(uint256 n, bytes32 rootHash) public {
         require(n > 0, "Cannot register 0 ids");
         require(n < maxBulk, "Cannot register this number of ids simultaneously");
-        require(accounts.length + n <= maxAccount, "Cannot register: ran out of ids");
+        require(SafeMath.add(accounts.length, n) <= maxAccount, "Cannot register: ran out of ids");
 
         emit BulkRegister(n, accounts.length, bulkRegistrations.length);
         bulkRegistrations.push(Account.BulkRecord(rootHash, uint32(n), uint32(accounts.length)));
         accounts.length += n;
-        
     }
 
-    function claimId(address addr, uint256[] proof, uint id, uint bulkId) public {
+    function claimId(address addr, uint256[] memory proof, uint id, uint bulkId) public {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
         uint minId = bulkRegistrations[bulkId].minId;
         uint n = bulkRegistrations[bulkId].n;
         bytes32 rootHash = bulkRegistrations[bulkId].rootHash;
-
         bytes32 hash = Merkle.evalProof(proof, id - minId, uint256(addr));
         
         require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");
@@ -118,8 +112,7 @@ contract BatPay {
     function register() public returns (uint32 ret) {
         require(accounts.length < maxAccount, "no more accounts left");
         ret = (uint32)(accounts.length);
-        accounts.length += 1;
-        accounts[ret].addr = msg.sender;
+        accounts.push(Account.Record(msg.sender, 0, 0));
         emit Register(ret, msg.sender);
         return ret;
     } 
@@ -155,14 +148,11 @@ contract BatPay {
         address addr = accounts[id].addr;
         uint64 balance = accounts[id].balance;
 
-        require(addr != 0, "Id registration not completed. Use claimId() first");
         require(balance >= amount, "insufficient funds");
         require(amount > 0, "amount should be nonzero");
-        require(msg.sender == addr, "only owner can withdraw");
-
-        balance -= amount;
-        accounts[id].balance = balance;
-
+        
+        balanceSub(id, amount);
+        
         token.transfer(addr, amount);        
     }
 
@@ -172,27 +162,20 @@ contract BatPay {
         require(token.transferFrom(msg.sender, address(this), amount), "transfer failed");
 
         if (id == newAccount)      
-        {   // new account
+        {               // new account
             uint newId = register();
             accounts[newId].balance = amount;
-        } else {  
-            // existing account
-            uint64 balance = accounts[id].balance;
-            uint64 newBalance = balance + amount;
-
-            // checking for overflow
-            require(balance <= newBalance, "arithmetic overflow"); 
-
-            accounts[id].balance = newBalance;
-       }
+        } else {        // existing account  
+            balanceAdd(id, amount);
+        }
     }
 
     function transfer(
         uint32 fromId, 
         uint64 amount, 
         uint64 fee,
-        bytes payData, 
-        uint newCount, // futo: what is the purpose of this parameter? maybe put a more meaningful name
+        bytes memory payData, 
+        uint newCount,      //  # of new Users included on bulkRegistration
         bytes32 roothash,
         bytes32 lock,
         bytes32 metadata) 
@@ -203,41 +186,42 @@ contract BatPay {
         p.amount = amount;
         p.fee = fee;
         p.lock = lock;
-        p.block = uint64(block.number + unlockBlocks);
+        p.block = SafeMath.add64(block.number,unlockBlocks);
 
         require(isValidId(fromId), "invalid fromId");
+        uint len = payData.length;
+        require(len > 1, "payData length is invalid");
         uint bytesPerId = uint(payData[1]);
         Account.Record memory from = accounts[fromId];
-    
+        
         require(bytesPerId > 0, "bytes per Id should be positive");
         require(from.addr == msg.sender, "only owner of id can transfer");
-        require((payData.length-2) % bytesPerId == 0, "payData length is invalid");
+        require((len-2) % bytesPerId == 0, "payData length is invalid");
 
-        p.totalCount = uint32((payData.length-2) / bytesPerId + newCount);
+        p.totalCount = SafeMath.div32(len-2, SafeMath.add32(bytesPerId,newCount));
         require(p.totalCount < maxTransfer, "too many payees");
         
-        uint64 total = uint64(amount * p.totalCount) + fee; // TODO: check for overflow
+        uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalCount), fee); 
         require (total <= from.balance, "not enough funds");
 
-        from.balance = from.balance - total;
+        from.balance = SafeMath.sub64(from.balance, total);
         accounts[fromId] = from;
 
         p.minId = uint32(accounts.length);
-        p.maxId = uint32(p.minId + newCount);
-        p.metadata = metadata;
-        require(p.maxId >= p.minId && p.maxId <= maxAccount, "invalid newCount");
-        
+        p.maxId = SafeMath.add32(p.minId, newCount); 
         if (newCount > 0) {
             bulkRegister(newCount, roothash);
         }
-        
+
+        p.metadata = metadata; 
         p.hash = keccak256(abi.encodePacked(payData));
+
         payments.push(p);
   
         emit Transfer(payments.length-1, p.from, p.totalCount, p.amount);
     }
 
-    function unlock(uint32 payIndex, uint32 unlockerId, bytes key) public returns(bool) {
+    function unlock(uint32 payIndex, uint32 unlockerId, bytes memory key) public returns(bool) {
         require(payIndex < payments.length, "invalid payIndex");
         require(isValidId(unlockerId), "Invalid unlockerId");
         require(block.number < payments[payIndex].block, "Hash lock expired");
@@ -245,8 +229,8 @@ contract BatPay {
         require(h == payments[payIndex].lock, "Invalid key");
         
         payments[payIndex].lock = bytes32(0);
-        accounts[unlockerId].balance += payments[payIndex].fee;
-
+        balanceAdd(unlockerId, payments[payIndex].fee);
+        
         emit Unlock(payIndex, key);
         return true;
     }
@@ -255,26 +239,24 @@ contract BatPay {
         require(payIndex < payments.length, "invalid payment Id");
         require(payments[payIndex].lock != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].block, "Hash lock has not expired yet");
+        Payment memory p = payments[payIndex];
         
-        uint64 amount = payments[payIndex].amount;
-        uint32 totalCount = payments[payIndex].totalCount;
-        uint64 fee = payments[payIndex].fee;
-
-        require(totalCount > 0, "payment already refunded");
+        require(p.totalCount > 0, "payment already refunded");
         
-        uint64 total = totalCount * amount + fee;
-        uint from = payments[payIndex].from;
+        uint64 total = SafeMath.add64(
+            SafeMath.mul64(p.totalCount, p.amount),
+            p.fee);
 
+        p.totalCount = 0;
+        p.fee = 0;
+        p.amount = 0;
+        payments[payIndex] = p;
+ 
         // Complete refund
-        payments[payIndex].totalCount = 0;
-        payments[payIndex].fee = 0;
-        accounts[from].balance += total;
+        balanceAdd(p.from, total);
     }
 
 
-
-
-   
     function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
@@ -308,8 +290,7 @@ contract BatPay {
             return address(0);
         }
 
-        return ecrecover(prefixedHash, v, r, s);
-        
+        return ecrecover(prefixedHash, v, r, s); 
     }
 
     function freeSlot(uint32 delegate, uint32 slot) public {
@@ -322,8 +303,11 @@ contract BatPay {
         require (s.status == 1 && block.number >= s.block, "slot not available"); 
     
         // Refund Stake 
-        accounts[delegate].balance += s.delegateAmount + collectStake;
-        uint64 balance = accounts[s.to].balance + s.amount - s.delegateAmount;
+        balanceAdd(delegate, SafeMath.add64(s.delegateAmount, collectStake));
+
+        uint64 balance = SafeMath.add64(
+            accounts[s.to].balance, 
+            SafeMath.sub64(s.amount, s.delegateAmount));
 
         if (s.addr != address(0)) {
             token.transfer(s.addr, balance);
@@ -342,7 +326,7 @@ contract BatPay {
         uint64 amount,
         uint64 fee, 
         address destination,
-        bytes signature
+        bytes memory signature
         ) 
         public
         
@@ -384,7 +368,9 @@ contract BatPay {
         // check if this is an instant collect
         if (slot >= instantSlot) {
             sl.delegateAmount = amount;
-            tacc.balance += uint64(amount-fee);
+            tacc.balance = SafeMath.add64(
+                tacc.balance,
+                SafeMath.sub64(amount, fee));
 
             // check if the user is withdrawing its balance
             if (destination != address(0)) {
@@ -393,7 +379,9 @@ contract BatPay {
             }
 
             sl.addr = address(0);
-            needed += amount-fee;
+            needed = SafeMath.add64(
+                needed, 
+                SafeMath.sub64(amount, fee));
         } else
         {
             sl.addr = destination;
@@ -403,8 +391,7 @@ contract BatPay {
         // Check amount & balance
         require (acc.balance >= needed, "not enough funds");
 
-        acc.balance -= needed;
-        accounts[delegate] = acc;
+        balanceSub(delegate, needed);
         
         sl.amount = amount;
         sl.to = to;
@@ -412,18 +399,16 @@ contract BatPay {
         sl.status = 1;
         collects[delegate][slot] = sl;
      
-        
         tacc.collected = uint32(payIndex);
         accounts[to] = tacc;
     }
 
-    function accountOf(uint id) public view validId(id) returns (address addr, uint64 balance, uint32 collected) {
-        Account.Record memory a = accounts[id];
-        addr = a.addr;
-        balance = a.balance;
-        collected = a.collected;
+    function balanceAdd(uint id, uint64 diff) private validId(id) {
+        accounts[id].balance = SafeMath.add64(accounts[id].balance, diff);
+    }
 
-        // futo: are we missing a return here?
+    function balanceSub(uint id, uint64 diff) private validId(id) {
+        accounts[id].balance = SafeMath.sub64(accounts[id].balance, diff);
     }
 
     function balanceOf(uint id) public view validId(id) returns (uint64) {

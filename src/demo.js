@@ -44,7 +44,7 @@ function generateData(len)
 }
 
 async function bpAccount(id) {
-    return await bp.accountOf.call(id);
+    return await bp.accounts.call(id);
 }
 
 async function tokenTransfer(from, to, amount) {
@@ -172,7 +172,6 @@ async function doStuff() {
         for(let i = 0; i<nbulk; i++) list.push(acc[i%10]);
         
         let bulk = await bulkRegister(list);
-        console.log(bulk.bulkId);
         console.log("claiming "+nbulk+" accounts");
         for(let i = 0; i<nbulk; i++) await claimId(bulk, list[i], i+bulk.minId);
 
