@@ -5,19 +5,27 @@ import "./Challenge.sol";
 import "./Account.sol";
 import "./SafeMath.sol";
 
+/// @title BatchPayment processing
+/// @notice This contract allows to scale ERC-20 token transfer for fees or micropayments
+/// on the few buyers - many sellers setting.
+
+
 contract BatPay {
-    uint constant public maxAccount = 2**32-1;
-    uint constant public maxBulk = 2**16;
-    uint constant public newAccount = 2**256-1; // special account id. It's NOT in the range of accounts
-    uint constant public maxBalance = 2**64-1;
-    uint constant public maxTransfer = 100000;
-    uint constant public unlockBlocks = 20; 
-    uint constant public maxCollect = 1000;
-    uint32 constant public instantSlot = 32768;
-    uint constant public challengeBlocks = 300;     
-    uint constant public challengeStepBlocks = 100;
-    uint64 constant public collectStake = 100;
-    uint64 constant public challengeStake = 100;
+
+    /*
+     * Constants
+     */
+    uint constant public maxAccount = 2**32-1;      // Maximum account id (32-bits)
+    uint constant public maxBulk = 2**16;           // Maximum number of accounts that can be reserved simultaneously
+    uint constant public newAccount = 2**256-1;     // Request registration of new account
+    uint constant public maxBalance = 2**64-1;      // Maximum supported token balance
+    uint constant public maxTransfer = 100000;      // Maximum number of destination accounts per transfer
+    uint constant public unlockBlocks = 20;         // Number of blocks the contract waits for unlock
+    uint32 constant public instantSlot = 32768;     // Slots reserved for Instant collect&withdraw for user
+    uint constant public challengeBlocks = 300;     // Number of blocks the contracts waits for a challenge
+    uint constant public challengeStepBlocks = 100; // Number of blocks the contract waits for each individual challenge step
+    uint64 constant public collectStake = 100;      // Collect/delegate stake in tokens  
+    uint64 constant public challengeStake = 100;    // Challenger stake in tokens.
 
     event Transfer(uint payIndex, uint from, uint totalCount, uint amount);
     event Unlock(uint payIndex, bytes key);
@@ -43,7 +51,6 @@ contract BatPay {
         return (id < accounts.length);
     }
 
-    // TODO: rename this function to something more meaningful
     function isOwnerId(uint id) public view returns (bool) {
         return isValidId(id) && msg.sender == accounts[id].addr;
     }
@@ -67,13 +74,22 @@ contract BatPay {
         _;
     }
 
+    /*
+     * Public functions
+     */
+
+    /// @dev Contract constructor, sets ERC20 token this contract will use for payments
+    /// @param _token ERC20 contract address
     constructor(address _token) public {
         owner = msg.sender;
         token = IERC20(_token);
     }
 
-    // Reserve n accounts but delay assigning addresses
-    // Accounts will be claimed later using MerkleTree's rootHash
+
+    /// @dev Reserve accounts but delay assigning addresses
+    /// Accounts will be claimed later using MerkleTree's rootHash
+    /// @param n Number of accounts to reserve
+    /// @param rootHash Hash of the root node of the Merkle Tree referencing the list of addresses
    
     function bulkRegister(uint256 n, bytes32 rootHash) public {
         require(n > 0, "Cannot register 0 ids");
@@ -85,6 +101,11 @@ contract BatPay {
         accounts.length += n;
     }
 
+    /// @dev Complete registration for a reserved account by showing the bulkRegistration-id and Merkle proof associated with this address
+    /// @param addr Address claiming this account
+    /// @param proof Merkle proof for address and id
+    /// @param bulkId BulkRegistration id for the transaction reserving this account 
+    
     function claimId(address addr, uint256[] memory proof, uint id, uint bulkId) public {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
         uint minId = bulkRegistrations[bulkId].minId;
@@ -99,8 +120,8 @@ contract BatPay {
         accounts[id].addr = addr;
     }
 
-    // Register a new account
- 
+    /// @dev Register a new account
+    /// @return the id of the new account
     function register() public returns (uint32 ret) {
         require(accounts.length < maxAccount, "no more accounts left");
         ret = (uint32)(accounts.length);
@@ -133,6 +154,11 @@ contract BatPay {
     }
 
 */
+
+    /// @dev withdraw tokens from the batchpement contract into the original address
+    /// @param amount Amount of tokens to withdraw
+    /// @param id Id of the user requesting the withdraw. 
+
     function withdraw(uint64 amount, uint256 id) 
     public
     onlyOwnerId(id) 
@@ -148,6 +174,10 @@ contract BatPay {
         token.transfer(addr, amount);        
     }
 
+    /// @dev Deposit tokens into the BatchPayment contract to enable scalable payments
+    /// @param amount Amount of tokens to deposit on account. User should have enough balance and issue an approve method prior to calling this.
+    /// @param id The id of the user account. -1 will register a new account and deposit the requested amount on a single operation.
+   
     function deposit(uint64 amount, uint256 id) public {
         require(id < accounts.length || id == newAccount, "invalid id");
         require(amount > 0, "amount should be positive");
@@ -162,13 +192,23 @@ contract BatPay {
         }
     }
 
+    /// @dev Transfer tokens to multiple recipients
+    /// @param fromId account id for the originator of the transaction
+    /// @param amount amount of tokens to pay each destination. 
+    /// @param fee Fee in tokens to be payed to the party providing the unlocking service
+    /// @param payData efficient representation of the destination account list
+    /// @param newCount number of new destination accounts that will be reserved during the transfer transaction 
+    /// @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
+    /// @param lock hash of the key locking this payment to help in atomic data swaps.  
+    /// @param metadata Application specific data to be stored associated with the payment
+    
     function transfer(
         uint32 fromId, 
         uint64 amount, 
         uint64 fee,
         bytes memory payData, 
         uint newCount,      //  # of new Users included on bulkRegistration
-        bytes32 roothash,
+        bytes32 rootHash,
         bytes32 lock,
         bytes32 metadata) 
         public 
@@ -202,7 +242,7 @@ contract BatPay {
         p.minId = uint32(accounts.length);
         p.maxId = SafeMath.add32(p.minId, newCount); 
         if (newCount > 0) {
-            bulkRegister(newCount, roothash);
+            bulkRegister(newCount, rootHash);
         }
 
         p.metadata = metadata; 
@@ -213,6 +253,11 @@ contract BatPay {
         emit Transfer(payments.length-1, p.from, p.totalCount, p.amount);
     }
 
+    /// @dev provide the required key, releasing the payment and enabling the buyer decryption the digital content
+    /// @param payIndex payment Index associated with the transfer operation.
+    /// @param unlockerId id of the party providing the unlocking service. Fees wil be payed to this id
+    /// @param key Cryptographic key used to encrypt traded data
+   
     function unlock(uint32 payIndex, uint32 unlockerId, bytes memory key) public returns(bool) {
         require(payIndex < payments.length, "invalid payIndex");
         require(isValidId(unlockerId), "Invalid unlockerId");
@@ -226,6 +271,10 @@ contract BatPay {
         emit Unlock(payIndex, key);
         return true;
     }
+
+    /// @dev Enables the buyer to recover funds associated with a transfer operation for which decryption keys were not provided.
+    /// @param payIndex Index of the payment transaction associated with this request. 
+    /// @return true if the operation succeded.
 
     function refund(uint payIndex) public returns (bool) {
         require(payIndex < payments.length, "invalid payment Id");
@@ -248,6 +297,11 @@ contract BatPay {
         balanceAdd(p.from, total);
     }
 
+
+    /// @dev Helps verify a ECDSA signature, while recovering the signing address.
+    /// @param hash Hash of the signed message
+    /// @param _sig binary representation of the r, s & v parameters.
+    /// @return address of the signer if data provided is valid, zero oterwise.
 
     function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
@@ -285,6 +339,10 @@ contract BatPay {
         return ecrecover(prefixedHash, v, r, s); 
     }
 
+    /// @dev release a slot used for the collect chanel game, if the challenge game has ended.
+    /// @param delegate id of the account requesting the release operation
+    /// @param slot id of the slot requested for the duration of the challenge game
+
     function freeSlot(uint32 delegate, uint32 slot) public {
         require(isOwnerId(delegate), "only delegate can call");
 
@@ -310,6 +368,16 @@ contract BatPay {
         collects[delegate][slot] = s;
     }
     
+    /// @dev let users claim pending balance associated with prior transactions
+    /// @param delegate id of the delegate account performing the operation on the name fo the user.
+    /// @param slot Individual slot used for the challenge game.
+    /// @param to Destination of the collect operation. 
+    /// @param payIndex payIndex of the first payment index not covered by this application. 
+    /// @param amount amount of tokens owed to this user account
+    /// @param fee fee in tokens to be paid for the end user help.
+    /// @param destination Address to withdraw the full account balance
+    /// @param signature An R,S,V  ECDS signature provided by a user
+
     function collect(
         uint32 delegate,
         uint32 slot,
@@ -399,6 +467,10 @@ contract BatPay {
         accounts[to] = tacc;
     }
 
+    /// @dev initiate a challenge game
+    /// @param delegate id of the delegate that performed the collect operation in the name of the end-user.
+    /// @param slot slot used for the challenge game. Every user has a sperate set of slots
+    /// @param challenger id of the user account challenging the delegate.    
     function challenge_1(
         uint32 delegate, 
         uint32 slot, 
@@ -411,6 +483,11 @@ contract BatPay {
         emit Challenge_1(delegate, slot, challenger);
     }
 
+    /// @dev The delegate provides the list of payments that mentions the enduser
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
+    /// @param data binary list of payment indexes associated with this collect operation.
+
     function challenge_2(
         uint32 delegate, 
         uint32 slot, 
@@ -422,6 +499,11 @@ contract BatPay {
         emit Challenge_2(delegate, slot);
     }
 
+    /// @dev the Challenger chooses a single index into the delegate provided data list
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
+    /// @param data binary list of payment indexes associated with this collect operation.
+    /// @param index index into the data array for the payment id selected by the challenger
 
     function challenge_3(
         uint32 delegate,
@@ -437,6 +519,10 @@ contract BatPay {
         emit Challenge_3(delegate, slot, index);
     }
 
+    /// @dev the delegate provides proof that the destination account was included on that payment, winning the game
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
+ 
     function challenge_4(
         uint32 delegate,
         uint32 slot,
@@ -455,6 +541,10 @@ contract BatPay {
     }
 
 
+    /// @dev the challenge was completed successfully. The delegate stake is slahed.
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
+    
     function challenge_success(
         uint32 delegate,
         uint32 slot
@@ -465,6 +555,11 @@ contract BatPay {
         Challenge.challenge_success(collects[delegate][slot], accounts);
         emit Challenge_sucess(delegate, slot);
     }
+
+
+    /// @dev The delegate won the challenge game. He gets the challenge stake.
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
 
     function challenge_failed(
         uint32 delegate,
@@ -477,25 +572,45 @@ contract BatPay {
     }
 
 
+    /// @dev Increase the specified account balance by diff tokens.
+    /// @param id account id, as returned by register, bulkRegister and deposit
+    /// @param diff number of tokens
+    
     function balanceAdd(uint id, uint64 diff) private validId(id) {
         accounts[id].balance = SafeMath.add64(accounts[id].balance, diff);
     }
+
+    /// @dev substract diff tokens from the specified account's balance
+    /// @param id account id, as returned by register, bulkRegister and deposit
+    /// @param diff number of tokens
 
     function balanceSub(uint id, uint64 diff) private validId(id) {
         accounts[id].balance = SafeMath.sub64(accounts[id].balance, diff);
     }
 
+    /// @dev returns the balance associated with the account in tokens
+    /// @param id account requested.
+
     function balanceOf(uint id) public view validId(id) returns (uint64) {
         return accounts[id].balance;
     }
+
+    /// @dev gets number of accounts registered and reserved.
+    /// @return returns the size of the accounts array.
 
     function accountsLength() public view returns (uint) {
         return accounts.length;
     }
 
+    /// @dev gets the number of payments issued
+    /// @return returns the size of the payments array.
+
     function paymentsLength() public view returns (uint) {
         return payments.length;
     }
+
+    /// @dev gets the number of bulk registrations performed
+    /// @return the size of the bulkRegistrations array.
 
     function bulkLength() public view returns (uint) {
         return bulkRegistrations.length;

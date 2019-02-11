@@ -2,13 +2,14 @@ pragma solidity ^0.4.24;
 import "./Account.sol";
 import "./SafeMath.sol";
 
+/// @title Challenge game - Performs the operations associated with the different steps of the collect 
+/// challenge game
 
 library Challenge {
     uint constant public challengeBlocks = 300;     
     uint constant public challengeStepBlocks = 100;
     uint64 constant public collectStake = 100;
     uint64 constant public challengeStake = 100;
-
   
     struct CollectSlot {
         uint32  minPayIndex;
@@ -39,11 +40,18 @@ library Challenge {
         bytes32 metadata;
     }
 
+    /// @dev calculates new block numbers based on the current block and a delta constant specified by the protocol policy
+    /// @param delta number of blocks into the future to calculate
+    /// @return future block number
+
     function futureBlock(uint delta) private view returns(uint64) {
         return SafeMath.add64(block.number, delta);
     }    
 
-    
+    /// @dev Inspects the compact payment list provided and calculates the sum of the amounts referenced
+    /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
+    /// @return the sum of the amounts referenced on the array.
+
     function getDataSum(bytes memory data) public pure returns (uint sum) {
         uint n = data.length / 12;
         uint modulus = 2**64;
@@ -67,6 +75,12 @@ library Challenge {
         }
     }
 
+
+    /// @dev Helper function that obtains the amount/payIndex pair located at position index
+    /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
+    /// @param index Array item requested
+    /// @return amount and payIndex requested 
+
     function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
         uint mod1 = 2**64;
         uint mod2 = 2**32;
@@ -87,6 +101,11 @@ library Challenge {
             }
     }
 
+    /// @dev Internal function. Phase I of the challenging game
+    /// @param s Collect slot
+    /// @param accounts List of user accounts
+    /// @param challenger id of the challenger user
+
     function challenge_1(CollectSlot storage s, Account.Record[] storage accounts, uint32 challenger) internal {
         require(accounts[challenger].balance >= challengeStake, "not enough balance");
  
@@ -98,6 +117,10 @@ library Challenge {
         
         accounts[challenger].balance -= challengeStake;
     }
+
+    /// @dev Internal function. Phase II of the challenging game
+    /// @param s Collect slot
+    /// @param data Binary array listing the payments in which the user was referenced.
 
     function challenge_2(CollectSlot storage s, bytes memory data) internal {
         require(s.status == 2, "wrong slot status");
@@ -111,6 +134,10 @@ library Challenge {
         s.block = futureBlock(challengeStepBlocks);
     }
 
+    /// @dev Internal function. Phase III of the challenging game
+    /// @param s Collect slot
+    /// @param data Binary array listing the payments in which the user was referenced.
+    /// @param index selecting the disputed payment
 
     function challenge_3(CollectSlot storage s, bytes memory data, uint32 index) internal {  
         require(s.status == 3);
@@ -123,6 +150,12 @@ library Challenge {
         s.block = futureBlock(challengeStepBlocks);
     }
 
+    /// @dev Internal function. Phase IV of the challenging game
+    /// @param s Collect slot
+    /// @param accounts List of user accounts
+    /// @param payments internal array listing all recorded payments
+    /// @param payData binary data describing the list of account receiving tokens on the selected transfer
+  
     function challenge_4(
         CollectSlot storage s, 
         Account.Record[] storage accounts, 
@@ -170,6 +203,11 @@ library Challenge {
         s.status = 5;
     }
 
+    /// @dev the challenge was completed successfully, or the delegate failed to respond on time. 
+    /// The challenger will collect the stake.
+    /// @param s Collect slot
+    /// @param accounts List of user accounts
+
     function challenge_success(CollectSlot storage s, Account.Record[] storage accounts) internal {
         require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
 
@@ -180,6 +218,10 @@ library Challenge {
         s.status = 0;
     }
 
+    /// @dev Internal function. The delegate proved the challenger wrong, or the challenger failed to respond on time. The delegae collects the stake.
+    /// @param s Collect slot
+    /// @param accounts List of user accounts
+    
     function challenge_failed(CollectSlot storage s, Account.Record[] storage accounts) internal {
         require(s.status == 5 || (s.status == 3 && block.number >= s.block), "challenge not completed");
 
