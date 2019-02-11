@@ -1,49 +1,109 @@
 var lib = require('../lib')(web3, artifacts);
 var bat = lib.bat;
+var utils = lib.utils;
 
 var StandardToken = artifacts.require('StandardToken');
 var BatPay = artifacts.require('BatPay');
 
 var bp,st,id;
+var b;
 
-const depositAmount = 1000;
+const passcode = "x1234";
+
+const depositAmount = 100000;
 
 var stats = {};
+var acc;
 
+var id, id2;
 
 function addStat(what, gas) {
     stats[what] = gas;
 }
 
 async function init() {
-        let ins = await lib.newInstances();
+        acc = web3.eth.accounts;
 
+        let ins = await lib.newInstances();
         st = ins.token;
         bp = ins.bp;
+
+        b = new bat.BP(ins.bp, ins.token);
+        await b.init();
+}
+
+async function register() {
+    let [i0, t] = await b.register(acc[0]);
+
+    
+    let [i1, t2] = await b.register(acc[0]);
+    addStat('register', t2.gasUsed);
+    
+    id = i0;
+    id2 = i1;
 }
 
 async function deposit(amount) {
-        let tx1 = await st.approve(bp.address, amount);
-        let tx2 = await bp.deposit(amount, bat.newAccount);
-        id = (await bp.accountsLength.call()).toNumber()-1;
-
-        addStat("deposit", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
-        addStat("deposit.token.approve", tx1.receipt.gasUsed);
-        addStat("deposit.batpay.deposit", tx2.receipt.gasUsed);  
+        let [id2, t1, t2] = await b.deposit(amount, -1, acc[0]);
+        
+        [id2, t1, t2] = await b.deposit(amount, -1, acc[0]);
+      
+        addStat("deposit", t1.gasUsed + t2.gasUsed);
+        addStat("deposit.token.approve", t1.gasUsed);
+        addStat("deposit.batpay.deposit", t2.gasUsed);
+    
 }
 
 async function depositE(amount) {
-    let tx1 = await st.approve(bp.address, amount);
-    let tx2 = await bp.deposit(amount, id);
+       
+    let [id2, t1, t2] = await b.deposit(amount, id);
+   
  
-    addStat("deposit-existing", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
-    addStat("deposit-existing.token.approve", tx1.receipt.gasUsed);
-    addStat("deposit-existing.batpay.deposit", tx2.receipt.gasUsed);
+    addStat("deposit-existing", t1.gasUsed + t2.gasUsed);
 }
 
 async function bulkReg(count) {
-    let tx1 = await bp.bulkRegister(count, 0x1234);
-    addStat("bulkRegister", tx1.receipt.gasUsed);
+    let list = [];
+    for(let i = 0; i<count; i++) list.push(acc[i % acc.length]);
+
+    await b.bulkRegister(list);
+
+    let bulk = await b.bulkRegister(list);
+    addStat("bulkRegister-"+count, bulk.recp.gasUsed);
+
+    let [id, addr, t] = await b.claimId(bulk, list[0], bulk.minId);
+    addStat("claimId", t.gasUsed);
+}
+
+async function transfer( amount, fee, count, lock, name) {
+    let list = [];
+    for(let i = 0; i<count; i++) list.push(i);
+  
+    let [pid, t] = await b.transfer(0, 10, 1, list, lock);
+    addStat(name, t.gasUsed);
+}
+
+async function unlock() {
+    let list = [];
+    for(let i = 0; i<100; i++) list.push(i);
+    let lock = utils.hashLock(id2, passcode);
+    let [pid, t] = await b.transfer(0, 10, 1, list, lock);
+    
+    let t2 = await b.unlock(pid, id2, passcode);
+    addStat("unlock", t2.gasUsed);
+}
+
+
+async function refund() {
+    let list = [];
+    for(let i = 0; i<100; i++) list.push(i);
+    let lock = utils.hashLock(id2, passcode);
+    let [pid, t] = await b.transfer(0, 10, 1, list, lock);
+   
+    await utils.skipBlocks(b.unlockBlocks);
+
+    let t2 = await b.refund(pid);
+    addStat("refund", t2.gasUsed);
 }
 
 async function withdraw(amount) {
@@ -51,13 +111,63 @@ async function withdraw(amount) {
         addStat("withdraw", tx1.receipt.gasUsed);
 }
 
+async function collect() {
+    let t = await b.collect(id, 0, id2, 0, 1, 100, 2, 0);
+    let t2 = await b.collect(id, 1, id2, 1, 2, 100, 2, 0);
+    addStat("collect-empty-nowd", t2.gasUsed);
+    let t3 = await b.collect(id, 2, id2, 2, 3, 100, 2, acc[0]);
+    addStat("collect-empty-withdraw", t3.gasUsed);
+
+    let t7 = await b.collect(id, b.instantSlot, id2, 3, 4, 100, 2, acc[0]);
+    addStat("collect-empty-instant-withdraw", t7.gasUsed);
+
+
+    await utils.skipBlocks(b.challengeBlocks);
+    let t4 = await b.freeSlot(id, 0);
+    addStat("freeSlot-nowd", t4.gasUsed);
+
+    let t5 = await b.freeSlot(id, 2);
+    addStat("freeSlot-withdraw", t5.gasUsed);
+
+    let t6 = await b.collect(id, 1, id2, 4, 5, 100, 2, acc[0]);
+    addStat("collect-reuse-nowd", t6.gasUsed);
+
+
+}
+
+async function challenge() {
+    let t7 = await b.challenge_1(id, 1, id);
+    addStat("challenge_1", t7.gasUsed);
+
+}
+
 async function doStuff() {
     try {
         await init();
+        await register();
         await deposit(depositAmount);
         await depositE(depositAmount);
+        await bulkReg(100);
         await bulkReg(1000);
+        
         await withdraw(10);
+
+        let lock = utils.hashLock(0, passcode);
+        let run = [10,50,100,250,500];
+
+
+        for(let i = 0; i<run.length; i++) {
+            let count = run[i];
+            await transfer(1, 2, count, 0, "transfer-"+count+"-nolock");
+            await transfer(1, 2, count, lock, "transfer-"+count+"-lock");
+            console.log(count);
+        }    
+    
+        await unlock();
+        await refund();
+        await collect();
+        await challenge();
+
         console.log(stats);
     } catch (e) {
         console.log(e);
