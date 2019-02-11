@@ -81,7 +81,7 @@ async function doStuff() {
 
     console.log("collect for "+id1);
 
-    let sign = utils.signCollect(web3.eth.accounts[0], delegate, id1, 0, 1, 1, 0, 0);
+    let sign = utils.signCollect(web3.eth.accounts[0], bp.address, delegate, id1, 0, 1, 1, 0, 0);
     
 
     console.log("sign="+sign);

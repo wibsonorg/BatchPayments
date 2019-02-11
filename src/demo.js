@@ -111,7 +111,7 @@ function getCollectAmount(id, fromIndex, toIndex) {
 }
 
 async function bpCollect(delegate, slot, to, fromId, toId, amount, fee, addr) {
-    let signature = utils.signCollect(ids[to], delegate, to, fromId, toId, amount, fee, addr);
+    let signature = utils.signCollect(ids[to], bp.address, delegate, to, fromId, toId, amount, fee, addr);
 
     let tx = await bp.collect(delegate, slot, to, toId, amount, fee, addr, signature);
 }
