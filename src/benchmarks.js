@@ -9,8 +9,8 @@ var bp,st,id;
 var b;
 
 const passcode = "x1234";
-
-const depositAmount = 100000;
+const max = 200000; // size of the user set
+const depositAmount = 900000;
 
 var stats = {};
 var acc;
@@ -76,9 +76,8 @@ async function bulkReg(count) {
 }
 
 async function transfer( amount, fee, count, lock, name) {
-    let list = [];
-    for(let i = 0; i<count; i++) list.push(i);
-  
+    let list = utils.randomIds(count, max);
+    
     let [pid, t] = await b.transfer(0, 10, 1, list, lock);
     addStat(name, t.gasUsed);
 }
@@ -131,14 +130,11 @@ async function collect() {
 
     let t6 = await b.collect(id, 1, id2, 4, 5, 100, 2, acc[0]);
     addStat("collect-reuse-nowd", t6.gasUsed);
-
-
 }
 
 async function challenge() {
     let t7 = await b.challenge_1(id, 1, id);
     addStat("challenge_1", t7.gasUsed);
-
 }
 
 async function doStuff() {
@@ -153,7 +149,7 @@ async function doStuff() {
         await withdraw(10);
 
         let lock = utils.hashLock(0, passcode);
-        let run = [10,50,100,250,500];
+        let run = [10,50,100,250,500,1000,2000,3000];
 
 
         for(let i = 0; i<run.length; i++) {
