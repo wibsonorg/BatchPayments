@@ -87,7 +87,7 @@ library Challenge {
             }
     }
 
-    function challenge_1(CollectSlot storage s, Account.Record[] storage accounts, uint32 challenger) public {
+    function challenge_1(CollectSlot storage s, Account.Record[] storage accounts, uint32 challenger) internal {
         require(accounts[challenger].balance >= challengeStake, "not enough balance");
  
         require(s.status == 1, "slot is not available for challenge");      
@@ -99,7 +99,7 @@ library Challenge {
         accounts[challenger].balance -= challengeStake;
     }
 
-    function challenge_2(CollectSlot storage s, bytes memory data) public {
+    function challenge_2(CollectSlot storage s, bytes memory data) internal {
         require(s.status == 2, "wrong slot status");
         require (block.number < s.block, "challenge time has passed");
 
@@ -112,7 +112,7 @@ library Challenge {
     }
 
 
-    function challenge_3(CollectSlot storage s, bytes memory data, uint32 index) public {  
+    function challenge_3(CollectSlot storage s, bytes memory data, uint32 index) internal {  
         require(s.status == 3);
         require(index < data.length/12);
         require (block.number < s.block, "challenge time has passed");
@@ -128,7 +128,7 @@ library Challenge {
         Account.Record[] storage accounts, 
         Payment[] storage payments, 
         bytes memory payData) 
-        public 
+        internal 
     {
         require(s.status == 4);
         require(block.number < s.block, "challenge time has passed");
@@ -170,7 +170,7 @@ library Challenge {
         s.status = 5;
     }
 
-    function challenge_success(CollectSlot storage s, Account.Record[] storage accounts) public {
+    function challenge_success(CollectSlot storage s, Account.Record[] storage accounts) internal {
         require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
 
         accounts[s.challenger].balance = SafeMath.add64(
@@ -180,7 +180,7 @@ library Challenge {
         s.status = 0;
     }
 
-    function challenge_failed(CollectSlot storage s, Account.Record[] storage accounts) public {
+    function challenge_failed(CollectSlot storage s, Account.Record[] storage accounts) internal {
         require(s.status == 5 || (s.status == 3 && block.number >= s.block), "challenge not completed");
 
         // Challenge failed
