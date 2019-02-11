@@ -36,7 +36,7 @@ contract BatPay {
     event Challenge_2(uint delegate, uint slot);
     event Challenge_3(uint delegate, uint slot, uint index);
     event Challenge_4(uint delegate, uint slot);
-    event Challenge_sucess(uint delegate, uint slot);
+    event Challenge_success(uint delegate, uint slot);
     event Challenge_failed(uint delegate, uint slot);  
 
     mapping (uint32 => mapping (uint32 => Challenge.CollectSlot)) public collects;
@@ -553,7 +553,7 @@ contract BatPay {
         validId(delegate) 
     {
         Challenge.challenge_success(collects[delegate][slot], accounts);
-        emit Challenge_sucess(delegate, slot);
+        emit Challenge_success(delegate, slot);
     }
 
 
