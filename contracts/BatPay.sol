@@ -364,10 +364,10 @@ contract BatPay {
         collects[delegate][slot].status = 0;
 
         if (amount != 0) 
-            require(token.transfer(s.addr, balance), "transfer failed");
+            require(token.transfer(s.addr, amount), "transfer failed");
     }
 
-    /// @dev release a slot used for the collect chanel game, if the challenge game has ended.
+    /// @dev release a slot used for the collect channel game, if the challenge game has ended.
     /// @param delegate id of the account requesting the release operation
     /// @param slot id of the slot requested for the duration of the challenge game
 
