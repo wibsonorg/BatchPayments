@@ -1,6 +1,6 @@
-# BatchPayments 
+# BatchPayment
 ## Payment scaling contract
-A proxy contract to reduce gas costs for operating with existing erc20 token on the ethereum blockchain.
+An intermediary contract to reduce gas costs associated with operating with existing erc20 tokens on the ethereum blockchain.
 
 ## Summary
 
