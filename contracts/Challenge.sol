@@ -27,18 +27,7 @@ library Challenge {
         bytes32 data;
     }
 
-    struct Payment {
-        uint32  from;
-        uint64  amount;
-        uint64  fee;
-        uint32  minId;  
-        uint32  maxId;
-        uint32  totalCount;
-        uint64  block;
-        bytes32 hash;
-        bytes32 lock;
-        bytes32 metadata;
-    }
+  
 
     /// @dev calculates new block numbers based on the current block and a delta constant specified by the protocol policy
     /// @param delta number of blocks into the future to calculate
@@ -157,14 +146,14 @@ library Challenge {
   
     function challenge_4(
         CollectSlot storage s, 
-        Payment[] storage payments, 
+        Account.Payment[] storage payments, 
         bytes memory payData) 
         internal 
     {
         require(s.status == 4);
         require(block.number < s.block, "challenge time has passed");
         require(s.index >= s.minPayIndex && s.index < s.maxPayIndex, "payment referenced is out of range");
-        Payment memory p = payments[s.index];
+        Account.Payment memory p = payments[s.index];
         require(keccak256(payData) == p.hash, "payData is incorrect");
         
         uint bytesPerId = uint(payData[1]);

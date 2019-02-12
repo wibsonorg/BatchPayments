@@ -45,7 +45,7 @@ contract BatPay {
     IERC20 public token;
     Account.Record[] public accounts;
     Account.BulkRecord[] public bulkRegistrations;
-    Challenge.Payment[] public payments;
+    Account.Payment[] public payments;
 
     function isValidId(uint id) public view returns (bool) {
         return (id < accounts.length);
@@ -213,7 +213,7 @@ contract BatPay {
         bytes32 metadata) 
         public 
     {
-        Challenge.Payment memory p;
+        Account.Payment memory p;
         p.from = fromId;
         p.amount = amount;
         p.fee = fee;
@@ -280,7 +280,7 @@ contract BatPay {
         require(payIndex < payments.length, "invalid payment Id");
         require(payments[payIndex].lock != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].block, "Hash lock has not expired yet");
-        Challenge.Payment memory p = payments[payIndex];
+        Account.Payment memory p = payments[payIndex];
         
         require(p.totalCount > 0, "payment already refunded");
         

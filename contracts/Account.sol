@@ -12,5 +12,18 @@ library Account {
         uint32  n;
         uint32  minId;
     }
+
+    struct Payment {
+        uint32  from;
+        uint64  amount;
+        uint64  fee;
+        uint32  minId;  
+        uint32  maxId;
+        uint32  totalCount;
+        uint64  block;
+        bytes32 hash;
+        bytes32 lock;
+        bytes32 metadata;
+    }
  
 }
