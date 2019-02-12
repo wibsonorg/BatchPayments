@@ -6,8 +6,8 @@ import "./SafeMath.sol";
 /// challenge game
 
 library Challenge {
-    uint constant public challengeBlocks = 300;     
-    uint constant public challengeStepBlocks = 100;
+    uint constant public challengeBlocks = 30;     
+    uint constant public challengeStepBlocks = 10;
     uint64 constant public collectStake = 100;
     uint64 constant public challengeStake = 100;
   
@@ -152,13 +152,11 @@ library Challenge {
 
     /// @dev Internal function. Phase IV of the challenging game
     /// @param s Collect slot
-    /// @param accounts List of user accounts
     /// @param payments internal array listing all recorded payments
     /// @param payData binary data describing the list of account receiving tokens on the selected transfer
   
     function challenge_4(
         CollectSlot storage s, 
-        Account.Record[] storage accounts, 
         Payment[] storage payments, 
         bytes memory payData) 
         internal 

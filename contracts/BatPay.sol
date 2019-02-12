@@ -20,10 +20,10 @@ contract BatPay {
     uint constant public newAccount = 2**256-1;     // Request registration of new account
     uint constant public maxBalance = 2**64-1;      // Maximum supported token balance
     uint constant public maxTransfer = 100000;      // Maximum number of destination accounts per transfer
-    uint constant public unlockBlocks = 20;         // Number of blocks the contract waits for unlock
+    uint constant public unlockBlocks = 10;         // Number of blocks the contract waits for unlock
     uint32 constant public instantSlot = 32768;     // Slots reserved for Instant collect&withdraw for user
-    uint constant public challengeBlocks = 300;     // Number of blocks the contracts waits for a challenge
-    uint constant public challengeStepBlocks = 100; // Number of blocks the contract waits for each individual challenge step
+    uint constant public challengeBlocks = 30;     // Number of blocks the contracts waits for a challenge
+    uint constant public challengeStepBlocks = 10; // Number of blocks the contract waits for each individual challenge step
     uint64 constant public collectStake = 100;      // Collect/delegate stake in tokens  
     uint64 constant public challengeStake = 100;    // Challenger stake in tokens.
 
@@ -207,7 +207,7 @@ contract BatPay {
         uint64 amount, 
         uint64 fee,
         bytes memory payData, 
-        uint newCount,      //  # of new Users included on bulkRegistration
+        uint newCount,      
         bytes32 rootHash,
         bytes32 lock,
         bytes32 metadata) 
@@ -339,13 +339,7 @@ contract BatPay {
         return ecrecover(prefixedHash, v, r, s); 
     }
 
-    /// @dev release a slot used for the collect chanel game, if the challenge game has ended.
-    /// @param delegate id of the account requesting the release operation
-    /// @param slot id of the slot requested for the duration of the challenge game
-
-    function freeSlot(uint32 delegate, uint32 slot) public {
-        require(isOwnerId(delegate), "only delegate can call");
-
+    function _freeSlot(uint32 delegate, uint32 slot) private {
         Challenge.CollectSlot memory s = collects[delegate][slot];
 
         if (s.status == 0) return;
@@ -358,14 +352,28 @@ contract BatPay {
         uint64 balance = SafeMath.add64(
             accounts[s.to].balance, 
             SafeMath.sub64(s.amount, s.delegateAmount));
+        
+        uint amount = 0;
 
         if (s.addr != address(0)) {
-            token.transfer(s.addr, balance);
+            amount = balance;
             balance = 0;
         } 
         accounts[s.to].balance = balance;
-        s.status = 0;
-        collects[delegate][slot] = s;
+
+        collects[delegate][slot].status = 0;
+
+        if (amount != 0) 
+            require(token.transfer(s.addr, balance), "transfer failed");
+    }
+
+    /// @dev release a slot used for the collect chanel game, if the challenge game has ended.
+    /// @param delegate id of the account requesting the release operation
+    /// @param slot id of the slot requested for the duration of the challenge game
+
+    function freeSlot(uint32 delegate, uint32 slot) public {
+        require(isOwnerId(delegate), "only delegate can call");
+        _freeSlot(delegate, slot);
     }
     
     /// @dev let users claim pending balance associated with prior transactions
@@ -387,15 +395,14 @@ contract BatPay {
         uint64 fee, 
         address destination,
         bytes memory signature
-        ) 
+        )
         public
         
     {
-        // Check delegate is valid
-        require(delegate < accounts.length, "delegate must be a valid account id");
+        require(isOwnerId(delegate), "invalid delegate");
+        _freeSlot(delegate, slot);
+      
         Account.Record memory acc = accounts[delegate];
-        require(acc.addr != 0, "account registration has be to completed for delegate");
-        require(acc.addr == msg.sender, "only delegate can initiate collect");
         
         // Check to is valid
         require(to <= accounts.length, "to must be a valid account id");
@@ -416,19 +423,17 @@ contract BatPay {
         sl.delegate = delegate;
 
         if (delegate != to) {
-            // Check that "to" != delegate, check who signed this transaction
+            // If "to" != delegate, check who signed this transaction
             bytes32 hash = keccak256(abi.encodePacked(address(this), delegate, to, tacc.collected, payIndex, amount, fee, destination)); 
             
             require(recoverHelper(hash, signature) == tacc.addr, "Bad user signature");
         }
 
-        // free slot if necessary
-        freeSlot(delegate, slot);
-        
         sl.minPayIndex = tacc.collected;
         sl.maxPayIndex = payIndex;
 
         uint64 needed = collectStake;
+
         // check if this is an instant collect
         if (slot >= instantSlot) {
             sl.delegateAmount = amount;
@@ -436,18 +441,12 @@ contract BatPay {
                 tacc.balance,
                 SafeMath.sub64(amount, fee));
 
-            // check if the user is withdrawing its balance
-            if (destination != address(0)) {
-                token.transfer(destination, tacc.balance);
-                tacc.balance = 0;
-            }
-
             sl.addr = address(0);
             needed = SafeMath.add64(
                 needed, 
                 SafeMath.sub64(amount, fee));
-        } else
-        {
+        } else 
+        {   // not instant-collect
             sl.addr = destination;
             sl.delegateAmount = fee;
         }    
@@ -465,6 +464,12 @@ contract BatPay {
      
         tacc.collected = uint32(payIndex);
         accounts[to] = tacc;
+
+        // check if the user is withdrawing its balance
+        if (destination != address(0) && slot >= instantSlot) {
+            accounts[to].balance = 0;
+            require(token.transfer(destination, tacc.balance), "transfer failed");
+        } 
     }
 
     /// @dev initiate a challenge game
@@ -532,7 +537,6 @@ contract BatPay {
     {
         Challenge.challenge_4(
             collects[delegate][slot], 
-            accounts, 
             payments,
             payData
             );
