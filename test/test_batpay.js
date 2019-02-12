@@ -7,7 +7,7 @@ const assertPasses = truffleAssertions.passes;
 const eventEmitted = truffleAssertions.eventEmitted; 
 var BigNumber = web3.BigNumber;
 var lib = require('../lib')(web3, artifacts);
-var { utils } = lib;
+var { utils, bat } = lib;
 const TestHelper = artifacts.require('./TestHelper');
 const merkle = lib.merkle;
 
@@ -470,6 +470,211 @@ contract('BatPay', (addr)=> {
 //        require(hash == rootHash, "Merkle proof invalid");
     });
 
+    describe("collect", ()=> {
+        let b,id;
+        let acc;
+        let userid = [];
+        let payid = [];
+        let nUsers = 10;
+        let nPays = 10;
+        let maxPayIndex = 0;
+
+
+        before(async ()=> {
+            b = new bat.BP(bp, st);
+            acc = web3.eth.accounts;
+
+            await b.init();
+            let [mainId, receipt] = await b.deposit(100000, -1, acc[0]);
+            id = mainId;
+
+            for(let i = 0; i<nUsers; i++)
+            {
+                let [ id, t ] = await b.register(acc[0]);
+                userid.push(id);
+            }
+
+            for(let i = 0; i<nPays; i++) 
+            {
+                let [ pid, t ] = await b.transfer(id, 10, 2, userid, 0);
+                payid.push(pid);
+                if (pid > maxPayIndex) maxPayIndex = pid;
+            }
+
+            await utils.skipBlocks(b.unlockBlocks);
+        });
+        it('should collect', async ()=>{
+            let mid = userid[0];
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            await b.collect(id, 0, mid, 0, maxPayIndex+1, amount, 0, 0);
+            await utils.skipBlocks(b.challengeBlocks);
+            await b.freeSlot(id, 0);
+            let b1 = (await b.balanceOf(mid)).toNumber();
+            assert.equal(b0+amount,b1);
+        });
+        it('should instant-collect', async ()=>{
+            let mid = userid[1];
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            await b.collect(id, b.instantSlot, mid, 0, maxPayIndex+1, amount, 0, 0);
+            let b1 = (await b.balanceOf(mid)).toNumber();
+        
+            assert.equal(b0+amount,b1);
+        });
+        it('should reuse slot', async ()=>{
+            let mid = userid[2];
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex/2);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            await b.collect(id, 1, mid, 0, maxPayIndex/2, amount, 0, 0);
+            await utils.skipBlocks(b.challengeBlocks);
+            let amount2 = await b.getCollectAmount(mid, maxPayIndex/2, maxPayIndex+1);
+            // await b.freeSlot(id, 1);
+            let r1 = await b.collect(id, 1, mid, maxPayIndex/2, maxPayIndex+1, amount2, 0, 0);
+            let b1 = (await b.balanceOf(mid)).toNumber();
+            await utils.skipBlocks(b.challengeBlocks);
+            await b.freeSlot(id, 1);
+            let b2 = (await b.balanceOf(mid)).toNumber();  
+            assert.equal(b0+amount,b1);
+            assert.equal(b1+amount2, b2);
+        });
+        it('should pay fee on instant-collect', async ()=>{
+            let mid = userid[3];
+            let slot = b.instantSlot+1;
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let fee = Math.floor(amount/3);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            let c0 = (await b.balanceOf(id)).toNumber();
+            await b.collect(id, slot, mid, 0, maxPayIndex+1, amount, amount/3, 0);
+            await utils.skipBlocks(b.challengeBlocks);
+            await b.freeSlot(id, slot);
+
+            let b1 = (await b.balanceOf(mid)).toNumber();
+            let c1 = (await b.balanceOf(id)).toNumber();
+           
+            assert.equal(b0+amount-fee,b1);
+            assert.equal(c0+fee, c1);
+        });
+        it('should pay fee', async ()=>{
+            let mid = userid[4];
+            let slot = 2;
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let fee = Math.floor(amount/3);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            let c0 = (await b.balanceOf(id)).toNumber();
+            await b.collect(id, slot, mid, 0, maxPayIndex+1, amount, amount/3, 0);
+            await utils.skipBlocks(b.challengeBlocks);
+            await b.freeSlot(id, slot);
+
+            let b1 = (await b.balanceOf(mid)).toNumber();
+            let c1 = (await b.balanceOf(id)).toNumber();
+           
+            assert.equal(b0+amount-fee,b1);
+            assert.equal(c0+fee, c1);
+        });
+        it('should withdraw if requested', async ()=>{
+            let mid = userid[5];
+            let slot = 3;
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let fee = Math.floor(amount/3);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            let c0 = (await b.balanceOf(id)).toNumber();
+            let d0 = (await b.tokenBalance(acc[1])).toNumber();
+
+            await b.collect(id, slot, mid, 0, maxPayIndex+1, amount, amount/3, acc[1]);
+            await utils.skipBlocks(b.challengeBlocks);
+            await b.freeSlot(id, slot);
+
+            let b1 = (await b.balanceOf(mid)).toNumber();
+            let c1 = (await b.balanceOf(id)).toNumber();
+            let d1 = (await b.tokenBalance(acc[1])).toNumber();
+  
+            assert.equal(d0+amount-fee,d1);
+            assert.equal(c0+fee, c1);
+          //  assert.equal(b1, 0);
+
+        });
+        it('should withdraw if requested instant', async ()=>{
+            let mid = userid[6];
+            let slot = b.instantSlot+2;
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let fee = Math.floor(amount/3);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            let c0 = (await b.balanceOf(id)).toNumber();
+            let d0 = (await b.tokenBalance(acc[1])).toNumber();
+
+            await b.collect(id, slot, mid, 0, maxPayIndex+1, amount, amount/3, acc[1]);
+            let b1 = (await b.balanceOf(mid)).toNumber();
+            let d1 = (await b.tokenBalance(acc[1])).toNumber();
+  
+            await utils.skipBlocks(b.challengeBlocks);
+            await b.freeSlot(id, slot);
+
+            let c1 = (await b.balanceOf(id)).toNumber();
+         
+            assert.equal(d0+amount-fee,d1);
+            assert.equal(c0+fee, c1);
+            assert.equal(b1, 0);
+            
+        });
+        it('should reject if wrong payIndex', async ()=>{
+            let mid = userid[6];
+            let slot = b.instantSlot+2;
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let [addr,balance,collected] = await b.getAccount(mid);
+
+            let fee = Math.floor(amount/3);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            let c0 = (await b.balanceOf(id)).toNumber();
+            let d0 = (await b.tokenBalance(acc[1])).toNumber();
+
+            assertRequire(b.collect(id, slot, mid, collected, maxPayIndex+1, amount, amount/3, acc[1]), "payIndex is not a valid value");
+    
+        });
+        it('should reject if invalid payIndex', async ()=>{
+            let mid = userid[6];
+            let slot = b.instantSlot+2;
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let [addr,balance,collected] = await b.getAccount(mid);
+
+            let fee = Math.floor(amount/3);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            let c0 = (await b.balanceOf(id)).toNumber();
+            let d0 = (await b.tokenBalance(acc[1])).toNumber();
+
+            assertRequire(b.collect(id, slot, mid, collected, (await b.paymentsLength())+100, amount, amount/3, acc[1]), "invalid payIndex");
+    
+        });
+        
+        it('should reject if invalid to-id', async ()=>{
+            let mid = userid[6];
+            let slot = b.instantSlot+2;
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let [addr,balance,collected] = await b.getAccount(mid);
+
+            let fee = Math.floor(amount/3);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            let c0 = (await b.balanceOf(id)).toNumber();
+            let d0 = (await b.tokenBalance(acc[1])).toNumber();
+
+            assertRequire(b.collect(id, slot, 1000000, 0, 1, amount, amount/3, acc[1]), "to must be a valid account id");
+    
+        });
+        it('should reject invalid signature/wrong fromPayIndex', async ()=>{
+            let mid = userid[7];
+            let slot = b.instantSlot+2;
+            let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
+            let [addr,balance,collected] = await b.getAccount(mid);
+
+            let fee = Math.floor(amount/3);
+            let b0 = (await b.balanceOf(mid)).toNumber();
+            let c0 = (await b.balanceOf(id)).toNumber();
+            let d0 = (await b.tokenBalance(acc[1])).toNumber();
+
+            assertRequire(b.collect(id, slot, 1000000, collected+1, maxPayIndex, amount, amount/3, 0), "Bad user signature");
+    
+        });
+    });
     describe ("misc", ()=> {
         it('cannot obtain the balance for invalid id', async ()=> {
             let l0 = await bp.accountsLength.call();
