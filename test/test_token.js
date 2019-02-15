@@ -31,6 +31,9 @@ contract('StandardToken', async (accounts)=> {
     });
 
     it("Should handle simple transfers", async()=> {
+        let tx = await instance.transfer(a1, 1);
+        await tx.receipt
+
         let v0 = await instance.balanceOf.call(a0);
         let v1 = await instance.balanceOf.call(a1);
 
@@ -39,7 +42,8 @@ contract('StandardToken', async (accounts)=> {
         const x = 10;
 
         for(let i = 0; i<5; i++) {
-            await instance.transfer(a1, x);
+            let tx = await instance.transfer(a1, 10);
+            await tx.receipt
             let w0 = await instance.balanceOf.call(a0);
             let w1 = await instance.balanceOf.call(a1);
             w0 = w0.toNumber();
