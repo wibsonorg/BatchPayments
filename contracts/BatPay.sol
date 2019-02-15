@@ -206,12 +206,12 @@ contract BatPay {
         uint32 fromId, 
         uint64 amount, 
         uint64 fee,
-        bytes memory payData, 
+        bytes payData, 
         uint newCount,      
         bytes32 rootHash,
         bytes32 lock,
         bytes32 metadata) 
-        public 
+        external 
     {
         Account.Payment memory p;
         p.from = fromId;
