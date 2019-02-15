@@ -1,6 +1,7 @@
 {
-  "name": "batpay",
+  "name": "batchpayments",
   "version": "1.0.0",
+  "private": true,
   "description": "a batch payments solution for ethereum",
   "main": "",
   "directories": {
