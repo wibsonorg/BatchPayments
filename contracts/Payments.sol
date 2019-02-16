@@ -1,16 +1,28 @@
 pragma solidity ^0.4.24;
-import "./Account.sol";
+import "./Accounts.sol";
 import "./SafeMath.sol";
 
-/// @title Challenge game - Performs the operations associated with the different steps of the collect 
-/// challenge game
+/// @title Payments and Challenge game - Performs the operations associated with transfer and the different 
+/// steps of the collect challenge game
 
-library Challenge {
+contract Payments is Accounts {
     uint constant public challengeBlocks = 30;     
     uint constant public challengeStepBlocks = 10;
     uint64 constant public collectStake = 100;
     uint64 constant public challengeStake = 100;
-  
+    uint32 constant public instantSlot = 32768;
+    uint public unlockBlocks = 10;
+    
+    event Transfer(uint payIndex, uint from, uint totalCount, uint amount);
+    event Unlock(uint payIndex, bytes key);
+    event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
+    event Challenge_1(uint delegate, uint slot, uint challenger);
+    event Challenge_2(uint delegate, uint slot);
+    event Challenge_3(uint delegate, uint slot, uint index);
+    event Challenge_4(uint delegate, uint slot);
+    event Challenge_success(uint delegate, uint slot);
+    event Challenge_failed(uint delegate, uint slot);  
+
     struct CollectSlot {
         uint32  minPayIndex;
         uint32  maxPayIndex;
@@ -27,6 +39,8 @@ library Challenge {
         bytes32 data;
     }
 
+
+    mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
   
 
     /// @dev calculates new block numbers based on the current block and a delta constant specified by the protocol policy
@@ -92,10 +106,9 @@ library Challenge {
 
     /// @dev Internal function. Phase I of the challenging game
     /// @param s Collect slot
-    /// @param accounts List of user accounts
     /// @param challenger id of the challenger user
 
-    function challenge_1(CollectSlot storage s, Account.Record[] storage accounts, uint32 challenger) internal {
+    function challenge_1(CollectSlot storage s, uint32 challenger) internal {
         require(accounts[challenger].balance >= challengeStake, "not enough balance");
  
         require(s.status == 1, "slot is not available for challenge");      
@@ -141,19 +154,17 @@ library Challenge {
 
     /// @dev Internal function. Phase IV of the challenging game
     /// @param s Collect slot
-    /// @param payments internal array listing all recorded payments
     /// @param payData binary data describing the list of account receiving tokens on the selected transfer
   
     function challenge_4(
         CollectSlot storage s, 
-        Account.Payment[] storage payments, 
         bytes memory payData) 
         internal 
     {
         require(s.status == 4);
         require(block.number < s.block, "challenge time has passed");
         require(s.index >= s.minPayIndex && s.index < s.maxPayIndex, "payment referenced is out of range");
-        Account.Payment memory p = payments[s.index];
+        Payment memory p = payments[s.index];
         require(keccak256(payData) == p.hash, "payData is incorrect");
         
         uint bytesPerId = uint(payData[1]);
@@ -193,9 +204,8 @@ library Challenge {
     /// @dev the challenge was completed successfully, or the delegate failed to respond on time. 
     /// The challenger will collect the stake.
     /// @param s Collect slot
-    /// @param accounts List of user accounts
-
-    function challenge_success(CollectSlot storage s, Account.Record[] storage accounts) internal {
+   
+    function challenge_success(CollectSlot storage s) internal {
         require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
 
         accounts[s.challenger].balance = SafeMath.add64(
@@ -207,9 +217,9 @@ library Challenge {
 
     /// @dev Internal function. The delegate proved the challenger wrong, or the challenger failed to respond on time. The delegae collects the stake.
     /// @param s Collect slot
-    /// @param accounts List of user accounts
+
     
-    function challenge_failed(CollectSlot storage s, Account.Record[] storage accounts) internal {
+    function challenge_failed(CollectSlot storage s) internal {
         require(s.status == 5 || (s.status == 3 && block.number >= s.block), "challenge not completed");
 
         // Challenge failed
@@ -223,5 +233,113 @@ library Challenge {
         s.status = 1;
         s.block = futureBlock(challengeBlocks);
     }
+
+
+
+    /// @dev Transfer tokens to multiple recipients
+    /// @param fromId account id for the originator of the transaction
+    /// @param amount amount of tokens to pay each destination. 
+    /// @param fee Fee in tokens to be payed to the party providing the unlocking service
+    /// @param payData efficient representation of the destination account list
+    /// @param newCount number of new destination accounts that will be reserved during the transfer transaction 
+    /// @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
+    /// @param lock hash of the key locking this payment to help in atomic data swaps.  
+    /// @param metadata Application specific data to be stored associated with the payment
+    
+    function transfer(
+        uint32 fromId, 
+        uint64 amount, 
+        uint64 fee,
+        bytes payData, 
+        uint newCount,      
+        bytes32 rootHash,
+        bytes32 lock,
+        bytes32 metadata) 
+        external 
+    {
+        Payment memory p;
+        p.from = fromId;
+        p.amount = amount;
+        p.fee = fee;
+        p.lock = lock;
+        p.block = SafeMath.add64(block.number,unlockBlocks);
+
+        require(isValidId(fromId), "invalid fromId");
+        uint len = payData.length;
+        require(len > 1, "payData length is invalid");
+        uint bytesPerId = uint(payData[1]);
+        Account memory from = accounts[fromId];
+        
+        require(bytesPerId > 0, "bytes per Id should be positive");
+        require(from.addr == msg.sender, "only owner of id can transfer");
+        require((len-2) % bytesPerId == 0, "payData length is invalid");
+
+        p.totalCount = SafeMath.div32(len-2, SafeMath.add32(bytesPerId,newCount));
+        require(p.totalCount < maxTransfer, "too many payees");
+        
+        uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalCount), fee); 
+        require (total <= from.balance, "not enough funds");
+
+        from.balance = SafeMath.sub64(from.balance, total);
+        accounts[fromId] = from;
+
+        p.minId = uint32(accounts.length);
+        p.maxId = SafeMath.add32(p.minId, newCount); 
+        if (newCount > 0) {
+            bulkRegister(newCount, rootHash);
+        }
+
+        p.metadata = metadata; 
+        p.hash = keccak256(abi.encodePacked(payData));
+
+        payments.push(p);
+  
+        emit Transfer(payments.length-1, p.from, p.totalCount, p.amount);
+    }
+
+    /// @dev provide the required key, releasing the payment and enabling the buyer decryption the digital content
+    /// @param payIndex payment Index associated with the transfer operation.
+    /// @param unlockerId id of the party providing the unlocking service. Fees wil be payed to this id
+    /// @param key Cryptographic key used to encrypt traded data
+   
+    function unlock(uint32 payIndex, uint32 unlockerId, bytes memory key) public returns(bool) {
+        require(payIndex < payments.length, "invalid payIndex");
+        require(isValidId(unlockerId), "Invalid unlockerId");
+        require(block.number < payments[payIndex].block, "Hash lock expired");
+        bytes32 h = keccak256(abi.encodePacked(unlockerId, key));
+        require(h == payments[payIndex].lock, "Invalid key");
+        
+        payments[payIndex].lock = bytes32(0);
+        balanceAdd(unlockerId, payments[payIndex].fee);
+        
+        emit Unlock(payIndex, key);
+        return true;
+    }
+
+    /// @dev Enables the buyer to recover funds associated with a transfer operation for which decryption keys were not provided.
+    /// @param payIndex Index of the payment transaction associated with this request. 
+    /// @return true if the operation succeded.
+
+    function refund(uint payIndex) public returns (bool) {
+        require(payIndex < payments.length, "invalid payment Id");
+        require(payments[payIndex].lock != 0, "payment is already unlocked");
+        require(block.number >= payments[payIndex].block, "Hash lock has not expired yet");
+        Payment memory p = payments[payIndex];
+        
+        require(p.totalCount > 0, "payment already refunded");
+        
+        uint64 total = SafeMath.add64(
+            SafeMath.mul64(p.totalCount, p.amount),
+            p.fee);
+
+        p.totalCount = 0;
+        p.fee = 0;
+        p.amount = 0;
+        payments[payIndex] = p;
+ 
+        // Complete refund
+        balanceAdd(p.from, total);
+    }
+
 
 }
