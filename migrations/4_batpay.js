@@ -10,6 +10,16 @@ module.exports = function(deployer) {
     deployer.then(()=>{
         return StandardToken.deployed();
     }).then(token=>{
-        return deployer.deploy(BatPay, token.address);            
+        return deployer.deploy(BatPay, 
+            token.address,
+            5000, // maxBulk
+            3000, // maxTransfer
+            5,    // challengeBlocks
+            2,    // challengeStepBlocks
+            500,  // collectStake
+            150,  // challengeStake
+            5);   // unlockBlocks           
+
+            
     });
 };

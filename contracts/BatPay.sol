@@ -18,17 +18,27 @@ contract BatPay is Accounts, Payments {
 
     /// @dev Contract constructor, sets ERC20 token this contract will use for payments
     /// @param _token ERC20 contract address
-    constructor(address _token) public {
+    constructor(
+        address _token, 
+        uint32 maxBulk, 
+        uint32 maxTransfer, 
+        uint32 challengeBlocks, 
+        uint32 challengeStepBlocks,
+        uint64 collectStake,
+        uint64 challengeStake,
+        uint32 unlockBlocks) 
+        public 
+    {
         owner = msg.sender;
         token = IERC20(_token);
 
-        params.maxBulk = 2**16;
-        params.maxTransfer = 100000;
-        params.challengeBlocks = 30;
-        params.challengeStepBlocks = 10;
-        params.collectStake = 100;
-        params.challengeStake = 100;
-        params.unlockBlocks = 10;
+        params.maxBulk = maxBulk;
+        params.maxTransfer = maxTransfer;
+        params.challengeBlocks = challengeBlocks;
+        params.challengeStepBlocks = challengeStepBlocks;
+        params.collectStake = collectStake;
+        params.challengeStake = challengeStake;
+        params.unlockBlocks = unlockBlocks;
     }
 
 

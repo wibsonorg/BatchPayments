@@ -29,7 +29,7 @@ async function getDeploymentGas(contract) {
 async function init() {
         acc = web3.eth.accounts;
 
-        let ins = await lib.newInstances();
+        let ins = await lib.newInstances(bat.prefs.testing);
         st = ins.token;
         bp = ins.bp;
 

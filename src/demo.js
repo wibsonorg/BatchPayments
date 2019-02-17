@@ -5,7 +5,6 @@ var utils = lib.utils;
 var merkle = lib.merkle;
 var BP = lib.bat.BP;
 
-
 var b;
 
 async function skipBlocks(n) {
@@ -60,7 +59,7 @@ async function challenge(delegate, slot, challenger, list) {
 async function doStuff() {
     try {
         console.log("Instantiate contracts");
-        let x = await lib.newInstances();
+        let x = await lib.newInstances(bat.prefs.testing);
 
         b = new BP(x.bp, x.token);
         await b.init();
@@ -144,6 +143,7 @@ async function doStuff() {
         await skipBlocks(b.challengeBlocks);
         console.log("Freeing collect slots");
         for(let i = 1; i<=5; i++) {
+            
             await b.freeSlot(0, i);
         }
         await b.showBalance();
