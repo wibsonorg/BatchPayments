@@ -21,6 +21,11 @@ function addStat(what, gas) {
     stats[what] = gas;
 }
 
+async function getDeploymentGas(contract) {
+    let receipt = await web3.eth.getTransactionReceipt(contract.transactionHash);
+    return receipt.gasUsed;
+}
+
 async function init() {
         acc = web3.eth.accounts;
 
@@ -28,6 +33,11 @@ async function init() {
         st = ins.token;
         bp = ins.bp;
 
+        addStat('challenge.deployment', await getDeploymentGas(ins.challenge));
+        addStat('merkle.deployment', await getDeploymentGas(ins.merkle));
+        addStat('batpay.deployment', await getDeploymentGas(ins.bp));
+        addStat('token.deployment', await getDeploymentGas(ins.token));
+        
         b = new bat.BP(ins.bp, ins.token);
         await b.init();
 }
