@@ -4,6 +4,7 @@ const StandardToken = artifacts.require('./StandardToken');
 var utils = lib.utils;
 var merkle = lib.merkle;
 var BP = lib.bat.BP;
+var bat = lib.bat;
 
 var b;
 
