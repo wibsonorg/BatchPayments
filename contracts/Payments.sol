@@ -213,7 +213,7 @@ contract Payments is Accounts {
         // Check if fee is valid
         require (fee <= amount, "fee is too big");
 
-        CollectSlot memory sl;
+        CollectSlot storage sl = collects[delegate][slot];
      
         sl.delegate = delegate;
 
@@ -255,7 +255,7 @@ contract Payments is Accounts {
         sl.to = to;
         sl.block = uint64(block.number + params.challengeBlocks);
         sl.status = 1;
-        collects[delegate][slot] = sl;
+        // collects[delegate][slot] = sl;
      
         tacc.collected = uint32(payIndex);
         accounts[to] = tacc;
