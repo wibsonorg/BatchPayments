@@ -68,6 +68,8 @@ library Challenge {
 
     /// @dev Internal function. Phase I of the challenging game
     /// @param s Collect slot
+    /// @param params Various parameters
+    /// @param accounts a reference to the main accounts array
     /// @param challenger id of the challenger user
 
     function challenge_1(
@@ -90,6 +92,7 @@ library Challenge {
 
     /// @dev Internal function. Phase II of the challenging game
     /// @param s Collect slot
+    /// @param params Various parameters   
     /// @param data Binary array listing the payments in which the user was referenced.
 
     function challenge_2(
@@ -111,6 +114,7 @@ library Challenge {
 
     /// @dev Internal function. Phase III of the challenging game
     /// @param s Collect slot
+    /// @param params Various parameters
     /// @param data Binary array listing the payments in which the user was referenced.
     /// @param index selecting the disputed payment
 
@@ -133,6 +137,7 @@ library Challenge {
 
     /// @dev Internal function. Phase IV of the challenging game
     /// @param s Collect slot
+    /// @param payments a reference to the BatPay payments array
     /// @param payData binary data describing the list of account receiving tokens on the selected transfer
   
     function challenge_4(
@@ -184,6 +189,9 @@ library Challenge {
     /// @dev the challenge was completed successfully, or the delegate failed to respond on time. 
     /// The challenger will collect the stake.
     /// @param s Collect slot
+    /// @param params Various parameters
+    /// @param accounts a reference to the main accounts array
+
    
     function challenge_success(
         Data.CollectSlot storage s, 
@@ -202,6 +210,9 @@ library Challenge {
 
     /// @dev Internal function. The delegate proved the challenger wrong, or the challenger failed to respond on time. The delegae collects the stake.
     /// @param s Collect slot
+    /// @param params Various parameters
+    /// @param accounts a reference to the main accounts array
+
 
     function challenge_failed(
         Data.CollectSlot storage s, 
