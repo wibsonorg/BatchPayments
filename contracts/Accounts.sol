@@ -11,7 +11,6 @@ contract Accounts {
     uint public maxBalance = 2**64-1;      // Maximum supported token balance
     uint public maxTransfer = 100000;      // Maximum number of destination accounts per transfer
  
-
     event BulkRegister(uint n, uint minId, uint bulkId );
     event Register(uint id, address addr);
 
