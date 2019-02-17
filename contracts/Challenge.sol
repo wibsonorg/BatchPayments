@@ -126,11 +126,10 @@ library Challenge {
         internal 
     {  
         require(s.status == 3);
-        require(index < data.length/12);
+        require(index < data.length/12, "invalid index");
         require (block.number < s.block, "challenge time has passed");
         require(s.data == keccak256(data), "data mismatch");
         (s.challengeAmount, s.index) = getDataAtIndex(data, index);
-        s.index = index;
         s.status = 4;
         s.block = futureBlock(params.challengeStepBlocks);
     }
