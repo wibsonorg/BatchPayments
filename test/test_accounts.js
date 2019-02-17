@@ -32,6 +32,7 @@ contract('Accounts', (addr)=> {
     const newAccount = new BigNumber(2).pow(256).minus(1);
 
     before(async ()=> {
+        await utils.skipBlocks(1);
         let ret = await utils.getInstances();
         bp = ret.bp;
         st = ret.token;

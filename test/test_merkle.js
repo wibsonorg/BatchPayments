@@ -6,6 +6,7 @@ var BigNumber = web3.BigNumber;
 
 var TestHelper = artifacts.require('./TestHelper');
 
+
 describe('merkle lib', ()=> {
     var testhelper;
 

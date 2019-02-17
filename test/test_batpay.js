@@ -24,6 +24,8 @@ async function skipBlocks(n) {
 }
 
 
+
+
 contract('BatPay', (addr)=> {
     let a0 = addr[0];
     let a1 = addr[1];

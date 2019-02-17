@@ -1,4 +1,6 @@
 var StandardToken = artifacts.require('StandardToken');
+var lib = require('../lib')(web3, artifacts);
+var { utils, bat } = lib;
 
 
 contract('StandardToken', async (accounts)=> {
@@ -7,8 +9,8 @@ contract('StandardToken', async (accounts)=> {
     let instance;
 
     before(async ()=> {
-        instance = await StandardToken.deployed();
-        return await instance;
+        instance = await StandardToken.new("Token", "TOK", 2, 1000000);
+        return instance;
     });
 
     it("instance should be defined", async()=> {
@@ -29,6 +31,7 @@ contract('StandardToken', async (accounts)=> {
         let value = await instance.balanceOf.call(a1);
         assert.equal(value.toNumber(), 0);
     });
+   
 
     it("Should handle simple transfers", async()=> {
         let tx = await instance.transfer(a1, 1);

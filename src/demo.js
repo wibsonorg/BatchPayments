@@ -121,8 +121,8 @@ async function doStuff() {
         let max = p[(p.length / 2) - 1]+1;
 
         console.log("collect without instant slot. payIndex="+max);
-        let minIndex = await b.getAccount(3);
-        minIndex = minIndex[2].toNumber();
+        let minIndex = await b.getCollectedIndex(3);
+       
 
         for(let i = 1; i<=5; i++) {
             let [addr, bb, c] = await b.getAccount(i);

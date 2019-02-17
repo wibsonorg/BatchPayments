@@ -12,7 +12,6 @@ const TestHelper = artifacts.require('./TestHelper');
 const merkle = lib.merkle;
 
 var test;
-var unlockBlocks;
 
 async function skipBlocks(n) {
     let v = [];
@@ -25,25 +24,23 @@ async function skipBlocks(n) {
 
 
 contract('Payments', (addr)=> {
+  
     let a0 = addr[0];
     let a1 = addr[1];
+
 
     let bp, tAddress, st;
     const newAccount = new BigNumber(2).pow(256).minus(1);
 
-    before(async ()=> {
+    before(async function () {
+        this.timeout(10000);
+        await utils.skipBlocks(1);
         let ret = await utils.getInstances();
         bp = ret.bp;
         st = ret.token;
 
         test = await TestHelper.new();
 
-        let params = await bp.params.call();
-
-        unlockBlocks = params[7].toNumber();
-        challengeBlocks = params[3].toNumber();
-        challengeStepBlocks = params[4].toNumber();
-        instantSlot = (await bp.instantSlot.call()).toNumber();
     });
 
 
@@ -63,6 +60,7 @@ contract('Payments', (addr)=> {
         let key;
         let lock;
         let b0;
+        let unlockBlocks;
 
         beforeEach(async ()=> {
             // create a list of 100 random ids
@@ -79,6 +77,7 @@ contract('Payments', (addr)=> {
             // create lock
             key = "this-is-the-key";
             lock = utils.hashLock(0, key);
+            unlockBlocks = (await bp.params.call())[7].toNumber();
 
             // initial balance
             b0 = (await bp.balanceOf.call(from_id)).toNumber();
@@ -119,7 +118,7 @@ contract('Payments', (addr)=> {
             let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
             let payId = (await bp.paymentsLength.call()).toNumber() - 1;
 
-            await skipBlocks(unlockBlocks);
+            await utils.skipBlocks(unlockBlocks);
             let v2 = await bp.refund(payId);
 
             // check original balance didn't change
