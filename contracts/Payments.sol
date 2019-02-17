@@ -1,18 +1,14 @@
 pragma solidity ^0.4.24;
 import "./Accounts.sol";
 import "./SafeMath.sol";
+import "./Challenge.sol";
+
+
 
 /// @title Payments and Challenge game - Performs the operations associated with transfer and the different 
 /// steps of the collect challenge game
 
 contract Payments is Accounts {
-    uint constant public challengeBlocks = 30;     
-    uint constant public challengeStepBlocks = 10;
-    uint64 constant public collectStake = 100;
-    uint64 constant public challengeStake = 100;
-    uint32 constant public instantSlot = 32768;
-    uint public unlockBlocks = 10;
-    
     event Transfer(uint payIndex, uint from, uint totalCount, uint amount);
     event Unlock(uint payIndex, bytes key);
     event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
@@ -23,217 +19,10 @@ contract Payments is Accounts {
     event Challenge_success(uint delegate, uint slot);
     event Challenge_failed(uint delegate, uint slot);  
 
-    struct CollectSlot {
-        uint32  minPayIndex;
-        uint32  maxPayIndex;
-        uint64  amount;
-        uint64  delegateAmount;
-        uint32  to;
-        uint64  block;
-        uint8   status;
-        uint32  delegate;
-        uint32  challenger;
-        uint32  index;
-        uint64  challengeAmount;
-        address addr;
-        bytes32 data;
-    }
 
 
+    Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
-  
-
-    /// @dev calculates new block numbers based on the current block and a delta constant specified by the protocol policy
-    /// @param delta number of blocks into the future to calculate
-    /// @return future block number
-
-    function futureBlock(uint delta) private view returns(uint64) {
-        return SafeMath.add64(block.number, delta);
-    }    
-
-    /// @dev Inspects the compact payment list provided and calculates the sum of the amounts referenced
-    /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
-    /// @return the sum of the amounts referenced on the array.
-
-    function getDataSum(bytes memory data) public pure returns (uint sum) {
-        uint n = data.length / 12;
-        uint modulus = 2**64;
-
-        sum = 0;
-
-        // Get the sum of the stated amounts in data 
-        // Each entry in data is [8-bytes amount][4-bytes payIndex]
-
-        for(uint i = 0; i<n; i++) {
-            // solium-disable-next-line security/no-inline-assembly
-            assembly {
-                sum :=
-                    add(
-                        sum, 
-                        mod(
-                            mload(add(data, add(8, mul(i, 12)))), 
-                            modulus)
-                    )
-            }
-        }
-    }
-
-
-    /// @dev Helper function that obtains the amount/payIndex pair located at position index
-    /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
-    /// @param index Array item requested
-    /// @return amount and payIndex requested 
-
-    function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
-        uint mod1 = 2**64;
-        uint mod2 = 2**32;
-        uint i = index*12;
-
-        require(i <= data.length-12);
-
-        // solium-disable-next-line security/no-inline-assembly
-        assembly
-            {
-                amount := mod(
-                    mload(add(data, add(8, i))), 
-                    mod1)           
-
-                 payIndex := mod(
-                    mload(add(data, add(12, i))),
-                    mod2)
-            }
-    }
-
-    /// @dev Internal function. Phase I of the challenging game
-    /// @param s Collect slot
-    /// @param challenger id of the challenger user
-
-    function challenge_1(CollectSlot storage s, uint32 challenger) internal {
-        require(accounts[challenger].balance >= challengeStake, "not enough balance");
- 
-        require(s.status == 1, "slot is not available for challenge");      
-        require (block.number < s.block, "challenge time has passed");
-        s.status = 2;
-        s.challenger = challenger;
-        s.block = futureBlock(challengeStepBlocks);
-        
-        accounts[challenger].balance -= challengeStake;
-    }
-
-    /// @dev Internal function. Phase II of the challenging game
-    /// @param s Collect slot
-    /// @param data Binary array listing the payments in which the user was referenced.
-
-    function challenge_2(CollectSlot storage s, bytes memory data) internal {
-        require(s.status == 2, "wrong slot status");
-        require (block.number < s.block, "challenge time has passed");
-
-        require(data.length % 12 == 0, "wrong data format");
-        require (getDataSum(data) == s.amount, "data doesn't represent collected amount");
-
-        s.data = keccak256(data);
-        s.status = 3;
-        s.block = futureBlock(challengeStepBlocks);
-    }
-
-    /// @dev Internal function. Phase III of the challenging game
-    /// @param s Collect slot
-    /// @param data Binary array listing the payments in which the user was referenced.
-    /// @param index selecting the disputed payment
-
-    function challenge_3(CollectSlot storage s, bytes memory data, uint32 index) internal {  
-        require(s.status == 3);
-        require(index < data.length/12);
-        require (block.number < s.block, "challenge time has passed");
-        require(s.data == keccak256(data), "data mismatch");
-        (s.challengeAmount, s.index) = getDataAtIndex(data, index);
-        s.index = index;
-        s.status = 4;
-        s.block = futureBlock(challengeStepBlocks);
-    }
-
-    /// @dev Internal function. Phase IV of the challenging game
-    /// @param s Collect slot
-    /// @param payData binary data describing the list of account receiving tokens on the selected transfer
-  
-    function challenge_4(
-        CollectSlot storage s, 
-        bytes memory payData) 
-        internal 
-    {
-        require(s.status == 4);
-        require(block.number < s.block, "challenge time has passed");
-        require(s.index >= s.minPayIndex && s.index < s.maxPayIndex, "payment referenced is out of range");
-        Payment memory p = payments[s.index];
-        require(keccak256(payData) == p.hash, "payData is incorrect");
-        
-        uint bytesPerId = uint(payData[1]);
-        uint modulus = 1 << (8*bytesPerId);
-
-        uint id = 0;
-        uint collected = 0;
-
-        // Check if id is included in bulkRegistration within payment
-        if (s.to >= p.minId && s.to < p.maxId) collected += p.amount;
-
-        // Process payData, inspecting the list of ids
-        // payData includes 2 header bytes, followed by n bytesPerId-bytes entries
-        // [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
-        for(uint i = 2; i < payData.length; i += bytesPerId) {
-            // Get next id delta from paydata 
-            // id += payData[2+i*bytesPerId]
-
-            // solium-disable-next-line security/no-inline-assembly
-            assembly {
-                id := add(
-                    id, 
-                    mod(
-                        mload(add(payData,add(i,bytesPerId))),
-                        modulus))
-            }
-            if (id == s.to) {
-                collected += p.amount;
-            }
-        }
-
-        require(collected == s.challengeAmount, "amount mismatch");
-
-        s.status = 5;
-    }
-
-    /// @dev the challenge was completed successfully, or the delegate failed to respond on time. 
-    /// The challenger will collect the stake.
-    /// @param s Collect slot
-   
-    function challenge_success(CollectSlot storage s) internal {
-        require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
-
-        accounts[s.challenger].balance = SafeMath.add64(
-            accounts[s.challenger].balance,
-            collectStake);
-
-        s.status = 0;
-    }
-
-    /// @dev Internal function. The delegate proved the challenger wrong, or the challenger failed to respond on time. The delegae collects the stake.
-    /// @param s Collect slot
-
-    
-    function challenge_failed(CollectSlot storage s) internal {
-        require(s.status == 5 || (s.status == 3 && block.number >= s.block), "challenge not completed");
-
-        // Challenge failed
-        // delegate wins Stake
-        accounts[s.delegate].balance = SafeMath.add64(
-            accounts[s.delegate].balance,
-            challengeStake);
-
-        // reset slot to status=1, waiting for challenges
-        s.challenger = 0;
-        s.status = 1;
-        s.block = futureBlock(challengeBlocks);
-    }
-
 
 
     /// @dev Transfer tokens to multiple recipients
@@ -262,7 +51,7 @@ contract Payments is Accounts {
         p.amount = amount;
         p.fee = fee;
         p.lock = lock;
-        p.block = SafeMath.add64(block.number,unlockBlocks);
+        p.block = SafeMath.add64(block.number,params.unlockBlocks);
 
         require(isValidId(fromId), "invalid fromId");
         uint len = payData.length;
@@ -275,7 +64,7 @@ contract Payments is Accounts {
         require((len-2) % bytesPerId == 0, "payData length is invalid");
 
         p.totalCount = SafeMath.div32(len-2, SafeMath.add32(bytesPerId,newCount));
-        require(p.totalCount < maxTransfer, "too many payees");
+        require(p.totalCount < params.maxTransfer, "too many payees");
         
         uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalCount), fee); 
         require (total <= from.balance, "not enough funds");
@@ -342,46 +131,6 @@ contract Payments is Accounts {
     }
 
 
-    /// @dev Helps verify a ECDSA signature, while recovering the signing address.
-    /// @param hash Hash of the signed message
-    /// @param _sig binary representation of the r, s & v parameters.
-    /// @return address of the signer if data provided is valid, zero oterwise.
-
-    function recoverHelper(bytes32 hash, bytes _sig) internal pure returns (address) {
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
-
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        // Check the signature length
-        if (_sig.length != 65) {
-            return (address(0));
-        }
-
-        // Divide the signature in r, s and v variables
-        // ecrecover takes the signature parameters, and the only way to get them
-        // currently is to use assembly.
-        // solium-disable-next-line security/no-inline-assembly
-        assembly {
-        r := mload(add(_sig, 32))
-        s := mload(add(_sig, 64))
-        v := byte(0, mload(add(_sig, 96)))
-        }
-
-        // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
-        if (v < 27) {
-            v += 27;
-        }
-
-        // If the version is correct return the signer address
-        if (v != 27 && v != 28) {
-            return address(0);
-        }
-
-        return ecrecover(prefixedHash, v, r, s); 
-    }
 
     function _freeSlot(uint32 delegate, uint32 slot) private {
         CollectSlot memory s = collects[delegate][slot];
@@ -391,7 +140,7 @@ contract Payments is Accounts {
         require (s.status == 1 && block.number >= s.block, "slot not available"); 
     
         // Refund Stake 
-        balanceAdd(delegate, SafeMath.add64(s.delegateAmount, collectStake));
+        balanceAdd(delegate, SafeMath.add64(s.delegateAmount, params.collectStake));
 
         uint64 balance = SafeMath.add64(
             accounts[s.to].balance, 
@@ -421,7 +170,7 @@ contract Payments is Accounts {
     }
     
 
- /// @dev let users claim pending balance associated with prior transactions
+    /// @dev let users claim pending balance associated with prior transactions
     /// @param delegate id of the delegate account performing the operation on the name fo the user.
     /// @param slot Individual slot used for the challenge game.
     /// @param to Destination of the collect operation. 
@@ -472,13 +221,13 @@ contract Payments is Accounts {
             // If "to" != delegate, check who signed this transaction
             bytes32 hash = keccak256(abi.encodePacked(address(this), delegate, to, tacc.collected, payIndex, amount, fee, destination)); 
             
-            require(recoverHelper(hash, signature) == tacc.addr, "Bad user signature");
+            require(Challenge.recoverHelper(hash, signature) == tacc.addr, "Bad user signature");
         }
 
         sl.minPayIndex = tacc.collected;
         sl.maxPayIndex = payIndex;
 
-        uint64 needed = collectStake;
+        uint64 needed = params.collectStake;
 
         // check if this is an instant collect
         if (slot >= instantSlot) {
@@ -504,7 +253,7 @@ contract Payments is Accounts {
         
         sl.amount = amount;
         sl.to = to;
-        sl.block = uint64(block.number + challengeBlocks);
+        sl.block = uint64(block.number + params.challengeBlocks);
         sl.status = 1;
         collects[delegate][slot] = sl;
      
@@ -516,5 +265,109 @@ contract Payments is Accounts {
             accounts[to].balance = 0;
             require(token.transfer(destination, tacc.balance), "transfer failed");
         } 
+    }
+
+
+    /// @dev initiate a challenge game
+    /// @param delegate id of the delegate that performed the collect operation in the name of the end-user.
+    /// @param slot slot used for the challenge game. Every user has a sperate set of slots
+    /// @param challenger id of the user account challenging the delegate.    
+    function challenge_1(
+        uint32 delegate, 
+        uint32 slot, 
+        uint32 challenger) 
+        validId(delegate)
+        public
+        onlyOwnerId(challenger) 
+    {
+        Challenge.challenge_1(collects[delegate][slot], params, accounts, challenger);
+        emit Challenge_1(delegate, slot, challenger);
+    }
+
+    /// @dev The delegate provides the list of payments that mentions the enduser
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
+    /// @param data binary list of payment indexes associated with this collect operation.
+
+    function challenge_2(
+        uint32 delegate, 
+        uint32 slot, 
+        bytes memory data)
+        public  
+        onlyOwnerId(delegate)
+    {
+        Challenge.challenge_2(collects[delegate][slot], params, data);
+        emit Challenge_2(delegate, slot);
+    }
+
+    /// @dev the Challenger chooses a single index into the delegate provided data list
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
+    /// @param data binary list of payment indexes associated with this collect operation.
+    /// @param index index into the data array for the payment id selected by the challenger
+
+    function challenge_3(
+        uint32 delegate,
+        uint32 slot, 
+        bytes memory data, 
+        uint32 index)
+        validId(delegate) 
+        public 
+    {
+        require(isOwnerId(collects[delegate][slot].challenger), "only challenger can call challenge_2");
+        
+        Challenge.challenge_3(collects[delegate][slot], params, data, index);
+        emit Challenge_3(delegate, slot, index);
+    }
+
+    /// @dev the delegate provides proof that the destination account was included on that payment, winning the game
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
+ 
+    function challenge_4(
+        uint32 delegate,
+        uint32 slot,
+        bytes memory payData) 
+        public 
+        onlyOwnerId(delegate) 
+    {
+        Challenge.challenge_4(
+            collects[delegate][slot], 
+            payments,
+            payData
+            );
+  
+        emit Challenge_4(delegate, slot);
+    }
+
+
+    /// @dev the challenge was completed successfully. The delegate stake is slahed.
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
+    
+    function challenge_success(
+        uint32 delegate,
+        uint32 slot
+        )
+        public
+        validId(delegate) 
+    {
+        Challenge.challenge_success(collects[delegate][slot], params, accounts);
+        emit Challenge_success(delegate, slot);
+    }
+
+
+    /// @dev The delegate won the challenge game. He gets the challenge stake.
+    /// @param delegate id of the delegate performing the collect operation
+    /// @param slot slot used for the operation
+
+    function challenge_failed(
+        uint32 delegate,
+        uint32 slot)
+        public
+        validId(delegate) 
+    {
+        Challenge.challenge_failed(collects[delegate][slot], params, accounts);
+        emit Challenge_failed(delegate, slot);
     }
 }

@@ -2,47 +2,15 @@ pragma solidity ^0.4.24;
 import "./IERC20.sol";
 import "./SafeMath.sol";
 import "./Merkle.sol";
+import "./Data.sol";
 
-contract Accounts {
-    uint public constant maxAccount = 2**32-1;      // Maximum account id (32-bits)
-    uint public constant newAccount = 2**256-1;     // Request registration of new account
- 
-    uint public maxBulk  = 2**16;          // Maximum number of accounts that can be reserved simultaneously
-    uint public maxBalance = 2**64-1;      // Maximum supported token balance
-    uint public maxTransfer = 100000;      // Maximum number of destination accounts per transfer
- 
+contract Accounts is Data {
     event BulkRegister(uint n, uint minId, uint bulkId );
     event Register(uint id, address addr);
-
-    struct Account {
-        address addr;
-        uint64  balance;
-        uint32  collected;
-    }
-
-    struct BulkRecord {
-        bytes32 rootHash;
-        uint32  n;
-        uint32  minId;
-    }
-
-    struct Payment {
-        uint32  from;
-        uint64  amount;
-        uint64  fee;
-        uint32  minId;  
-        uint32  maxId;
-        uint32  totalCount;
-        uint64  block;
-        bytes32 hash;
-        bytes32 lock;
-        bytes32 metadata;
-    }
 
     IERC20 public token;
     Account[] public accounts;
     BulkRecord[] public bulkRegistrations;
-    Payment[] public payments;
  
     function isValidId(uint id) public view returns (bool) {
         return (id < accounts.length);
@@ -78,7 +46,7 @@ contract Accounts {
    
     function bulkRegister(uint256 n, bytes32 rootHash) public {
         require(n > 0, "Cannot register 0 ids");
-        require(n < maxBulk, "Cannot register this number of ids simultaneously");
+        require(n < params.maxBulk, "Cannot register this number of ids simultaneously");
         require(SafeMath.add(accounts.length, n) <= maxAccount, "Cannot register: ran out of ids");
 
         emit BulkRegister(n, accounts.length, bulkRegistrations.length);
@@ -114,31 +82,6 @@ contract Accounts {
         emit Register(ret, msg.sender);
         return ret;
     } 
-
-/*
-    function withdrawTo(
-        uint32 delegate,
-        uint32 id,  
-        uint64 amount, 
-        uint64 fee,
-        address destination,
-        bytes signature) 
-        public 
-        onlyOwnerId(delegate) 
-        claimedId(id)
-    {
-        bytes32 hash = keccak256(abi.encodePacked(delegate, id, amount, fee, destination));
-        
-        require(recoverHelper(hash, signature) == accounts[id].addr, "invalid signature");
-        require(accounts[id].balance >= amount, "not enough founds");
-        require(fee <= amount, "invalid fee");
-
-        accounts[id].balance -= amount;
-        accounts[delegate].balance += fee;
-        token.transfer(destination, amount - fee);
-    }
-
-*/
 
     /// @dev withdraw tokens from the batchpement contract into the original address
     /// @param amount Amount of tokens to withdraw
@@ -215,6 +158,4 @@ contract Accounts {
     function accountsLength() public view returns (uint) {
         return accounts.length;
     }
-
-
 }

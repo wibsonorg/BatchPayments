@@ -33,14 +33,17 @@ contract('BatPay', (addr)=> {
     const newAccount = new BigNumber(2).pow(256).minus(1);
 
     before(async ()=> {
-        bp = await BatPay.deployed();
-        tAddress = await bp.token.call();
-        st = await StandardToken.at(tAddress);
+        let ret = await utils.getInstances();
+        bp = ret.bp;
+        st = ret.token;
+
         test = await TestHelper.new();
 
-        unlockBlocks = (await bp.unlockBlocks.call()).toNumber();
-        challengeBlocks = (await bp.challengeBlocks.call()).toNumber();
-        challengeStepBlocks = (await bp.challengeStepBlocks.call()).toNumber();
+        let params = await bp.params.call();
+
+        unlockBlocks = params[7].toNumber();
+        challengeBlocks = params[3].toNumber();
+        challengeStepBlocks = params[4].toNumber();
         instantSlot = (await bp.instantSlot.call()).toNumber();
     });
 
@@ -672,7 +675,6 @@ contract('BatPay', (addr)=> {
             let d0 = (await b.tokenBalance(acc[1])).toNumber();
 
             assertRequire(b.collect(id, slot, 1000000, collected+1, maxPayIndex, amount, amount/3, 0), "Bad user signature");
-    
         });
     });
     describe ("misc", ()=> {
