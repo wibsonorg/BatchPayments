@@ -108,20 +108,47 @@ contract MassExit is Payments {
         );
     }
 
-    function challengeExitId_success(
+    function challengeExit_success(
         uint32 delegate,
         uint32 exitId
         ) 
         public
         validId(delegate)
     {
-        MassExitLib.challengeExitId_success(
+        MassExitLib.challengeExit_success(
+            exits[delegate][exitId],
+            params,
+            accounts);
+    }
+
+
+    function challengerTimeout(
+        uint32 delegate,
+        uint32 exitId
+        ) 
+        public
+        validId(delegate)
+    {
+        MassExitLib.challengerTimeout(
             exits[delegate][exitId],
             params,
             accounts);
     }
 
     function startExitBalance(
+        uint32 delegate, 
+        uint32 exitId) 
+        public 
+        validId(delegate)
+    {
+        MassExitLib.startExitBalance(
+            exits[delegate][exitId], 
+            params
+            );
+    }
+
+    
+    function challengeExitBalance_3(
         uint32 delegate,
         uint32 exitId,
         uint64 totalBalance
@@ -129,14 +156,14 @@ contract MassExit is Payments {
         public
         onlyOwnerId(delegate) 
     {
-        MassExitLib.startExitBalance(
+        MassExitLib.challengeExitBalance_3(
             exits[delegate][exitId],
             params,
             totalBalance
         );
     }
 
-    function challengeExitBalance_3(
+    function challengeExitBalance_4(
         uint32 delegate,
         uint32 exitId,
         uint32 challenger
@@ -145,7 +172,7 @@ contract MassExit is Payments {
         onlyOwnerId(challenger)    
         validId(delegate)
     {
-        MassExitLib.challengeExitBalance_3(
+        MassExitLib.challengeExitBalance_4(
             exits[delegate][exitId],
             params,
             accounts,
@@ -153,7 +180,7 @@ contract MassExit is Payments {
         );
     }
 
-    function challengeExitBalance_4(
+    function challengeExitBalance_5(
         uint32 delegate,
         uint32 exitId,
         bytes balanceList
@@ -161,14 +188,14 @@ contract MassExit is Payments {
         public
         onlyOwnerId(delegate)    
     {
-        MassExitLib.challengeExitBalance_4(
+        MassExitLib.challengeExitBalance_5(
             exits[delegate][exitId],
             params,
             balanceList
         );
     }
 
-    function challengeExitBalance_5(
+    function challengeExitBalance_6(
         uint32 delegate,
         uint32 exitId,
         bytes sellerList,
@@ -180,7 +207,7 @@ contract MassExit is Payments {
     {
         require(isOwnerId(exits[delegate][exitId].challenger), "only challenger");
   
-        MassExitLib.challengeExitBalance_5(
+        MassExitLib.challengeExitBalance_6(
             exits[delegate][exitId],
             params,
             sellerList,

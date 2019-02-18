@@ -4,10 +4,8 @@ import "./SafeMath.sol";
 import "./Data.sol";
 import "./Challenge.sol";
 
-
-
-
 /// @title MassExit helper functions
+/// 
 
 library MassExitLib {
     struct ExitSlot {
@@ -159,15 +157,19 @@ library MassExitLib {
         slot.status = 1;
     }
 
-    function challengeExitId_success(
+    function challengeExit_success(
         ExitSlot storage slot, 
         Data.Params storage params, 
         Data.Account[] storage accounts) 
         public
     {
-        require(slot.status == 2, "invalid status");
+        
+        require(
+            slot.status == 2 || slot.status == 3 || slot.status == 5 || slot.status == 7,
+            "invalid status");
+        
         require(block.number >= slot.block, "challenge is still possible");
-
+        
         // Challenge success
         accounts[slot.challenger].balance = SafeMath.add64(
             accounts[slot.challenger].balance,
@@ -189,19 +191,34 @@ library MassExitLib {
  
     function startExitBalance(
         ExitSlot storage slot, 
+        Data.Params storage params  
+        )
+        public
+    {
+        require(slot.status == 1, "invalid status");
+        require(block.number >= slot.block, "challenge is still possible");
+        
+        // give the delegate the oportunity to finish pending collects.
+        slot.status = 3;
+        slot.block = Challenge.futureBlock(2*params.challengeBlocks); 
+    }
+
+    function challengeExitBalance_3(
+        ExitSlot storage slot, 
         Data.Params storage params, 
         uint64 totalBalance
        ) 
         public 
     {
-        require(slot.status == 1, "invalid status");
-        require(block.number >= slot.block, "challenge is still possible");
+        require(slot.status == 3, "invalid status");
+        require(block.number < slot.block, "challenge time has passed");
+       
         slot.totalBalance = totalBalance;
         slot.block = Challenge.futureBlock(params.massExitBalanceBlocks);
-        slot.status = 3;
+        slot.status = 4;
     }
 
-    function challengeExitBalance_3(
+    function challengeExitBalance_4(
         ExitSlot storage slot, 
         Data.Params storage params, 
         Data.Account[] storage accounts,
@@ -209,7 +226,7 @@ library MassExitLib {
        ) 
         public 
     {
-        require(slot.status == 3, "invalid status");
+        require(slot.status == 4, "invalid status");
         require(block.number < slot.block, "challenge time has passed");
         require(accounts[challenger].balance >= params.massExitChallengeStake, "not enough funds");
 
@@ -218,27 +235,27 @@ library MassExitLib {
             params.massExitChallengeStake);
 
         slot.challenger = challenger;
-        slot.block = Challenge.futureBlock(params.massExitBalanceBlocks);
-        slot.status = 4;
+        slot.block = Challenge.futureBlock(params.massExitBalanceStepBlocks);
+        slot.status = 5;
     }
 
-    function challengeExitBalance_4(
+    function challengeExitBalance_5(
         ExitSlot storage slot, 
         Data.Params storage params, 
         bytes balanceList
        ) 
         public 
     {
-        require(slot.status == 4, "invalid status");
+        require(slot.status == 5, "invalid status");
         require(block.number < slot.block, "challenge time has passed");
         require(balanceList.length == slot.listLength*8, "invalid balanceList");
 
         slot.hashBalanceList = keccak256(balanceList);
-        slot.block = Challenge.futureBlock(params.massExitBalanceBlocks);
-        slot.status = 5;
+        slot.block = Challenge.futureBlock(params.massExitBalanceStepBlocks);
+        slot.status = 6;
     }
 
-    function challengeExitBalance_5(
+    function challengeExitBalance_6(
         ExitSlot storage slot, 
         Data.Params storage params, 
         bytes sellerList,
@@ -247,7 +264,7 @@ library MassExitLib {
        ) 
         public
     {
-        require(slot.status == 5, "invalid status");
+        require(slot.status == 6, "invalid status");
         require(block.number < slot.block, "challenge time has passed");
         require(keccak256(sellerList) == slot.hashSellerList, "invalid sellerList");
         require(keccak256(balanceList) == slot.hashBalanceList, "invalid balanceList");
@@ -255,8 +272,29 @@ library MassExitLib {
         slot.index = indexOf(sellerList, seller);
         slot.seller = seller;
         slot.sellerBalance = getBalanceAtIndex(balanceList, slot.index);
+        slot.block = Challenge.futureBlock(params.massExitBalanceStepBlocks);
+        slot.status = 7; 
+    }
+
+    function challengerTimeout(
+        ExitSlot storage slot,
+        Data.Params storage params,
+        Data.Account[] storage accounts)
+        public
+    {
+        require(slot.status == 6, "invalid status");
+        require(block.number >= slot.block, "challenge is still possible");
+
+        accounts[slot.delegate].balance = SafeMath.add64(
+            accounts[slot.delegate].balance,
+            SafeMath.add64(
+                params.collectStake,
+                params.massExitChallengeStake
+                )
+        );
+
+        slot.status = 4;
         slot.block = Challenge.futureBlock(params.massExitBalanceBlocks);
-        slot.status = 6; 
     }
 
     function challengeExit_collectSuccessful(
@@ -268,7 +306,7 @@ library MassExitLib {
     {   
         require (s.status == 1, "slot is not available for challenge");      
         require (block.number > s.block, "challenge time has passed");
-        require (e.status >= 3, "exit not completed");
+        require (e.status == 7, "exit not completed");
         
         // check for exit challenge validation scenario
         //  - The delegate for collect() should be the same as for exit
@@ -276,7 +314,7 @@ library MassExitLib {
         //  - The exit-slot seller should be the target of the collect
         
         require(
-            s.delegate == e.delegate && e.status == 6 && e.seller == s.to, 
+            s.delegate == e.delegate && e.status == 7 && e.seller == s.to, 
             "collect & exit mismatch");
 
         require(s.amount == e.sellerBalance, "balance mismatch");
@@ -284,6 +322,11 @@ library MassExitLib {
         // delegate recovers Collect stake && exit challenge Stake
 
         s.status = 0;
+
+        // Challenges from exits shouldn't modify seller.collected
+        if (accounts[s.to].collected > s.minPayIndex)
+            accounts[s.to].collected = s.minPayIndex;
+
         accounts[s.delegate].balance = SafeMath.add64(
             accounts[s.delegate].balance,
             SafeMath.add64(
@@ -293,7 +336,7 @@ library MassExitLib {
         );
 
         e.block = Challenge.futureBlock(params.massExitBalanceBlocks);
-        e.status = 3;
+        e.status = 4;
     }
 
     function challenge_accountClosed(
@@ -329,6 +372,10 @@ library MassExitLib {
         // Check seller is included on List
         indexOf(sellerList, s.to);
 
+        // Challenges from exits shouldn't modify seller.collected
+        if (accounts[s.to].collected > s.minPayIndex)
+            accounts[s.to].collected = s.minPayIndex;
+ 
         // challenger wins stake
         accounts[challenger].balance = SafeMath.add64(
             accounts[challenger].balance,
