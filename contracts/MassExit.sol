@@ -17,7 +17,6 @@ contract MassExit is Payments {
         _;
     }
 
-
     function setExitParams(
         uint32 massExitIdBlocks,
         uint32 massExitIdStepBlocks,
@@ -40,6 +39,10 @@ contract MassExit is Payments {
     function setDefaultMonitor(address _monitor) public {
         require(msg.sender == owner);
         defaultMonitor = _monitor;
+    }
+
+    function setMonitor(uint32 id, address _monitor) public onlyOwnerId(id) {
+        monitor[id] = _monitor;
     }
 
     function startExit(
@@ -71,7 +74,6 @@ contract MassExit is Payments {
         public
         onlyOwnerId(challenger)
         validId(delegate)
-        enabled()
     {
         MassExitLib.challengeExitId_1(
             exits[delegate][exitId],
@@ -91,7 +93,6 @@ contract MassExit is Payments {
         ) 
         public
         onlyOwnerId(delegate)
-        enabled()
     {
         uint32 seller = exits[delegate][exitId].seller;
         address mon = monitor[seller];
@@ -113,7 +114,6 @@ contract MassExit is Payments {
         ) 
         public
         validId(delegate)
-        enabled() 
     {
         MassExitLib.challengeExitId_success(
             exits[delegate][exitId],
@@ -128,7 +128,6 @@ contract MassExit is Payments {
         ) 
         public
         onlyOwnerId(delegate) 
-        enabled()   
     {
         MassExitLib.startExitBalance(
             exits[delegate][exitId],
@@ -145,7 +144,6 @@ contract MassExit is Payments {
         public
         onlyOwnerId(challenger)    
         validId(delegate)
-        enabled()
     {
         MassExitLib.challengeExitBalance_3(
             exits[delegate][exitId],
@@ -162,7 +160,6 @@ contract MassExit is Payments {
         ) 
         public
         onlyOwnerId(delegate)    
-        enabled()
     {
         MassExitLib.challengeExitBalance_4(
             exits[delegate][exitId],
@@ -179,8 +176,7 @@ contract MassExit is Payments {
         uint32 seller
         ) 
         public
-        validId(delegate)  
-        enabled()   
+        validId(delegate)    
     {
         require(isOwnerId(exits[delegate][exitId].challenger), "only challenger");
   
@@ -202,7 +198,6 @@ contract MassExit is Payments {
         public 
         onlyOwnerId(exitDelegate)
         onlyOwnerId(delegate)
-        enabled()
     {
         MassExitLib.challengeExit_collectSuccessful(
             collects[delegate][slot],
