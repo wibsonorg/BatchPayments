@@ -1,6 +1,7 @@
  pragma solidity ^0.4.24;
 /// @title Data Structures for BatPay: Accounts, Payments & Challenge
 
+import "./IERC20.sol";
 
 contract Data {
     struct Account {
@@ -35,29 +36,38 @@ contract Data {
         uint64  delegateAmount;
         uint32  to;
         uint64  block;
-        uint8   status;
         uint32  delegate;
         uint32  challenger;
         uint32  index;
         uint64  challengeAmount;
+        uint8   status;
         address addr;
         bytes32 data;
     }
 
     struct Params {
-        uint32 maxBulk;                   //  2**16;  Maximum number of accounts that can be reserved simultaneously
-        uint64 maxBalance;                //  2**64-1 Maximum supported token balance
-        uint32 maxTransfer;               //  100000  Maximum number of destination accounts per transfer
-        uint32 challengeBlocks;           //  30     
-        uint32 challengeStepBlocks;       //  10
-        uint64 collectStake;              // 100
-        uint64 challengeStake;            // 100
-        uint32 unlockBlocks;              //  10
+        uint32 maxBulk;                                
+        uint32 maxTransfer;               
+        uint32 challengeBlocks;               
+        uint32 challengeStepBlocks;      
+        uint64 collectStake;
+        uint64 challengeStake;     
+        uint32 unlockBlocks;  
+        uint32 massExitIdBlocks;
+        uint32 massExitIdStepBlocks;
+        uint32 massExitBalanceBlocks;
+        uint32 massExitBalanceStepBlocks;  
+        uint64 massExitStake;
+        uint64 massExitChallengeStake;     
     }
 
-    Params public params;
 
+    Params public params;
+    address public owner;
+   
     uint public constant maxAccount = 2**32-1;      // Maximum account id (32-bits)
     uint public constant newAccount = 2**256-1;     // Request registration of new account
     uint public constant instantSlot = 32768;
+
+   
 }

@@ -19,6 +19,7 @@ contract TestHelper  {
     * @param _hash bytes32 message, the hash is the signed message. What is recovered is the signer address.
     * @param _sig bytes signature, the signature is generated using web3.eth.sign()
     */
+
     function recover(bytes32 _hash, bytes _sig)
         public
         pure

@@ -1,10 +1,16 @@
 const Merkle = artifacts.require('./Merkle');
 const Challenge = artifacts.require('./Challenge');
+const MassExitLib = artifacts.require('./MassExitLib');
 
 module.exports = function(deployer) {
-    return Promise.all(
-        deployer.deploy(Merkle),
-        deployer.deploy(Challenge));
+    deployer.then(()=>{
+        return deployer.deploy(Merkle);
+    }).then(()=>{
+        return deployer.deploy(Challenge);
+    }).then(()=>{
+        deployer.link(Challenge, MassExitLib);
+        return deployer.deploy(MassExitLib);
+    });
 }
 
     

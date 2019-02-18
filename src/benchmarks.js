@@ -37,6 +37,7 @@ async function init() {
         addStat('merkle.deployment', await getDeploymentGas(ins.merkle));
         addStat('batpay.deployment', await getDeploymentGas(ins.bp));
         addStat('token.deployment', await getDeploymentGas(ins.token));
+        addStat('massExitLib.deployment', await getDeploymentGas(ins.massExitLib));
         
         b = new bat.BP(ins.bp, ins.token);
         await b.init();

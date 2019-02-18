@@ -39,7 +39,8 @@ contract Accounts is Data {
         _;
     }
 
- /// @dev Reserve accounts but delay assigning addresses
+
+    /// @dev Reserve accounts but delay assigning addresses
     /// Accounts will be claimed later using MerkleTree's rootHash
     /// @param n Number of accounts to reserve
     /// @param rootHash Hash of the root node of the Merkle Tree referencing the list of addresses
@@ -157,5 +158,12 @@ contract Accounts is Data {
 
     function accountsLength() public view returns (uint) {
         return accounts.length;
+    }
+
+    /// @dev gets the number of bulk registrations performed
+    /// @return the size of the bulkRegistrations array.
+
+    function bulkLength() public view returns (uint) {
+        return bulkRegistrations.length;
     }
 }

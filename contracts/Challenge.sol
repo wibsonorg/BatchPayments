@@ -66,7 +66,7 @@ library Challenge {
             }
     }
 
-    /// @dev Internal function. Phase I of the challenging game
+    /// @dev function. Phase I of the challenging game
     /// @param s Collect slot
     /// @param params Various parameters
     /// @param accounts a reference to the main accounts array
@@ -77,7 +77,7 @@ library Challenge {
         Data.Params storage params, 
         Data.Account[] storage accounts, 
         uint32 challenger) 
-        internal 
+        public 
     {
         require(accounts[challenger].balance >= params.challengeStake, "not enough balance");
  
@@ -99,7 +99,7 @@ library Challenge {
         Data.CollectSlot storage s, 
         Data.Params storage params, 
         bytes memory data) 
-        internal 
+        public 
     {
         require(s.status == 2, "wrong slot status");
         require (block.number < s.block, "challenge time has passed");
@@ -123,7 +123,7 @@ library Challenge {
         Data.Params storage params, 
         bytes memory data, 
         uint32 index) 
-        internal 
+        public 
     {  
         require(s.status == 3);
         require(index < data.length/12, "invalid index");
@@ -143,7 +143,7 @@ library Challenge {
         Data.CollectSlot storage s,
         Data.Payment[] storage payments, 
         bytes memory payData) 
-        internal 
+        public 
     {
         require(s.status == 4);
         require(block.number < s.block, "challenge time has passed");
@@ -196,7 +196,7 @@ library Challenge {
         Data.CollectSlot storage s, 
         Data.Params storage params,
         Data.Account[] storage accounts) 
-        internal 
+        public 
     {
         require((s.status == 2 || s.status == 4) && block.number >= s.block, "challenge not finished");
 
@@ -217,7 +217,7 @@ library Challenge {
         Data.CollectSlot storage s, 
         Data.Params storage params,
         Data.Account[] storage accounts) 
-        internal 
+        public 
     {
         require(s.status == 5 || (s.status == 3 && block.number >= s.block), "challenge not completed");
 

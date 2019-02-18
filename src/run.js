@@ -80,7 +80,7 @@ async function doStuff() {
 
     let params = await bp.params.call();
 
-    skipBlocks(params[7].toNumber()); // unlockBlocks
+    skipBlocks(params[6].toNumber()); // unlockBlocks
 
     console.log("collect for "+id1);
 
@@ -90,7 +90,7 @@ async function doStuff() {
     console.log("sign="+sign);
 
     console.log("topping delegate");
-    let amount2 = params[5].toNumber() + 100; // CollectStake + 100
+    let amount2 = params[4].toNumber() + 100; // CollectStake + 100
     await st.approve(bp.address, amount2);
     let t4 = await bp.deposit(amount2, delegate); 
     await t4;

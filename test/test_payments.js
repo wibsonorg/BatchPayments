@@ -77,7 +77,7 @@ contract('Payments', (addr)=> {
             // create lock
             key = "this-is-the-key";
             lock = utils.hashLock(0, key);
-            unlockBlocks = (await bp.params.call())[7].toNumber();
+            unlockBlocks = (await bp.params.call())[6].toNumber();
 
             // initial balance
             b0 = (await bp.balanceOf.call(from_id)).toNumber();

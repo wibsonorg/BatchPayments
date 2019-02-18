@@ -19,10 +19,9 @@ contract Payments is Accounts {
     event Challenge_success(uint delegate, uint slot);
     event Challenge_failed(uint delegate, uint slot);  
 
-
-
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
+
 
 
     /// @dev Transfer tokens to multiple recipients
@@ -255,8 +254,7 @@ contract Payments is Accounts {
         sl.to = to;
         sl.block = uint64(block.number + params.challengeBlocks);
         sl.status = 1;
-        // collects[delegate][slot] = sl;
-     
+        
         tacc.collected = uint32(payIndex);
         accounts[to] = tacc;
 
@@ -268,6 +266,14 @@ contract Payments is Accounts {
     }
 
 
+    /// @dev gets the number of payments issued
+    /// @return returns the size of the payments array.
+
+    function paymentsLength() public view returns (uint) {
+        return payments.length;
+    }
+
+
     /// @dev initiate a challenge game
     /// @param delegate id of the delegate that performed the collect operation in the name of the end-user.
     /// @param slot slot used for the challenge game. Every user has a sperate set of slots
@@ -275,10 +281,11 @@ contract Payments is Accounts {
     function challenge_1(
         uint32 delegate, 
         uint32 slot, 
-        uint32 challenger) 
+        uint32 challenger)
+        public 
         validId(delegate)
-        public
-        onlyOwnerId(challenger) 
+        onlyOwnerId(challenger)
+         
     {
         Challenge.challenge_1(collects[delegate][slot], params, accounts, challenger);
         emit Challenge_1(delegate, slot, challenger);
@@ -365,7 +372,7 @@ contract Payments is Accounts {
         uint32 delegate,
         uint32 slot)
         public
-        validId(delegate) 
+        onlyOwnerId(delegate) 
     {
         Challenge.challenge_failed(collects[delegate][slot], params, accounts);
         emit Challenge_failed(delegate, slot);
