@@ -150,6 +150,7 @@ library Challenge {
         require(s.index >= s.minPayIndex && s.index < s.maxPayIndex, "payment referenced is out of range");
         Data.Payment memory p = payments[s.index];
         require(keccak256(payData) == p.hash, "payData is incorrect");
+        require(p.lock == 0, "payment is locked");
         
         uint bytesPerId = uint(payData[1]);
         uint modulus = 1 << (8*bytesPerId);
