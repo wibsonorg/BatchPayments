@@ -69,8 +69,8 @@ contract('Payments', (addr)=> {
             total_amount = amount_each * list.length + fee;
 
             // put enough funds to transfer and bulk register ids
-            await st.approve(bp.address, total_amount);
-            t0 = await bp.deposit(total_amount, newAccount);
+            await st.approve(bp.address, total_amount*2);
+            t0 = await bp.deposit(total_amount*2, newAccount);
             from_id = await bp.accountsLength.call() - 1;
             v0 = await bp.bulkRegister(list.length, rootHash);
 
@@ -168,7 +168,7 @@ contract('Payments', (addr)=> {
             // because 100000 < 2 ** 32 we can only trigger the first condition
             let toobig_count = 100000; // this should actually be bp.maxTransfer, however it crashes
 
-            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, toobig_count, rootHash, lock, metadata), "Cannot register this number of ids simultaneously");
+            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, toobig_count, rootHash, lock, metadata), "too many payees");
 
             // check original balance didn't change
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
@@ -185,6 +185,49 @@ contract('Payments', (addr)=> {
             // check original balance didn't change
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
             assert.equal(b0, b1);
+        });
+
+        it('should correctly substract balance on transfer with new-count=0', async()=> {
+            let balance0 = await bp.balanceOf(from_id);
+            let new_count = 0;
+
+            await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
+            let balance1 = await bp.balanceOf(from_id);
+
+            assert.equal(balance0 - balance1, total_amount);
+        });
+
+        
+        it('should correctly substract balance on transfer with new-count=10', async()=> {
+            let balance0 = await bp.balanceOf(from_id);
+            let new_count = 10;
+
+            await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
+            let balance1 = await bp.balanceOf(from_id);
+
+            assert.equal(balance0 - balance1, total_amount + amount_each * new_count);
+        });
+
+        it('should correctly substract balance on transfer with new-count=1', async()=> {
+            let balance0 = await bp.balanceOf(from_id);
+            let new_count = 1;
+
+            await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
+            let balance1 = await bp.balanceOf(from_id);
+
+            assert.equal(balance0 - balance1, total_amount + amount_each * new_count);
+        });
+
+        
+        it('should correctly substract balance on transfer with no payData', async()=> {
+            let balance0 = await bp.balanceOf(from_id);
+            let new_count = 10;
+            
+            let pdata = pay_data = utils.getPayData([]);
+            await bp.transfer(from_id, amount_each, fee, pdata, new_count, rootHash, lock, metadata);
+            let balance1 = await bp.balanceOf(from_id);
+
+            assert.equal(balance0 - balance1, fee + amount_each * new_count);
         });
     });
 

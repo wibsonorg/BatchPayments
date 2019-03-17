@@ -62,7 +62,7 @@ contract Payments is Accounts {
         require(from.addr == msg.sender, "only owner of id can transfer");
         require((len-2) % bytesPerId == 0, "payData length is invalid");
 
-        p.totalCount = SafeMath.div32(len-2, SafeMath.add32(bytesPerId,newCount));
+        p.totalCount = SafeMath.add32(SafeMath.div32(len-2,bytesPerId),newCount);
         require(p.totalCount < params.maxTransfer, "too many payees");
         
         uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalCount), fee); 
