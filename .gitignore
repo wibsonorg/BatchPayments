@@ -25,3 +25,6 @@ blockchain/history
 # testchain data and passphrases
 config/testchain/data
 config/testchain/secret
+
+# Directory for temporary files
+tmp

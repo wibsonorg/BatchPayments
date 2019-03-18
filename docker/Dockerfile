@@ -22,7 +22,7 @@ RUN yarn global add truffle@4 ganache-cli truffle-assertions
 # Set working directory
 WORKDIR /src
 
-COPY config src/
+COPY config/testchain config/testchain
 
 # Bootstrap a new genesis block
-RUN geth --identity "MyTestNode" init config/testchain/genesis.json --datadir config/testchain/.data
+RUN geth --identity "MyTestNode" init config/testchain/genesis.json --datadir config/testchain/data
