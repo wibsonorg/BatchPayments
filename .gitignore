@@ -22,3 +22,5 @@ blockchain/history
 #truffle
 .tern-port
 
+# testchain passphrase
+config/testchain/secret
