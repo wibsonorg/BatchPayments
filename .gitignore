@@ -19,8 +19,9 @@ blockchain/geth/**
 blockchain/keystore/**
 blockchain/history
 
-#truffle
+# truffle
 .tern-port
 
-# testchain passphrase
+# testchain data and passphrases
+config/testchain/data
 config/testchain/secret
