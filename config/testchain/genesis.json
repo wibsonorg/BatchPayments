@@ -5,13 +5,13 @@
     "eip155Block": 0,
     "eip158Block": 0
   },
-  "difficulty": "0x400",
+  "difficulty": "0x4",
   "gasLimit": "0x8000000",
   "alloc": {
-    "0x9ebd1709ea1bb9f6101a7abb8ea427c95a65c156": {"balance": "111111111"},
-    "0xd9ec843db4075b79cc2fbad2121f95bb9615ffb4": {"balance": "222222222"},
-    "0xeabcff3ed3a8bcfc52899b5e8516072a202a65df": {"balance": "333333333"},
-    "0xb1bacc8890aa9cafa7f6193e5bab4067ec5bccb7": {"balance": "444444444"},
-    "0xc4be259e2b2c8b97307621b17c4c4ad3c7c0f993": {"balance": "555555555"}
+    "0x9ebd1709ea1bb9f6101a7abb8ea427c95a65c156": {"balance": "0000000000000000000000000000"},
+    "0xd9ec843db4075b79cc2fbad2121f95bb9615ffb4": {"balance": "1000000000000000000000000000"},
+    "0xeabcff3ed3a8bcfc52899b5e8516072a202a65df": {"balance": "2000000000000000000000000000"},
+    "0xb1bacc8890aa9cafa7f6193e5bab4067ec5bccb7": {"balance": "3000000000000000000000000000"},
+    "0xc4be259e2b2c8b97307621b17c4c4ad3c7c0f993": {"balance": "4000000000000000000000000000"}
     }
 }
