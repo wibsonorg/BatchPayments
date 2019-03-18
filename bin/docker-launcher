@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# Start a docker-containerized environment equipped for Ethereum development.
+#
+
+
+# Exit if any pipeline returns a non-zero status
+set -e
+
+
+main() {
+    parse_args "$@"
+    set_env
+    # docker-compose up
+    docker-compose up --build
+}
+
+usage() {
+    echo "Usage: $(basename $0) ENVIRONMENT" >&2
+    echo >&2
+    echo "        ENVIRONMENT      Environment to enter to (development, testing)." >&2
+    echo >&2
+    return 1
+}
+
+parse_args() {
+    [ $# -ne 1 ] && usage
+
+    ENVIRONMENT=$1
+    [ -z "$ENVIRONMENT" ] && usage
+
+    return 0
+}
+
+set_env() {
+    case "$ENVIRONMENT" in
+        development)
+            export ETH_CLIENT=ganache-cli
+            ;;
+        testing)
+            export ETH_CLIENT='geth --datadir .data --networkid 316507 --rpc --rpcaddr "127.0.0.1" --rpcport 9656'
+            # export ETH_CLIENT='geth --datadir .data --networkid 316507 --rpc --rpcaddr "127.0.0.1" --rpcport 9656 --unlock 0,1,2,3,4 --password config/testchain/secret --mine'
+            ;;
+        *)
+            echo "Wrong value for ENVIRONMENT."
+            echo "Permitted values: development, testing"
+            return 1
+    esac
+}
+
+
+main "$@"
