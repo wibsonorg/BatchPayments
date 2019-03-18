@@ -36,13 +36,27 @@ In addition, it includes many relevant features, like meta-transactions for end-
 - Batch-Payments Using zk-Snarks: Scalability through verifiable offchain computation (see [6]).
 
 ## Getting started
-### Using docker
-Setup docker, then run `docker-compose up` to get truffle & ganache-cli running.
-Then, in a different terminal, run `./docker-run.sh` 
+### Setup
+##### Using docker
+Use the `docker-launcher` util to start a docker-containerized environment.
+_Note: Docker needs `sudo` or a user belonging to the `docker` group to be able to run._
+Then, in another terminal run `docker-enter` to get a bash shell attached to the container.
 
-### Alternatively install truffle
-- Install truffle@4 locally
-- Install ganache or ganache-cli.
+##### Local installation
+Install dependencies:
+```
+$ npm i
+```
+To run a development client use `ganache-cli`:
+```
+$ npx ganache-cli
+```
+Or run a private testing node with `geth`:
+```
+$ geth --identity "MyTestNode" init config/testchain/genesis.json --datadir config/testchain/data
+$ geth --datadir config/testchain/data --networkid 316507 --rpc --rpcaddr "127.0.0.1" --rpcport 9656 --unlock 0,1,2,3,4 --password config/testchain/secret --mine --miner.threads 1 --nodiscover
+```
+
 
 ### Using Batchpayments
 Run the following commands to get BP deployed
