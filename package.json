@@ -19,5 +19,8 @@
     "truffle": "^4.1.15",
     "truffle-assertions": "^0.7.2",
     "truffle-hdwallet-provider": "^1.0.5"
+  },
+  "devDependencies": {
+    "ganache-cli": "^6.4.1"
   }
 }
