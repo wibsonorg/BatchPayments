@@ -1,0 +1,2 @@
+# Ignore blockchain data
+config/testchain/data/geth
