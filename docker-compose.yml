@@ -3,9 +3,8 @@ services:
     truffle:
         build:
             context: ./docker
-        command: ganache-cli 
+        command: "${ETH_CLIENT}"
         stdin_open: true
         tty: true
         volumes:
         - ./:/src
-        
