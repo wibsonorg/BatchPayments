@@ -38,8 +38,7 @@ set_env() {
             export ETH_CLIENT=ganache-cli
             ;;
         testing)
-            export ETH_CLIENT='geth --datadir .data --networkid 316507 --rpc --rpcaddr "127.0.0.1" --rpcport 9656'
-            # export ETH_CLIENT='geth --datadir .data --networkid 316507 --rpc --rpcaddr "127.0.0.1" --rpcport 9656 --unlock 0,1,2,3,4 --password config/testchain/secret --mine'
+            export ETH_CLIENT='geth --datadir config/testchain/data --networkid 316507 --rpc --rpcaddr "127.0.0.1" --rpcport 9656 --unlock 0,1,2,3,4 --password config/testchain/secret --mine --miner.threads 1 --nodiscover'
             ;;
         *)
             echo "Wrong value for ENVIRONMENT."
