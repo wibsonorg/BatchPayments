@@ -2,7 +2,8 @@ version: '3'
 services:
     truffle:
         build:
-            context: ./docker
+            context: ./
+            dockerfile: ./docker/Dockerfile
         command: "${ETH_CLIENT}"
         stdin_open: true
         tty: true
