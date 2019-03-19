@@ -71,7 +71,7 @@ contract('Payments', (addr)=> {
             // put enough funds to transfer and bulk register ids
             await st.approve(bp.address, total_amount*2);
             t0 = await bp.deposit(total_amount*2, newAccount);
-            from_id = await bp.accountsLength.call() - 1;
+            from_id = await bp.getAccountsLength.call() - 1;
             v0 = await bp.bulkRegister(list.length, rootHash);
 
             // create lock
@@ -232,7 +232,7 @@ contract('Payments', (addr)=> {
     });
 
 
-    describe("collect", ()=> {
+    describe("collect", () => {
         let b,id;
         let acc;
         let userid = [];
