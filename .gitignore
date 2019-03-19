@@ -22,3 +22,9 @@ blockchain/history
 #truffle
 .tern-port
 
+# testchain data and passphrases
+config/testchain/data
+config/testchain/secret
+
+# Directory for temporary files
+tmp
