@@ -12,30 +12,30 @@ contract Accounts is Data {
     Account[] public accounts;
     BulkRecord[] public bulkRegistrations;
  
-    function isValidId(uint id) public view returns (bool) {
-        return (id < accounts.length);
+    function isValidId(uint accountId) public view returns (bool) {
+        return (accountId < accounts.length);
     }
 
-    function isOwnerId(uint id) public view returns (bool) {
-        return isValidId(id) && msg.sender == accounts[id].addr;
+    function isOwnerId(uint accountId) public view returns (bool) {
+        return isValidId(accountId) && msg.sender == accounts[accountId].addr;
     }
 
-    function isClaimedId(uint id) public view returns (bool) {
-        return isValidId(id) && accounts[id].addr != 0;
+    function isClaimedId(uint accountId) public view returns (bool) {
+        return isValidId(accountId) && accounts[accountId].addr != 0;
     }
 
-    modifier validId(uint id) {
-        require(isValidId(id), "id is not valid");
+    modifier validId(uint accountId) {
+        require(isValidId(accountId), "accountId is not valid");
         _;
     }
 
-    modifier onlyOwnerId(uint id) {
-        require(isOwnerId(id), "Only owner can invoke this method");
+    modifier onlyOwnerId(uint accountId) {
+        require(isOwnerId(accountId), "Only owner can invoke this method");
         _;
     }
     
-    modifier claimedId(uint id) {
-        require(isClaimedId(id), "account has no associated address");
+    modifier claimedId(uint accountId) {
+        require(isClaimedId(accountId), "account has no associated address");
         _;
     }
 
@@ -58,20 +58,21 @@ contract Accounts is Data {
     /// @dev Complete registration for a reserved account by showing the bulkRegistration-id and Merkle proof associated with this address
     /// @param addr Address claiming this account
     /// @param proof Merkle proof for address and id
+    /// @param accountId Id of the account to be registered.
     /// @param bulkId BulkRegistration id for the transaction reserving this account 
     
-    function claimId(address addr, uint256[] memory proof, uint id, uint bulkId) public {
+    function claimId(address addr, uint256[] memory proof, uint accountId, uint bulkId) public {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
         uint minId = bulkRegistrations[bulkId].minId;
         uint n = bulkRegistrations[bulkId].n;
         bytes32 rootHash = bulkRegistrations[bulkId].rootHash;
-        bytes32 hash = Merkle.evalProof(proof, id - minId, uint256(addr));
+        bytes32 hash = Merkle.evalProof(proof, accountId - minId, uint256(addr));
         
-        require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");
+        require(accountId >= minId && accountId < minId+n, "the accountId specified is not part of that bulk registration slot");
         require(hash == rootHash, "invalid Merkle proof");
-        emit Register(id, addr);
+        emit Register(accountId, addr);
 
-        accounts[id].addr = addr;
+        accounts[accountId].addr = addr;
     }
 
     /// @dev Register a new account
@@ -86,84 +87,84 @@ contract Accounts is Data {
 
     /// @dev withdraw tokens from the batchpement contract into the original address
     /// @param amount Amount of tokens to withdraw
-    /// @param id Id of the user requesting the withdraw. 
+    /// @param accountId Id of the user requesting the withdraw. 
 
-    function withdraw(uint64 amount, uint256 id) 
+    function withdraw(uint64 amount, uint256 accountId)
     public
-    onlyOwnerId(id) 
-    {    
-        address addr = accounts[id].addr;
-        uint64 balance = accounts[id].balance;
+    onlyOwnerId(accountId)
+    {
+        address addr = accounts[accountId].addr;
+        uint64 balance = accounts[accountId].balance;
 
         require(balance >= amount, "insufficient funds");
         require(amount > 0, "amount should be nonzero");
         
-        balanceSub(id, amount);
+        balanceSub(accountId, amount);
         
         token.transfer(addr, amount);        
     }
 
     /// @dev Deposit tokens into the BatchPayment contract to enable scalable payments
     /// @param amount Amount of tokens to deposit on Account. User should have enough balance and issue an approve method prior to calling this.
-    /// @param id The id of the user account -1 will register a new account and deposit the requested amount on a single operation.
+    /// @param accountId The id of the user account -1 will register a new account and deposit the requested amount on a single operation.
    
-    function deposit(uint64 amount, uint256 id) public {
-        require(id < accounts.length || id == newAccount, "invalid id");
+    function deposit(uint64 amount, uint256 accountId) public {
+        require(accountId < accounts.length || accountId == newAccount, "invalid accountId");
         require(amount > 0, "amount should be positive");
         require(token.transferFrom(msg.sender, address(this), amount), "transfer failed");
 
-        if (id == newAccount)      
+        if (accountId == newAccount)      
         {               // new account
             uint newId = register();
             accounts[newId].balance = amount;
         } else {        // existing account  
-            balanceAdd(id, amount);
+            balanceAdd(accountId, amount);
         }
     }
 
     /// @dev Increase the specified account balance by diff tokens.
-    /// @param id account id, as returned by register, bulkRegister and deposit
+    /// @param accountId account id, as returned by register, bulkRegister and deposit
     /// @param diff number of tokens
     
-    function balanceAdd(uint id, uint64 diff) 
+    function balanceAdd(uint accountId, uint64 diff) 
     internal
-    validId(id) 
+    validId(accountId) 
     {
-        accounts[id].balance = SafeMath.add64(accounts[id].balance, diff);
+        accounts[accountId].balance = SafeMath.add64(accounts[accountId].balance, diff);
     }
 
     /// @dev substract diff tokens from the specified account's balance
-    /// @param id account id, as returned by register, bulkRegister and deposit
+    /// @param accountId account id, as returned by register, bulkRegister and deposit
     /// @param diff number of tokens
 
-    function balanceSub(uint id, uint64 diff) 
+    function balanceSub(uint accountId, uint64 diff) 
     internal
-    validId(id) 
+    validId(accountId)
     {
-        accounts[id].balance = SafeMath.sub64(accounts[id].balance, diff);
+        accounts[accountId].balance = SafeMath.sub64(accounts[accountId].balance, diff);
     }
 
     /// @dev returns the balance associated with the account in tokens
-    /// @param id account requested.
+    /// @param accountId account requested.
 
-    function balanceOf(uint id) 
-    public view 
-    validId(id) 
+    function balanceOf(uint accountId)
+    public view
+    validId(accountId)
     returns (uint64) {
-        return accounts[id].balance;
+        return accounts[accountId].balance;
     }
 
     /// @dev gets number of accounts registered and reserved.
     /// @return returns the size of the accounts array.
 
-    function accountsLength() public view returns (uint) {
+    function getAccountsLength() public view returns (uint) {
         return accounts.length;
     }
 
     /// @dev gets the number of bulk registrations performed
     /// @return the size of the bulkRegistrations array.
 
-    function bulkLength() public view returns (uint) {
+    function getBulkLength() public view returns (uint) {
         return bulkRegistrations.length;
     }
 }

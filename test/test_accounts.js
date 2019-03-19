@@ -93,7 +93,7 @@ contract('Accounts', (addr)=> {
 
             await st.approve(bp.address, amount);
             await bp.deposit(amount, newAccount);
-            let id = await bp.accountsLength.call();
+            let id = await bp.getAccountsLength.call();
             id = id.toNumber()-1;
 
             let x0 = await bp.balanceOf.call(id);
@@ -119,7 +119,7 @@ contract('Accounts', (addr)=> {
             await st.approve(bp.address, amount);
             await bp.deposit(amount, newAccount);
 
-            let id = await bp.accountsLength.call();
+            let id = await bp.getAccountsLength.call();
             id = id.toNumber()-1;  // this is a dangerous way to obtain the ID of the newAccount, as many accounts c
 
             await bp.withdraw(1, id); // make sure we can actually do a withdraw using a valid id
@@ -132,7 +132,7 @@ contract('Accounts', (addr)=> {
             await st.approve(bp.address, amount);
             await bp.deposit(amount, newAccount);
 
-            let id = await bp.accountsLength.call();
+            let id = await bp.getAccountsLength.call();
             id = id.toNumber()-1;
 
             let balance = await bp.balanceOf(id);
@@ -147,7 +147,7 @@ contract('Accounts', (addr)=> {
 //            await st.approve(bp.address, amount);
 //            await bp.deposit(amount, newAccount);
 //
-//            let id = await bp.accountsLength.call();
+//            let id = await bp.getAccountsLength.call();
 //            id = id.toNumber()-1;
 //
 //            let balance = await bp.balanceOf(id);
@@ -169,7 +169,7 @@ contract('Accounts', (addr)=> {
             await st.approve(bp.address, amount);
             await bp.deposit(amount, newAccount);
 
-            let id = await bp.accountsLength.call();
+            let id = await bp.getAccountsLength.call();
             id = id.toNumber()-1;
 
             let balance = await bp.balanceOf(id);
@@ -186,14 +186,14 @@ contract('Accounts', (addr)=> {
 
     describe('registration', ()=> {
         it('deposit() should register new accounts', async() => {
-            let v0 = await bp.accountsLength.call();
+            let v0 = await bp.getAccountsLength.call();
             const amount = 100;
 
             await st.approve(bp.address, amount);
             let tx1 = await bp.deposit(1, newAccount);
-            const v1 = await bp.accountsLength.call();
+            const v1 = await bp.getAccountsLength.call();
             let tx2 = await bp.deposit(1, newAccount);
-            const v2 = await bp.accountsLength.call();
+            const v2 = await bp.getAccountsLength.call();
 
             eventEmitted(tx1, 'Register');
             eventEmitted(tx2, 'Register');
@@ -203,35 +203,35 @@ contract('Accounts', (addr)=> {
         });
 
         it('Bulk registration should reserve new accounts', async()=> {
-            let v0 = await bp.accountsLength.call();
+            let v0 = await bp.getAccountsLength.call();
             const amount = 100;
             const rootHash = web3.fromUtf8("1234");
 
             await bp.bulkRegister(amount, rootHash);
-            const v1 = await bp.accountsLength.call();
+            const v1 = await bp.getAccountsLength.call();
             await bp.bulkRegister(1, rootHash);
-            const v2 = await bp.accountsLength.call();
+            const v2 = await bp.getAccountsLength.call();
 
             assert.equal(v2.toNumber() - v0.toNumber(), 1+amount);
             assert.equal(v1.toNumber() - v0.toNumber(), amount);
         });
 
         it('Bulk registration root hashes should be stored', async()=> {
-            let v0 = await bp.bulkLength.call();
+            let v0 = await bp.getBulkLength.call();
             const amount = 100;
             const rootHash = web3.fromUtf8("1234");
 
             await bp.bulkRegister(amount, rootHash);
-            const v1 = await bp.bulkLength.call();
+            const v1 = await bp.getBulkLength.call();
             await bp.bulkRegister(1, rootHash);
-            const v2 = await bp.bulkLength.call();
+            const v2 = await bp.getBulkLength.call();
 
             assert.equal(v2.toNumber() - v0.toNumber(), 2);
             assert.equal(v1.toNumber() - v0.toNumber(), 1);
         });
 
         it('Bulk registration should respect account limits', async()=> {
-            let v0 = await bp.bulkLength.call();
+            let v0 = await bp.getBulkLength.call();
             const rootHash = web3.fromUtf8("1234");
             const maxBulk = 2**16;
 
@@ -243,7 +243,7 @@ contract('Accounts', (addr)=> {
         // require(accounts.length + n <= maxAccount, "Cannot register: ran out of ids");
 
         it('Bulk registration should fail for n == 0', async()=> {
-            let v0 = await bp.bulkLength.call();
+            let v0 = await bp.getBulkLength.call();
             const n = 0;
             const rootHash = web3.fromUtf8("1234");
 
@@ -251,11 +251,11 @@ contract('Accounts', (addr)=> {
         });
 
         it('register() adds 1 account at a time', async ()=> {
-            let l0 = await bp.accountsLength.call();
+            let l0 = await bp.getAccountsLength.call();
             let new_id = await bp.register();
-            let l1 = await bp.accountsLength.call();
+            let l1 = await bp.getAccountsLength.call();
             let new_id2 = await bp.register();
-            let l2 = await bp.accountsLength.call();
+            let l2 = await bp.getAccountsLength.call();
 
             assert.equal(l2 - l0, 2);
             assert.equal(l1 - l0, 1);
@@ -263,7 +263,7 @@ contract('Accounts', (addr)=> {
 
         it('register() emits Register event', async () => {
             let tx = await await bp.register();
-            let l0 = await bp.accountsLength.call();
+            let l0 = await bp.getAccountsLength.call();
             await eventEmitted(tx, 'Register', ev=>ev.id==l0-1);
             
         });
@@ -282,7 +282,7 @@ contract('Accounts', (addr)=> {
 
         before(async ()=> {
             await bp.bulkRegister(amount, rootHash);
-            let bulkId = await bp.bulkLength.call();
+            let bulkId = await bp.getBulkLength.call();
             bulkId = bulkId.toNumber() -1; // last one
             let id = 0; // first one
         })
@@ -310,8 +310,8 @@ contract('Accounts', (addr)=> {
         it('cannot claim using an id not in the bulk', async ()=> {
             let invalid_id = amount * 2;
 
-            await assertRequire(bp.claimId(a0, proof, invalid_id, bulkId),   "the id specified is not part of that bulk registration slot");
-            await assertRequire(bp.claimId(a0, proof, invalid_id+1, bulkId), "the id specified is not part of that bulk registration slot");
+            await assertRequire(bp.claimId(a0, proof, invalid_id, bulkId),   "the accountId specified is not part of that bulk registration slot");
+            await assertRequire(bp.claimId(a0, proof, invalid_id+1, bulkId), "the accountId specified is not part of that bulk registration slot");
 
             // TODO: there may be additional negative cases
             // require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");

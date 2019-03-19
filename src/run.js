@@ -37,12 +37,12 @@ async function doStuff() {
 
     let t1 = await bp.register();
     await t1;
-    let id1 = await bp.accountsLength.call() - 1;
+    let id1 = await bp.getAccountsLength.call() - 1;
 
     let t2 = await bp.register();
     await t2;
  
-    let delegate = await bp.accountsLength.call() - 1;
+    let delegate = await bp.getAccountsLength.call() - 1;
 
 
     console.log("registered "+id1+" & "+delegate);
@@ -51,7 +51,7 @@ async function doStuff() {
     await st.approve(bp.address, amount);
     let t0 = await bp.deposit(amount, -1); 
     await t0;
-    let id = await bp.accountsLength.call() - 1;
+    let id = await bp.getAccountsLength.call() - 1;
     
     console.log("Desposited on "+id);
 
