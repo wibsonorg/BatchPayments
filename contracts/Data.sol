@@ -5,7 +5,7 @@ import "./IERC20.sol";
 
 contract Data {
     struct Account {
-        address addr;
+        address owner;
         uint64  balance;
         uint32  collected;
     }
