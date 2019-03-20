@@ -75,7 +75,7 @@ library MassExitLib {
 
     function startExit(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts, 
         uint32  delegate,
         bytes sellerList,
@@ -101,7 +101,7 @@ library MassExitLib {
 
     function challengeExitId_1(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts, 
         uint32 challenger,
         uint32 seller,
@@ -127,7 +127,7 @@ library MassExitLib {
 
     function challengeExitId_2(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts, 
         bytes sellerSignature,
         bytes monitorSignature,
@@ -159,7 +159,7 @@ library MassExitLib {
 
     function challengeExit_success(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts) 
         public
     {
@@ -191,7 +191,7 @@ library MassExitLib {
  
     function startExitBalance(
         ExitSlot storage slot, 
-        Data.Params storage params  
+        Data.Config storage params  
         )
         public
     {
@@ -205,7 +205,7 @@ library MassExitLib {
 
     function challengeExitBalance_3(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         uint64 totalBalance
        ) 
         public 
@@ -220,7 +220,7 @@ library MassExitLib {
 
     function challengeExitBalance_4(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts,
         uint32 challenger
        ) 
@@ -241,7 +241,7 @@ library MassExitLib {
 
     function challengeExitBalance_5(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         bytes balanceList
        ) 
         public 
@@ -257,7 +257,7 @@ library MassExitLib {
 
     function challengeExitBalance_6(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         bytes sellerList,
         bytes balanceList,
         uint32 seller
@@ -278,7 +278,7 @@ library MassExitLib {
 
     function challengerTimeout(
         ExitSlot storage slot,
-        Data.Params storage params,
+        Data.Config storage params,
         Data.Account[] storage accounts)
         public
     {
@@ -300,7 +300,7 @@ library MassExitLib {
     function challengeExit_collectSuccessful(
         Data.CollectSlot storage s,
         ExitSlot storage e, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts)
         public
     {   
@@ -342,7 +342,7 @@ library MassExitLib {
     function challenge_accountClosed(
         Data.CollectSlot storage s,
         ExitSlot storage e, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts,
         uint32 challenger,
         bytes sellerList

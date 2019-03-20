@@ -45,7 +45,7 @@ contract Data {
         bytes32 data;
     }
 
-    struct Params {
+    struct Config {
         uint32 maxBulk;                                
         uint32 maxTransfer;               
         uint32 challengeBlocks;               
@@ -61,13 +61,11 @@ contract Data {
         uint64 massExitChallengeStake;     
     }
 
-
-    Params public params;
+    Config public params;
     address public owner;
-   
+
     uint public constant maxAccountId = 2**32-1;      // Maximum account id (32-bits)
     uint public constant newAccountFlag = 2**256-1; // Request registration of new account
     uint public constant instantSlot = 32768;
-
    
 }
