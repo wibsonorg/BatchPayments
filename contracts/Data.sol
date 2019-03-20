@@ -24,8 +24,8 @@ contract Data {
         uint32  greatestAccountId;
         uint32  totalNumberOfPayees;
         uint64  lockTimeoutBlockNumber;
-        bytes32 hash;
-        bytes32 lock;
+        bytes32 paymentDataHash;
+        bytes32 lockingKeyHash;
         bytes32 metadata;
     }
 

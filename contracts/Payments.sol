@@ -49,7 +49,7 @@ contract Payments is Accounts {
         p.fromAccountId = fromId;
         p.amount = amount;
         p.fee = fee;
-        p.lock = lock;
+        p.lockingKeyHash = lock;
         p.lockTimeoutBlockNumber = SafeMath.add64(block.number,params.unlockBlocks);
 
         require(isValidId(fromId), "invalid fromId");
@@ -78,7 +78,7 @@ contract Payments is Accounts {
         }
 
         p.metadata = metadata; 
-        p.hash = keccak256(abi.encodePacked(payData));
+        p.paymentDataHash = keccak256(abi.encodePacked(payData));
 
         payments.push(p);
 
@@ -95,9 +95,9 @@ contract Payments is Accounts {
         require(isValidId(unlockerId), "Invalid unlockerId");
         require(block.number < payments[payIndex].lockTimeoutBlockNumber, "Hash lock expired");
         bytes32 h = keccak256(abi.encodePacked(unlockerId, key));
-        require(h == payments[payIndex].lock, "Invalid key");
+        require(h == payments[payIndex].lockingKeyHash, "Invalid key");
         
-        payments[payIndex].lock = bytes32(0);
+        payments[payIndex].lockingKeyHash = bytes32(0);
         balanceAdd(unlockerId, payments[payIndex].fee);
         
         emit Unlock(payIndex, key);
@@ -110,7 +110,7 @@ contract Payments is Accounts {
 
     function refund(uint payIndex) public returns (bool) {
         require(payIndex < payments.length, "invalid payment Id");
-        require(payments[payIndex].lock != 0, "payment is already unlocked");
+        require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
         Payment memory p = payments[payIndex];
         
