@@ -20,7 +20,7 @@ contract Data {
         uint32  fromAccountId;
         uint64  amount;
         uint64  fee;
-        uint32  minId;
+        uint32  smallestAccountId;
         uint32  maxId;
         uint32  totalCount;
         uint64  block;

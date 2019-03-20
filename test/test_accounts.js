@@ -314,7 +314,7 @@ contract('Accounts', (addr)=> {
             await assertRequire(bp.claimBulkRegistrationId(a0, proof, invalid_id+1, bulkId), "the accountId specified is not part of that bulk registration slot");
 
             // TODO: there may be additional negative cases
-            // require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");
+            // require(id >= smallestAccountId && id < smallestAccountId+n, "the id specified is not part of that bulk registration slot");
         })
 
         it('cannot claim using an invalid proof', async ()=> {
@@ -324,7 +324,7 @@ contract('Accounts', (addr)=> {
             await assertRequire(bp.claimBulkRegistrationId(a0, invalid_proof, id, bulkId), "invalid Merkle proof");
         })
 
-//        require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");
+//        require(id >= smallestAccountId && id < smallestAccountId+n, "the id specified is not part of that bulk registration slot");
 //        require(hash == rootHash, "Merkle proof invalid");
     });
 
