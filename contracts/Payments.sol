@@ -33,7 +33,7 @@ contract Payments is Accounts {
     /// @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
     /// @param lock hash of the key locking this payment to help in atomic data swaps.  
     /// @param metadata Application specific data to be stored associated with the payment
-    
+
     function transfer(
         uint32 fromId, 
         uint64 amount, 
@@ -57,14 +57,14 @@ contract Payments is Accounts {
         require(len > 1, "payData length is invalid");
         uint bytesPerId = uint(payData[1]);
         Account memory from = accounts[fromId];
-        
+
         require(bytesPerId > 0, "bytes per Id should be positive");
         require(from.owner == msg.sender, "only owner of id can transfer");
         require((len-2) % bytesPerId == 0, "payData length is invalid");
 
         p.totalCount = SafeMath.add32(SafeMath.div32(len-2,bytesPerId),newCount);
         require(p.totalCount < params.maxTransfer, "too many payees");
-        
+
         uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalCount), fee); 
         require (total <= from.balance, "not enough funds");
 
@@ -81,7 +81,7 @@ contract Payments is Accounts {
         p.hash = keccak256(abi.encodePacked(payData));
 
         payments.push(p);
-  
+
         emit Transfer(payments.length-1, p.from, p.totalCount, p.amount);
     }
 
@@ -319,7 +319,7 @@ contract Payments is Accounts {
         bytes memory data, 
         uint32 index)
         validId(delegate) 
-        public 
+        public
     {
         require(isAccountOwner(collects[delegate][slot].challenger), "only challenger can call challenge_2");
         
