@@ -30,7 +30,7 @@ contract('Payments', (addr)=> {
 
 
     let bp, tAddress, st;
-    const newAccount = new BigNumber(2).pow(256).minus(1);
+    const newAccountFlag = new BigNumber(2).pow(256).minus(1);
 
     before(async function () {
         this.timeout(10000);
@@ -70,7 +70,7 @@ contract('Payments', (addr)=> {
 
             // put enough funds to transfer and bulk register ids
             await st.approve(bp.address, total_amount*2);
-            t0 = await bp.deposit(total_amount*2, newAccount);
+            t0 = await bp.deposit(total_amount*2, newAccountFlag);
             from_id = await bp.getAccountsLength.call() - 1;
             v0 = await bp.bulkRegister(list.length, rootHash);
 

@@ -31,7 +31,7 @@ contract('BatPay', (addr)=> {
     let a1 = addr[1];
 
     let bp, tAddress, st;
-    const newAccount = new BigNumber(2).pow(256).minus(1);
+    const newAccountFlag = new BigNumber(2).pow(256).minus(1);
 
     before(async ()=> {
         let ret = await utils.getInstances();
