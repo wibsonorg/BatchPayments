@@ -163,7 +163,7 @@ contract('Payments', (addr)=> {
         it('should reject transfer if there are too many payees', async ()=> {
             // NOTE: there are 2 checks that depend on newCount:
             //   1. (payData.length-2) / bytesPerId + newCount < maxTransfer = 100000
-            //   2. accounts.length + newCount < maxAccount = 2 ** 32
+            //   2. accounts.length + newCount < maxAccountId = 2 ** 32
             //
             // because 100000 < 2 ** 32 we can only trigger the first condition
             let toobig_count = 100000; // this should actually be bp.maxTransfer, however it crashes

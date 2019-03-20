@@ -48,7 +48,7 @@ contract Accounts is Data {
     function bulkRegister(uint256 bulkSize, bytes32 rootHash) public {
         require(bulkSize > 0, "Bulk size can't be zero");
         require(bulkSize < params.maxBulk, "Cannot register this number of ids simultaneously");
-        require(SafeMath.add(accounts.length, bulkSize) <= maxAccount, "Cannot register: ran out of ids");
+        require(SafeMath.add(accounts.length, bulkSize) <= maxAccountId, "Cannot register: ran out of ids");
 
         emit BulkRegister(bulkSize, accounts.length, bulkRegistrations.length);
         bulkRegistrations.push(BulkRegistration(rootHash, uint32(bulkSize), uint32(accounts.length)));
@@ -78,7 +78,7 @@ contract Accounts is Data {
     /// @dev Register a new account
     /// @return the id of the new account
     function register() public returns (uint32 ret) {
-        require(accounts.length < maxAccount, "no more accounts left");
+        require(accounts.length < maxAccountId, "no more accounts left");
         ret = (uint32)(accounts.length);
         accounts.push(Account(msg.sender, 0, 0));
         emit AccountRegistered(ret, msg.sender);
