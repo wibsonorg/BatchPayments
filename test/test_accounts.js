@@ -158,9 +158,9 @@ contract('Accounts', (addr)=> {
 //            proof = [0];
 //            bulkId = 1;
 //            id = 1;
-//            bp.claimId(invalid_addr, proof, id, bulkId);
+//            bp.claimBulkRegistrationId(invalid_addr, proof, id, bulkId);
 //
-//            await assertRequire(bp.withdraw(balance, id), "Id registration not completed. Use claimId() first");
+//            await assertRequire(bp.withdraw(balance, id), "Id registration not completed. Use claimBulkRegistrationId() first");
 //        });
 
         it('Should reject withdrawals for $0', async ()=> {
@@ -195,8 +195,8 @@ contract('Accounts', (addr)=> {
             let tx2 = await bp.deposit(1, newAccount);
             const v2 = await bp.getAccountsLength.call();
 
-            eventEmitted(tx1, 'Register');
-            eventEmitted(tx2, 'Register');
+            eventEmitted(tx1, 'AccountRegistered');
+            eventEmitted(tx2, 'AccountRegistered');
             
             assert.equal(v2.toNumber() - v0.toNumber(), 2);
             assert.equal(v1.toNumber() - v0.toNumber(), 1);
@@ -247,7 +247,7 @@ contract('Accounts', (addr)=> {
             const n = 0;
             const rootHash = web3.fromUtf8("1234");
 
-            await assertRequire(bp.bulkRegister(n, rootHash), "Cannot register 0 ids");
+            await assertRequire(bp.bulkRegister(n, rootHash), "Bulk size can't be zero");
         });
 
         it('register() adds 1 account at a time', async ()=> {
@@ -261,10 +261,10 @@ contract('Accounts', (addr)=> {
             assert.equal(l1 - l0, 1);
         });
 
-        it('register() emits Register event', async () => {
+        it('register() emits AccountRegistered event', async () => {
             let tx = await await bp.register();
             let l0 = await bp.getAccountsLength.call();
-            await eventEmitted(tx, 'Register', ev=>ev.id==l0-1);
+            await eventEmitted(tx, 'AccountRegistered', ev => ev.accountId == l0 - 1);
             
         });
 
@@ -297,21 +297,21 @@ contract('Accounts', (addr)=> {
             let tree = merkle.merkle(values);
             // TODO: complete
             // let proof = merkle.getProof(tree, id);
-            // await assertPasses(bp.claimId(a0, proof, id, bulkId));
+            // await assertPasses(bp.claimBulkRegistrationId(a0, proof, id, bulkId));
         })
 
         it('cannot claim using an invalid bulkId', async ()=> {
             let invalid_bulkId = bulkId * 2 + 100;
 
-            await assertRequire(bp.claimId(a0, proof, id, invalid_bulkId),   "the bulkId referenced is invalid")
-            await assertRequire(bp.claimId(a0, proof, id, invalid_bulkId+1), "the bulkId referenced is invalid")
+            await assertRequire(bp.claimBulkRegistrationId(a0, proof, id, invalid_bulkId),   "the bulkId referenced is invalid")
+            await assertRequire(bp.claimBulkRegistrationId(a0, proof, id, invalid_bulkId+1), "the bulkId referenced is invalid")
         })
 
         it('cannot claim using an id not in the bulk', async ()=> {
             let invalid_id = amount * 2;
 
-            await assertRequire(bp.claimId(a0, proof, invalid_id, bulkId),   "the accountId specified is not part of that bulk registration slot");
-            await assertRequire(bp.claimId(a0, proof, invalid_id+1, bulkId), "the accountId specified is not part of that bulk registration slot");
+            await assertRequire(bp.claimBulkRegistrationId(a0, proof, invalid_id, bulkId),   "the accountId specified is not part of that bulk registration slot");
+            await assertRequire(bp.claimBulkRegistrationId(a0, proof, invalid_id+1, bulkId), "the accountId specified is not part of that bulk registration slot");
 
             // TODO: there may be additional negative cases
             // require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");
@@ -321,7 +321,7 @@ contract('Accounts', (addr)=> {
             let id = amount;
             let invalid_proof = [0];
 
-            await assertRequire(bp.claimId(a0, invalid_proof, id, bulkId), "invalid Merkle proof");
+            await assertRequire(bp.claimBulkRegistrationId(a0, invalid_proof, id, bulkId), "invalid Merkle proof");
         })
 
 //        require(id >= minId && id < minId+n, "the id specified is not part of that bulk registration slot");

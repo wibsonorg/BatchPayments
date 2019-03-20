@@ -82,8 +82,8 @@ async function bulkReg(count) {
     let bulk = await b.bulkRegister(list);
     addStat("bulkRegister-"+count, bulk.recp.gasUsed);
 
-    let [id, addr, t] = await b.claimId(bulk, list[0], bulk.minId);
-    addStat("claimId", t.gasUsed);
+    let [id, addr, t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.lowestAccountId);
+    addStat("claimBulkRegistrationId", t.gasUsed);
 }
 
 async function transfer( amount, fee, count, lock, name) {

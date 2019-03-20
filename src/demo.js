@@ -81,7 +81,7 @@ async function doStuff() {
         console.log("claiming "+nbulk+" accounts");
         let w = []
         for(let i = 0; i<nbulk; i++) {
-            w.push( b.claimId(bulk, list[i], i+bulk.minId));
+            w.push( b.claimBulkRegistrationId(bulk, list[i], i+bulk.lowestAccountId));
         }
         await Promise.all(w);
 
