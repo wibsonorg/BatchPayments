@@ -240,7 +240,7 @@ contract('Accounts', (addr)=> {
         });
 
         // TODO: check case we run out of ids:
-        // require(accounts.length + n <= maxAccount, "Cannot register: ran out of ids");
+        // require(accounts.length + n <= maxAccountId, "Cannot register: ran out of ids");
 
         it('Bulk registration should fail for n == 0', async()=> {
             let v0 = await bp.getBulkLength.call();
@@ -269,7 +269,7 @@ contract('Accounts', (addr)=> {
         });
 
         // TODO: check case we registered a lot of accounts
-        // accounts.length < maxAccount, "no more accounts left");
+        // accounts.length < maxAccountId, "no more accounts left");
     });
 
 
