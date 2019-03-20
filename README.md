@@ -99,7 +99,7 @@ There are four data structures maintained on contract storage.  Accounts, paymen
 
 **Account** is an array which stores the account address, balance and latest collected payment associated with an id.
 
-**BulkRecord** is an array used to store information about ids reservation, including the merkle-tree root hash which will allow a user to later claim an individual id, and associate it with her address.
+**BulkRegistration** is an array used to store information about ids reservation, including the merkle-tree root hash which will allow a user to later claim an individual id, and associate it with her address.
 
 **Payment** is an array which stores the per-destination amount, the hash of the destination list, as well as other miscellaneous elements associated with each individual payment.
 
@@ -124,7 +124,7 @@ Alternatively, executing a deposit operation with a user id of -1, would registe
 **Bulk Registration**
 The bulkRegistration function can be used to reserve a range of ids simultaneously. The sender specifies the number of accounts to reserve and provides the root hash of the merkle tree holding the list of addresses. This information is saved on contract storage to allow verification. 
 
-At a later time, the claimId function can be used to assign an address to a pre-reserved account. The sender specifies the account-id, the bulkRegistration-id, and a merkle proof referencing the address. 
+At a later time, the claimBulkRegistrationId function can be used to assign an address to a pre-reserved account. The sender specifies the account-id, the bulkRegistration-id, and a merkle proof referencing the address. 
 
 **Registration on initial deposit**
 In addition, specifying -1 as an account number while sending a token deposit to the BatchPayment contract, will register a new account. 

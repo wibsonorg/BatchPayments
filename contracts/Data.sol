@@ -10,10 +10,10 @@ contract Data {
         uint32  collected;
     }
 
-    struct BulkRecord {
+    struct BulkRegistration {
         bytes32 rootHash;
-        uint32  n;
-        uint32  minId;
+        uint32  recordCount;
+        uint32  lowestRecordId;
     }
 
     struct Payment {

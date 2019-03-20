@@ -164,7 +164,7 @@ contract Payments is Accounts {
     /// @param slot id of the slot requested for the duration of the challenge game
 
     function freeSlot(uint32 delegate, uint32 slot) public {
-        require(isOwnerId(delegate), "only delegate can call");
+        require(isAccountOwner(delegate), "only delegate can call");
         _freeSlot(delegate, slot);
     }
     
@@ -193,7 +193,7 @@ contract Payments is Accounts {
         public
         
     {
-        require(isOwnerId(delegate), "invalid delegate");
+        require(isAccountOwner(delegate), "invalid delegate");
         _freeSlot(delegate, slot);
       
         Account memory acc = accounts[delegate];
@@ -284,7 +284,7 @@ contract Payments is Accounts {
         uint32 challenger)
         public 
         validId(delegate)
-        onlyOwnerId(challenger)
+        onlyAccountOwner(challenger)
          
     {
         Challenge.challenge_1(collects[delegate][slot], params, accounts, challenger);
@@ -301,7 +301,7 @@ contract Payments is Accounts {
         uint32 slot, 
         bytes memory data)
         public  
-        onlyOwnerId(delegate)
+        onlyAccountOwner(delegate)
     {
         Challenge.challenge_2(collects[delegate][slot], params, data);
         emit Challenge_2(delegate, slot);
@@ -321,7 +321,7 @@ contract Payments is Accounts {
         validId(delegate) 
         public 
     {
-        require(isOwnerId(collects[delegate][slot].challenger), "only challenger can call challenge_2");
+        require(isAccountOwner(collects[delegate][slot].challenger), "only challenger can call challenge_2");
         
         Challenge.challenge_3(collects[delegate][slot], params, data, index);
         emit Challenge_3(delegate, slot, index);
@@ -336,7 +336,7 @@ contract Payments is Accounts {
         uint32 slot,
         bytes memory payData) 
         public 
-        onlyOwnerId(delegate) 
+        onlyAccountOwner(delegate) 
     {
         Challenge.challenge_4(
             collects[delegate][slot], 
@@ -372,7 +372,7 @@ contract Payments is Accounts {
         uint32 delegate,
         uint32 slot)
         public
-        onlyOwnerId(delegate) 
+        onlyAccountOwner(delegate) 
     {
         Challenge.challenge_failed(collects[delegate][slot], params, accounts);
         emit Challenge_failed(delegate, slot);
