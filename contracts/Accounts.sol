@@ -5,7 +5,7 @@ import "./Merkle.sol";
 import "./Data.sol";
 
 contract Accounts is Data {
-    event BulkRegister(uint bulkSize, uint lowestAccountId, uint bulkId );
+    event BulkRegister(uint bulkSize, uint smallestAccountId, uint bulkId );
     event AccountRegistered(uint accountId, address accountAddress);
 
     IERC20 public token;
@@ -63,7 +63,7 @@ contract Accounts is Data {
     
     function claimBulkRegistrationId(address addr, uint256[] memory proof, uint accountId, uint bulkId) public {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
-        uint minId = bulkRegistrations[bulkId].lowestRecordId;
+        uint minId = bulkRegistrations[bulkId].smallerRecordId;
         uint n = bulkRegistrations[bulkId].recordCount;
         bytes32 rootHash = bulkRegistrations[bulkId].rootHash;
         bytes32 hash = Merkle.evalProof(proof, accountId - minId, uint256(addr));
