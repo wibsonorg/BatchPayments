@@ -11,7 +11,7 @@ library Challenge {
 
     function futureBlock(uint delta) public view returns(uint64) {
         return SafeMath.add64(block.number, delta);
-    }    
+    }
 
     /// @dev Inspects the compact payment list provided and calculates the sum of the amounts referenced
     /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
@@ -68,36 +68,36 @@ library Challenge {
 
     /// @dev function. Phase I of the challenging game
     /// @param s Collect slot
-    /// @param params Various parameters
+    /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
     /// @param challenger id of the challenger user
 
     function challenge_1(
         Data.CollectSlot storage s, 
-        Data.Params storage params, 
+        Data.Config storage config, 
         Data.Account[] storage accounts, 
         uint32 challenger) 
         public 
     {
-        require(accounts[challenger].balance >= params.challengeStake, "not enough balance");
+        require(accounts[challenger].balance >= config.challengeStake, "not enough balance");
  
         require(s.status == 1, "slot is not available for challenge");      
         require (block.number < s.block, "challenge time has passed");
         s.status = 2;
         s.challenger = challenger;
-        s.block = futureBlock(params.challengeStepBlocks);
+        s.block = futureBlock(config.challengeStepBlocks);
         
-        accounts[challenger].balance -= params.challengeStake;
+        accounts[challenger].balance -= config.challengeStake;
     }
 
     /// @dev Internal function. Phase II of the challenging game
     /// @param s Collect slot
-    /// @param params Various parameters   
+    /// @param config Various parameters   
     /// @param data Binary array listing the payments in which the user was referenced.
 
     function challenge_2(
         Data.CollectSlot storage s, 
-        Data.Params storage params, 
+        Data.Config storage config, 
         bytes memory data) 
         public 
     {
@@ -109,18 +109,18 @@ library Challenge {
 
         s.data = keccak256(data);
         s.status = 3;
-        s.block = futureBlock(params.challengeStepBlocks);
+        s.block = futureBlock(config.challengeStepBlocks);
     }
 
     /// @dev Internal function. Phase III of the challenging game
     /// @param s Collect slot
-    /// @param params Various parameters
+    /// @param config Various parameters
     /// @param data Binary array listing the payments in which the user was referenced.
     /// @param index selecting the disputed payment
 
     function challenge_3(
         Data.CollectSlot storage s, 
-        Data.Params storage params, 
+        Data.Config storage config, 
         bytes memory data, 
         uint32 index) 
         public 
@@ -131,14 +131,14 @@ library Challenge {
         require(s.data == keccak256(data), "data mismatch");
         (s.challengeAmount, s.index) = getDataAtIndex(data, index);
         s.status = 4;
-        s.block = futureBlock(params.challengeStepBlocks);
+        s.block = futureBlock(config.challengeStepBlocks);
     }
 
     /// @dev Internal function. Phase IV of the challenging game
     /// @param s Collect slot
     /// @param payments a reference to the BatPay payments array
     /// @param payData binary data describing the list of account receiving tokens on the selected transfer
-  
+
     function challenge_4(
         Data.CollectSlot storage s,
         Data.Payment[] storage payments, 
@@ -189,13 +189,13 @@ library Challenge {
     /// @dev the challenge was completed successfully, or the delegate failed to respond on time. 
     /// The challenger will collect the stake.
     /// @param s Collect slot
-    /// @param params Various parameters
+    /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
 
    
     function challenge_success(
         Data.CollectSlot storage s, 
-        Data.Params storage params,
+        Data.Config storage config,
         Data.Account[] storage accounts) 
         public 
     {
@@ -203,20 +203,20 @@ library Challenge {
 
         accounts[s.challenger].balance = SafeMath.add64(
             accounts[s.challenger].balance,
-            params.collectStake);
+            config.collectStake);
 
         s.status = 0;
     }
 
     /// @dev Internal function. The delegate proved the challenger wrong, or the challenger failed to respond on time. The delegae collects the stake.
     /// @param s Collect slot
-    /// @param params Various parameters
+    /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
 
 
     function challenge_failed(
         Data.CollectSlot storage s, 
-        Data.Params storage params,
+        Data.Config storage config,
         Data.Account[] storage accounts) 
         public 
     {
@@ -226,12 +226,12 @@ library Challenge {
         // delegate wins Stake
         accounts[s.delegate].balance = SafeMath.add64(
             accounts[s.delegate].balance,
-            params.challengeStake);
+            config.challengeStake);
 
         // reset slot to status=1, waiting for challenges
         s.challenger = 0;
         s.status = 1;
-        s.block = futureBlock(params.challengeBlocks);
+        s.block = futureBlock(config.challengeBlocks);
     }
 
 
