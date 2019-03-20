@@ -50,7 +50,7 @@ contract Payments is Accounts {
         p.amount = amount;
         p.fee = fee;
         p.lock = lock;
-        p.block = SafeMath.add64(block.number,params.unlockBlocks);
+        p.lockTimeoutBlockNumber = SafeMath.add64(block.number,params.unlockBlocks);
 
         require(isValidId(fromId), "invalid fromId");
         uint len = payData.length;
@@ -93,7 +93,7 @@ contract Payments is Accounts {
     function unlock(uint32 payIndex, uint32 unlockerId, bytes memory key) public returns(bool) {
         require(payIndex < payments.length, "invalid payIndex");
         require(isValidId(unlockerId), "Invalid unlockerId");
-        require(block.number < payments[payIndex].block, "Hash lock expired");
+        require(block.number < payments[payIndex].lockTimeoutBlockNumber, "Hash lock expired");
         bytes32 h = keccak256(abi.encodePacked(unlockerId, key));
         require(h == payments[payIndex].lock, "Invalid key");
         
@@ -111,7 +111,7 @@ contract Payments is Accounts {
     function refund(uint payIndex) public returns (bool) {
         require(payIndex < payments.length, "invalid payment Id");
         require(payments[payIndex].lock != 0, "payment is already unlocked");
-        require(block.number >= payments[payIndex].block, "Hash lock has not expired yet");
+        require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
         Payment memory p = payments[payIndex];
         
         require(p.totalNumberOfPayees > 0, "payment already refunded");
@@ -207,7 +207,7 @@ contract Payments is Accounts {
         // Check payIndex is valid
         require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex");
         require(payIndex > tacc.collected, "payIndex is not a valid value");
-        require(payments[payIndex-1].block < block.number, "cannot collect payments that can be unlocked");
+        require(payments[payIndex-1].lockTimeoutBlockNumber < block.number, "cannot collect payments that can be unlocked");
 
         // Check if fee is valid
         require (fee <= amount, "fee is too big");
