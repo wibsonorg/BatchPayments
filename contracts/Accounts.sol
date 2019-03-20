@@ -17,11 +17,11 @@ contract Accounts is Data {
     }
 
     function isAccountOwner(uint accountId) public view returns (bool) {
-        return isValidId(accountId) && msg.sender == accounts[accountId].addr;
+        return isValidId(accountId) && msg.sender == accounts[accountId].owner;
     }
 
     function isClaimedAccountId(uint accountId) public view returns (bool) {
-        return isValidId(accountId) && accounts[accountId].addr != 0;
+        return isValidId(accountId) && accounts[accountId].owner != 0;
     }
 
     modifier validId(uint accountId) {
@@ -72,7 +72,7 @@ contract Accounts is Data {
         require(hash == rootHash, "invalid Merkle proof");
         emit AccountRegistered(accountId, addr);
 
-        accounts[accountId].addr = addr;
+        accounts[accountId].owner = addr;
     }
 
     /// @dev Register a new account
@@ -93,7 +93,7 @@ contract Accounts is Data {
     public
     onlyAccountOwner(accountId)
     {
-        address addr = accounts[accountId].addr;
+        address addr = accounts[accountId].owner;
         uint64 balance = accounts[accountId].balance;
 
         require(balance >= amount, "insufficient funds");

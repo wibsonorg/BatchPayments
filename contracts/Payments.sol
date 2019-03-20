@@ -59,7 +59,7 @@ contract Payments is Accounts {
         Account memory from = accounts[fromId];
         
         require(bytesPerId > 0, "bytes per Id should be positive");
-        require(from.addr == msg.sender, "only owner of id can transfer");
+        require(from.owner == msg.sender, "only owner of id can transfer");
         require((len-2) % bytesPerId == 0, "payData length is invalid");
 
         p.totalCount = SafeMath.add32(SafeMath.div32(len-2,bytesPerId),newCount);
@@ -202,7 +202,7 @@ contract Payments is Accounts {
         require(to <= accounts.length, "to must be a valid account id");
 
         Account memory tacc = accounts[to];
-        require(tacc.addr != 0, "account registration has to be completed");
+        require(tacc.owner != 0, "account registration has to be completed");
 
         // Check payIndex is valid
         require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex");
@@ -220,7 +220,7 @@ contract Payments is Accounts {
             // If "to" != delegate, check who signed this transaction
             bytes32 hash = keccak256(abi.encodePacked(address(this), delegate, to, tacc.collected, payIndex, amount, fee, destination)); 
             
-            require(Challenge.recoverHelper(hash, signature) == tacc.addr, "Bad user signature");
+            require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
         }
 
         sl.minPayIndex = tacc.collected;

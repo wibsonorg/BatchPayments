@@ -144,7 +144,7 @@ library MassExitLib {
             slot.destination 
             ));
 
-        require(Challenge.recoverHelper(hash, sellerSignature) == accounts[slot.seller].addr, "invalid seller signature");
+        require(Challenge.recoverHelper(hash, sellerSignature) == accounts[slot.seller].owner, "invalid seller signature");
         require(Challenge.recoverHelper(hash, monitorSignature) == monitorAddress, "invalid monitor address");
 
         // Challenge Failed. 
