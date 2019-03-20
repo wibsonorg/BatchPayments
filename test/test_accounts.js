@@ -29,7 +29,7 @@ contract('Accounts', (addr)=> {
     let a1 = addr[1];
 
     let bp, tAddress, st;
-    const newAccount = new BigNumber(2).pow(256).minus(1);
+    const newAccountFlag = new BigNumber(2).pow(256).minus(1);
 
     before(async ()=> {
         await utils.skipBlocks(1);
@@ -47,10 +47,10 @@ contract('Accounts', (addr)=> {
         it('Should fail on not enough approval', async ()=> {
             const amount = 100;
             await st.approve(bp.address, amount-1);
-            await catchRevert(bp.deposit(amount, newAccount));
+            await catchRevert(bp.deposit(amount, newAccountFlag));
 
             await st.approve(bp.address, 0);
-            await catchRevert(bp.deposit(amount, newAccount));
+            await catchRevert(bp.deposit(amount, newAccountFlag));
         });
 
         it('Should accept deposits for new accounts', async ()=> {
@@ -58,7 +58,7 @@ contract('Accounts', (addr)=> {
             const amount = 100;
 
             let r0 = await st.approve(bp.address, amount);
-            let r1 = await bp.deposit(amount, newAccount);
+            let r1 = await bp.deposit(amount, newAccountFlag);
 
             let v0 = await st.balanceOf.call(a0);
             let v1 = await st.balanceOf.call(bp.address);
@@ -72,7 +72,7 @@ contract('Accounts', (addr)=> {
             const amount = 100;
 
             let r0 = await st.approve(bp.address, 2*amount);
-            let r1 = await bp.deposit(amount, newAccount);
+            let r1 = await bp.deposit(amount, newAccountFlag);
 
             let v0 = await bp.balanceOf.call(0);
             await bp.deposit(amount, 0);
@@ -83,7 +83,7 @@ contract('Accounts', (addr)=> {
         });
 
         it('Should reject 0-token deposits', async ()=> {
-            await assertRequire(bp.deposit(0, newAccount), "amount should be positive");
+            await assertRequire(bp.deposit(0, newAccountFlag), "amount should be positive");
         });
     });
 
@@ -92,7 +92,7 @@ contract('Accounts', (addr)=> {
             const amount = 100;
 
             await st.approve(bp.address, amount);
-            await bp.deposit(amount, newAccount);
+            await bp.deposit(amount, newAccountFlag);
             let id = await bp.getAccountsLength.call();
             id = id.toNumber()-1;
 
@@ -117,10 +117,10 @@ contract('Accounts', (addr)=> {
             const amount = 100;
 
             await st.approve(bp.address, amount);
-            await bp.deposit(amount, newAccount);
+            await bp.deposit(amount, newAccountFlag);
 
             let id = await bp.getAccountsLength.call();
-            id = id.toNumber()-1;  // this is a dangerous way to obtain the ID of the newAccount, as many accounts c
+            id = id.toNumber()-1;  // this is a dangerous way to obtain the ID of the newAccountFlag, as many accounts c
 
             await bp.withdraw(1, id); // make sure we can actually do a withdraw using a valid id
             await catchRevert(bp.withdraw(amount/2, id+1)); // try with invalid id
@@ -130,7 +130,7 @@ contract('Accounts', (addr)=> {
             const amount = 100;
 
             await st.approve(bp.address, amount);
-            await bp.deposit(amount, newAccount);
+            await bp.deposit(amount, newAccountFlag);
 
             let id = await bp.getAccountsLength.call();
             id = id.toNumber()-1;
@@ -145,7 +145,7 @@ contract('Accounts', (addr)=> {
 //            const amount = 100;
 //
 //            await st.approve(bp.address, amount);
-//            await bp.deposit(amount, newAccount);
+//            await bp.deposit(amount, newAccountFlag);
 //
 //            let id = await bp.getAccountsLength.call();
 //            id = id.toNumber()-1;
@@ -167,7 +167,7 @@ contract('Accounts', (addr)=> {
             const amount = 100;
 
             await st.approve(bp.address, amount);
-            await bp.deposit(amount, newAccount);
+            await bp.deposit(amount, newAccountFlag);
 
             let id = await bp.getAccountsLength.call();
             id = id.toNumber()-1;
@@ -190,9 +190,9 @@ contract('Accounts', (addr)=> {
             const amount = 100;
 
             await st.approve(bp.address, amount);
-            let tx1 = await bp.deposit(1, newAccount);
+            let tx1 = await bp.deposit(1, newAccountFlag);
             const v1 = await bp.getAccountsLength.call();
-            let tx2 = await bp.deposit(1, newAccount);
+            let tx2 = await bp.deposit(1, newAccountFlag);
             const v2 = await bp.getAccountsLength.call();
 
             eventEmitted(tx1, 'AccountRegistered');

@@ -109,11 +109,11 @@ contract Accounts is Data {
     /// @param accountId The id of the user account -1 will register a new account and deposit the requested amount on a single operation.
    
     function deposit(uint64 amount, uint256 accountId) public {
-        require(accountId < accounts.length || accountId == newAccount, "invalid accountId");
+        require(accountId < accounts.length || accountId == newAccountFlag, "invalid accountId");
         require(amount > 0, "amount should be positive");
         require(token.transferFrom(msg.sender, address(this), amount), "transfer failed");
 
-        if (accountId == newAccount)      
+        if (accountId == newAccountFlag)      
         {               // new account
             uint newId = register();
             accounts[newId].balance = amount;
