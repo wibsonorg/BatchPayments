@@ -63,12 +63,12 @@ contract Accounts is Data {
     
     function claimBulkRegistrationId(address addr, uint256[] memory proof, uint accountId, uint bulkId) public {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
-        uint minId = bulkRegistrations[bulkId].smallestRecordId;
+        uint smallestAccountId = bulkRegistrations[bulkId].smallestRecordId;
         uint n = bulkRegistrations[bulkId].recordCount;
         bytes32 rootHash = bulkRegistrations[bulkId].rootHash;
-        bytes32 hash = Merkle.evalProof(proof, accountId - minId, uint256(addr));
+        bytes32 hash = Merkle.evalProof(proof, accountId - smallestAccountId, uint256(addr));
         
-        require(accountId >= minId && accountId < minId+n, "the accountId specified is not part of that bulk registration slot");
+        require(accountId >= smallestAccountId && accountId < smallestAccountId+n, "the accountId specified is not part of that bulk registration slot");
         require(hash == rootHash, "invalid Merkle proof");
         emit AccountRegistered(accountId, addr);
 

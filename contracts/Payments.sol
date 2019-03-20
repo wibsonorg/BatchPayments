@@ -71,8 +71,8 @@ contract Payments is Accounts {
         from.balance = SafeMath.sub64(from.balance, total);
         accounts[fromId] = from;
 
-        p.minId = uint32(accounts.length);
-        p.maxId = SafeMath.add32(p.minId, newCount); 
+        p.smallestAccountId = uint32(accounts.length);
+        p.maxId = SafeMath.add32(p.smallestAccountId, newCount); 
         if (newCount > 0) {
             bulkRegister(newCount, rootHash);
         }
