@@ -9,7 +9,7 @@ import "./Challenge.sol";
 /// steps of the collect challenge game
 
 contract Payments is Accounts {
-    event Transfer(uint payIndex, uint from, uint totalCount, uint amount);
+    event Transfer(uint payIndex, uint from, uint totalNumberOfPayees, uint amount);
     event Unlock(uint payIndex, bytes key);
     event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
     event Challenge_1(uint delegate, uint slot, uint challenger);
@@ -62,10 +62,10 @@ contract Payments is Accounts {
         require(from.owner == msg.sender, "only owner of id can transfer");
         require((len-2) % bytesPerId == 0, "payData length is invalid");
 
-        p.totalCount = SafeMath.add32(SafeMath.div32(len-2,bytesPerId),newCount);
-        require(p.totalCount < params.maxTransfer, "too many payees");
+        p.totalNumberOfPayees = SafeMath.add32(SafeMath.div32(len-2,bytesPerId),newCount);
+        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees");
 
-        uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalCount), fee); 
+        uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalNumberOfPayees), fee); 
         require (total <= from.balance, "not enough funds");
 
         from.balance = SafeMath.sub64(from.balance, total);
@@ -82,7 +82,7 @@ contract Payments is Accounts {
 
         payments.push(p);
 
-        emit Transfer(payments.length-1, p.fromAccountId, p.totalCount, p.amount);
+        emit Transfer(payments.length-1, p.fromAccountId, p.totalNumberOfPayees, p.amount);
     }
 
     /// @dev provide the required key, releasing the payment and enabling the buyer decryption the digital content
@@ -114,13 +114,13 @@ contract Payments is Accounts {
         require(block.number >= payments[payIndex].block, "Hash lock has not expired yet");
         Payment memory p = payments[payIndex];
         
-        require(p.totalCount > 0, "payment already refunded");
+        require(p.totalNumberOfPayees > 0, "payment already refunded");
         
         uint64 total = SafeMath.add64(
-            SafeMath.mul64(p.totalCount, p.amount),
+            SafeMath.mul64(p.totalNumberOfPayees, p.amount),
             p.fee);
 
-        p.totalCount = 0;
+        p.totalNumberOfPayees = 0;
         p.fee = 0;
         p.amount = 0;
         payments[payIndex] = p;
