@@ -66,7 +66,7 @@ contract Accounts is Data {
         uint smallestAccountId = bulkRegistrations[bulkId].smallestRecordId;
         uint n = bulkRegistrations[bulkId].recordCount;
         bytes32 rootHash = bulkRegistrations[bulkId].rootHash;
-        bytes32 hash = Merkle.evalProof(proof, accountId - smallestAccountId, uint256(addr));
+        bytes32 hash = Merkle.getProofRootHash(proof, accountId - smallestAccountId, uint256(addr));
         
         require(accountId >= smallestAccountId && accountId < smallestAccountId+n, "the accountId specified is not part of that bulk registration slot");
         require(hash == rootHash, "invalid Merkle proof");

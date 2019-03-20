@@ -18,7 +18,7 @@ library Merkle {
     /// @param value the leaf element to verify on the set.
     /// @return the hash of the merkle proof. Should match the merkle root if the proof is valid
 
-    function evalProof(uint256[] memory proof, uint256 key, uint256 value) public pure  returns(bytes32) {
+    function getProofRootHash(uint256[] memory proof, uint256 key, uint256 value) public pure  returns(bytes32) {
         bytes32 hash = keccak256(abi.encodePacked(value));
         uint256 k = key;
         for(uint i = 0; i<proof.length; i++) {
