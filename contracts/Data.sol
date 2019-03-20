@@ -13,14 +13,14 @@ contract Data {
     struct BulkRegistration {
         bytes32 rootHash;
         uint32  recordCount;
-        uint32  lowestRecordId;
+        uint32  smallerRecordId;
     }
 
     struct Payment {
         uint32  from;
         uint64  amount;
         uint64  fee;
-        uint32  minId;  
+        uint32  minId;
         uint32  maxId;
         uint32  totalCount;
         uint64  block;
