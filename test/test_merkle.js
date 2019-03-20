@@ -94,7 +94,7 @@ describe('merkle lib', ()=> {
 
             for(let i = 0; i<v.length; i++) {
                 let proof = merkle.getProof(tree, i);
-                let x = merkle.evalProof(proof, v[i]);
+                let x = merkle.getProofRootHash(proof, v[i]);
                 assert.equal(tree.roothash, x);
             }
         });
@@ -113,7 +113,7 @@ describe('merkle lib', ()=> {
                     if (proof[j].d == 'l') key = key + 1;
                 }
 
-                let x = await testhelper.evalProof.call(pp, key, v[i]);
+                let x = await testhelper.getProofRootHash.call(pp, key, v[i]);
                 assert.equal(tree.roothash, x);
             }
         })
