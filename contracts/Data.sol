@@ -21,7 +21,7 @@ contract Data {
         uint64  amount;
         uint64  fee;
         uint32  smallestAccountId;
-        uint32  maxId;
+        uint32  greatestAccountId;
         uint32  totalCount;
         uint64  block;
         bytes32 hash;
