@@ -17,7 +17,7 @@ contract Data {
     }
 
     struct Payment {
-        uint32  from;
+        uint32  fromAccountId;
         uint64  amount;
         uint64  fee;
         uint32  minId;

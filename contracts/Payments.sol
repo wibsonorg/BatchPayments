@@ -46,7 +46,7 @@ contract Payments is Accounts {
         external 
     {
         Payment memory p;
-        p.from = fromId;
+        p.fromAccountId = fromId;
         p.amount = amount;
         p.fee = fee;
         p.lock = lock;
@@ -82,7 +82,7 @@ contract Payments is Accounts {
 
         payments.push(p);
 
-        emit Transfer(payments.length-1, p.from, p.totalCount, p.amount);
+        emit Transfer(payments.length-1, p.fromAccountId, p.totalCount, p.amount);
     }
 
     /// @dev provide the required key, releasing the payment and enabling the buyer decryption the digital content
@@ -126,7 +126,7 @@ contract Payments is Accounts {
         payments[payIndex] = p;
  
         // Complete refund
-        balanceAdd(p.from, total);
+        balanceAdd(p.fromAccountId, total);
     }
 
 
