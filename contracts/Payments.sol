@@ -31,7 +31,7 @@ contract Payments is Accounts {
     /// @param payData efficient representation of the destination account list
     /// @param newCount number of new destination accounts that will be reserved during the registerPayment transaction 
     /// @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
-    /// @param lock hash of the key locking this payment to help in atomic data swaps.  
+    /// @param lockingKeyHash hash of the key locking this payment to help in atomic data swaps.  
     /// @param metadata Application specific data to be stored associated with the payment
 
     function registerPayment(
@@ -41,7 +41,7 @@ contract Payments is Accounts {
         bytes payData, 
         uint newCount,      
         bytes32 rootHash,
-        bytes32 lock,
+        bytes32 lockingKeyHash,
         bytes32 metadata) 
         external 
     {
@@ -49,7 +49,7 @@ contract Payments is Accounts {
         p.fromAccountId = fromId;
         p.amount = amount;
         p.fee = fee;
-        p.lockingKeyHash = lock;
+        p.lockingKeyHash = lockingKeyHash;
         p.lockTimeoutBlockNumber = SafeMath.add64(block.number,params.unlockBlocks);
 
         require(isValidId(fromId), "invalid fromId");

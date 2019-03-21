@@ -131,9 +131,9 @@ contract("challenge", ()=> {
         slot++;
         for(let i = 0; i<nPays; i++) 
         {
-            let lock = 0;
-            if (i == 2) lock = 1;
-            let [ pid, t ] = await b.registerPayment(id, 10, 2, userid, lock);
+            let lockingKeyHash = 0;
+            if (i == 2) lockingKeyHash = 1;
+            let [ pid, t ] = await b.registerPayment(id, 10, 2, userid, lockingKeyHash);
             payid.push(pid);
             if (pid > maxPayIndex) maxPayIndex = pid;
         }
