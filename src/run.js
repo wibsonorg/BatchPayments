@@ -67,7 +67,7 @@ async function doStuff() {
     list[0] = id1;
     let data = utils.getPayData(list);
     
-    console.log("Transfer from "+id);
+    console.log("PaymentRegistered from "+id);
     
     let v1 = await bp.registerPayment(id, 1, 0, data, newIds, 0x1234, 0, 0);
     

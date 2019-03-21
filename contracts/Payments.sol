@@ -9,7 +9,7 @@ import "./Challenge.sol";
 /// steps of the collect challenge game
 
 contract Payments is Accounts {
-    event Transfer(uint payIndex, uint from, uint totalNumberOfPayees, uint amount);
+    event PaymentRegistered(uint payIndex, uint from, uint totalNumberOfPayees, uint amount);
     event Unlock(uint payIndex, bytes key);
     event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
     event Challenge_1(uint delegate, uint slot, uint challenger);
@@ -24,7 +24,7 @@ contract Payments is Accounts {
 
 
 
-    /// @dev Transfer tokens to multiple recipients
+    /// @dev Register token payment to multiple recipients
     /// @param fromId account id for the originator of the transaction
     /// @param amount amount of tokens to pay each destination. 
     /// @param fee Fee in tokens to be payed to the party providing the unlocking service
@@ -82,7 +82,7 @@ contract Payments is Accounts {
 
         payments.push(p);
 
-        emit Transfer(payments.length-1, p.fromAccountId, p.totalNumberOfPayees, p.amount);
+        emit PaymentRegistered(payments.length-1, p.fromAccountId, p.totalNumberOfPayees, p.amount);
     }
 
     /// @dev provide the required key, releasing the payment and enabling the buyer decryption the digital content
