@@ -10,7 +10,7 @@ import "./Challenge.sol";
 
 contract Payments is Accounts {
     event PaymentRegistered(uint payIndex, uint from, uint totalNumberOfPayees, uint amount);
-    event Unlock(uint payIndex, bytes key);
+    event PaymentUnlocked(uint payIndex, bytes key);
     event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
     event Challenge_1(uint delegate, uint slot, uint challenger);
     event Challenge_2(uint delegate, uint slot);
@@ -100,7 +100,7 @@ contract Payments is Accounts {
         payments[payIndex].lockingKeyHash = bytes32(0);
         balanceAdd(unlockerId, payments[payIndex].fee);
         
-        emit Unlock(payIndex, key);
+        emit PaymentUnlocked(payIndex, key);
         return true;
     }
 
