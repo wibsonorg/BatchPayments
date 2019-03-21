@@ -323,9 +323,9 @@ library MassExitLib {
 
         s.status = 0;
 
-        // Challenges from exits shouldn't modify seller.collected
-        if (accounts[s.to].collected > s.minPayIndex)
-            accounts[s.to].collected = s.minPayIndex;
+        // Challenges from exits shouldn't modify seller.lastCollectedPaymentId
+        if (accounts[s.to].lastCollectedPaymentId > s.minPayIndex)
+            accounts[s.to].lastCollectedPaymentId = s.minPayIndex;
 
         accounts[s.delegate].balance = SafeMath.add64(
             accounts[s.delegate].balance,
@@ -372,9 +372,9 @@ library MassExitLib {
         // Check seller is included on List
         indexOf(sellerList, s.to);
 
-        // Challenges from exits shouldn't modify seller.collected
-        if (accounts[s.to].collected > s.minPayIndex)
-            accounts[s.to].collected = s.minPayIndex;
+        // Challenges from exits shouldn't modify seller.lastCollectedPaymentId
+        if (accounts[s.to].lastCollectedPaymentId > s.minPayIndex)
+            accounts[s.to].lastCollectedPaymentId = s.minPayIndex;
  
         // challenger wins stake
         accounts[challenger].balance = SafeMath.add64(

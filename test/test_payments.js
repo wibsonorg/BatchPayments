@@ -383,28 +383,28 @@ contract('Payments', (addr)=> {
             let mid = userid[6];
             let slot = b.instantSlot+2;
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
-            let [addr,balance,collected] = await b.getAccount(mid);
+            let [addr,balance,lastCollectedPaymentId] = await b.getAccount(mid);
 
             let fee = Math.floor(amount/3);
             let b0 = (await b.balanceOf(mid)).toNumber();
             let c0 = (await b.balanceOf(id)).toNumber();
             let d0 = (await b.tokenBalance(acc[1])).toNumber();
 
-            assertRequire(b.collect(id, slot, mid, collected, maxPayIndex+1, amount, amount/3, acc[1]), "payIndex is not a valid value");
+            assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, maxPayIndex+1, amount, amount/3, acc[1]), "payIndex is not a valid value");
     
         });
         it('should reject if invalid payIndex', async ()=>{
             let mid = userid[6];
             let slot = b.instantSlot+2;
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
-            let [addr,balance,collected] = await b.getAccount(mid);
+            let [addr,balance,lastCollectedPaymentId] = await b.getAccount(mid);
 
             let fee = Math.floor(amount/3);
             let b0 = (await b.balanceOf(mid)).toNumber();
             let c0 = (await b.balanceOf(id)).toNumber();
             let d0 = (await b.tokenBalance(acc[1])).toNumber();
 
-            assertRequire(b.collect(id, slot, mid, collected, (await b.getPaymentsLength())+100, amount, amount/3, acc[1]), "invalid payIndex");
+            assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, (await b.getPaymentsLength())+100, amount, amount/3, acc[1]), "invalid payIndex");
     
         });
         
@@ -412,7 +412,7 @@ contract('Payments', (addr)=> {
             let mid = userid[6];
             let slot = b.instantSlot+2;
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
-            let [addr,balance,collected] = await b.getAccount(mid);
+            let [addr,balance,lastCollectedPaymentId] = await b.getAccount(mid);
 
             let fee = Math.floor(amount/3);
             let b0 = (await b.balanceOf(mid)).toNumber();
@@ -426,14 +426,14 @@ contract('Payments', (addr)=> {
             let mid = userid[7];
             let slot = b.instantSlot+2;
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
-            let [addr,balance,collected] = await b.getAccount(mid);
+            let [addr,balance,lastCollectedPaymentId] = await b.getAccount(mid);
 
             let fee = Math.floor(amount/3);
             let b0 = (await b.balanceOf(mid)).toNumber();
             let c0 = (await b.balanceOf(id)).toNumber();
             let d0 = (await b.tokenBalance(acc[1])).toNumber();
 
-            assertRequire(b.collect(id, slot, 1000000, collected+1, maxPayIndex, amount, amount/3, 0), "Bad user signature");
+            assertRequire(b.collect(id, slot, 1000000, lastCollectedPaymentId+1, maxPayIndex, amount, amount/3, 0), "Bad user signature");
         });
     });
 

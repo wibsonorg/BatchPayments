@@ -206,7 +206,7 @@ contract Payments is Accounts {
 
         // Check payIndex is valid
         require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex");
-        require(payIndex > tacc.collected, "payIndex is not a valid value");
+        require(payIndex > tacc.lastCollectedPaymentId, "payIndex is not a valid value");
         require(payments[payIndex-1].lockTimeoutBlockNumber < block.number, "cannot collect payments that can be unlocked");
 
         // Check if fee is valid
@@ -218,12 +218,12 @@ contract Payments is Accounts {
 
         if (delegate != toAccountId) {
             // If "toAccountId" != delegate, check who signed this transaction
-            bytes32 hash = keccak256(abi.encodePacked(address(this), delegate, toAccountId, tacc.collected, payIndex, declaredAmount, fee, destination)); 
+            bytes32 hash = keccak256(abi.encodePacked(address(this), delegate, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount, fee, destination)); 
             
             require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
         }
 
-        sl.minPayIndex = tacc.collected;
+        sl.minPayIndex = tacc.lastCollectedPaymentId;
         sl.maxPayIndex = payIndex;
 
         uint64 needed = params.collectStake;
@@ -255,7 +255,7 @@ contract Payments is Accounts {
         sl.block = uint64(block.number + params.challengeBlocks);
         sl.status = 1;
         
-        tacc.collected = uint32(payIndex);
+        tacc.lastCollectedPaymentId = uint32(payIndex);
         accounts[toAccountId] = tacc;
 
         // check if the user is withdrawing its balance

@@ -7,7 +7,7 @@ contract Data {
     struct Account {
         address owner;
         uint64  balance;
-        uint32  collected;
+        uint32  lastCollectedPaymentId;
     }
 
     struct BulkRegistration {

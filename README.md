@@ -75,13 +75,13 @@ The BatchPayment contract can be instantiated to act as an optimization proxy fo
 
 ### Roles
 There are five different roles on the BatchPayment ecosystem: buyer, seller, unlocker, delegate and monitor.
-Players may interact with BatchPayment in  more than one of these roles, depending on the circumstance. All roles will be identify by an account  id obtained during registration.
+Players may interact with BatchPayment in  more than one of these roles, depending on the circumstance. All roles will be identified by an account id obtained during registration.
 
 #### Buyer
 The buyer deposits tokens into the BatchPayment contract, and uses her balance to pay sellers.
 
 #### Seller
-The seller participates in several operations with one or many buyers, and collects afterwards her earnings in her account. The balance could be withdrawn into an erc20 token account. For seller operation.
+The seller participates in several operations with one or many buyers, and collects afterwards her earnings in her account. The balance could be withdrawn into an erc20 token account.
 
 #### Unlocker
 The unlocker looks for a locked payment issued by a buyer, which references a key she possess, and provides the required key in exchange for a fee. This releases the payment to both sellers and unlocker. 
