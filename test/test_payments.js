@@ -94,7 +94,7 @@ contract('Payments', (addr)=> {
 
         it('should accept transfer+unlock with good key', async ()=> {
             let v1 = await bp.transfer(from_id, 1, fee, pay_data, new_count, rootHash, lock, metadata);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+            let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
             await bp.unlock(payId, unlocker_id, key);
 
@@ -105,7 +105,7 @@ contract('Payments', (addr)=> {
 
         it('should reject transfer+unlock with bad key', async ()=> {
             let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+            let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
             await assertRequire(bp.unlock(payId, unlocker_id, "not-the-key"), "Invalid key");
 
@@ -116,7 +116,7 @@ contract('Payments', (addr)=> {
 
         it('should accept transfer+refund after timeout', async ()=> {
             let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+            let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
             await utils.skipBlocks(unlockBlocks);
             let v2 = await bp.refund(payId);
@@ -128,7 +128,7 @@ contract('Payments', (addr)=> {
 
         it('should reject transfer+refund before timeout', async ()=> {
             let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+            let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
             await assertRequire(bp.refund(payId), "Hash lock has not expired yet");
 
@@ -404,7 +404,7 @@ contract('Payments', (addr)=> {
             let c0 = (await b.balanceOf(id)).toNumber();
             let d0 = (await b.tokenBalance(acc[1])).toNumber();
 
-            assertRequire(b.collect(id, slot, mid, collected, (await b.paymentsLength())+100, amount, amount/3, acc[1]), "invalid payIndex");
+            assertRequire(b.collect(id, slot, mid, collected, (await b.getPaymentsLength())+100, amount, amount/3, acc[1]), "invalid payIndex");
     
         });
         

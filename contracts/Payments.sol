@@ -269,7 +269,7 @@ contract Payments is Accounts {
     /// @dev gets the number of payments issued
     /// @return returns the size of the payments array.
 
-    function paymentsLength() public view returns (uint) {
+    function getPaymentsLength() public view returns (uint) {
         return payments.length;
     }
 
