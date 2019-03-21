@@ -174,7 +174,7 @@ contract Payments is Accounts {
     /// @param slot Individual slot used for the challenge game.
     /// @param toAccountId Destination of the collect operation. 
     /// @param payIndex payIndex of the first payment index not covered by this application. 
-    /// @param amount amount of tokens owed to this user account
+    /// @param declaredAmount amount of tokens owed to this user account
     /// @param fee fee in tokens to be paid for the end user help.
     /// @param destination Address to withdraw the full account balance
     /// @param signature An R,S,V  ECDS signature provided by a user
@@ -185,7 +185,7 @@ contract Payments is Accounts {
         uint32 slot,
         uint32 toAccountId,
         uint32 payIndex,
-        uint64 amount,
+        uint64 declaredAmount,
         uint64 fee, 
         address destination,
         bytes memory signature
@@ -210,7 +210,7 @@ contract Payments is Accounts {
         require(payments[payIndex-1].lockTimeoutBlockNumber < block.number, "cannot collect payments that can be unlocked");
 
         // Check if fee is valid
-        require (fee <= amount, "fee is too big");
+        require (fee <= declaredAmount, "fee is too big");
 
         CollectSlot storage sl = collects[delegate][slot];
      
@@ -218,7 +218,7 @@ contract Payments is Accounts {
 
         if (delegate != toAccountId) {
             // If "toAccountId" != delegate, check who signed this transaction
-            bytes32 hash = keccak256(abi.encodePacked(address(this), delegate, toAccountId, tacc.collected, payIndex, amount, fee, destination)); 
+            bytes32 hash = keccak256(abi.encodePacked(address(this), delegate, toAccountId, tacc.collected, payIndex, declaredAmount, fee, destination)); 
             
             require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
         }
@@ -230,15 +230,15 @@ contract Payments is Accounts {
 
         // check if this is an instant collect
         if (slot >= instantSlot) {
-            sl.delegateAmount = amount;
+            sl.delegateAmount = declaredAmount;
             tacc.balance = SafeMath.add64(
                 tacc.balance,
-                SafeMath.sub64(amount, fee));
+                SafeMath.sub64(declaredAmount, fee));
 
             sl.addr = address(0);
             needed = SafeMath.add64(
                 needed, 
-                SafeMath.sub64(amount, fee));
+                SafeMath.sub64(declaredAmount, fee));
         } else 
         {   // not instant-collect
             sl.addr = destination;
@@ -250,7 +250,7 @@ contract Payments is Accounts {
 
         balanceSub(delegate, needed);
         
-        sl.amount = amount;
+        sl.amount = declaredAmount;
         sl.to = toAccountId;
         sl.block = uint64(block.number + params.challengeBlocks);
         sl.status = 1;
