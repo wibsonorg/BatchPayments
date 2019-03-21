@@ -116,20 +116,20 @@ library Challenge {
     /// @param collectSlot Collect slot
     /// @param config Various parameters
     /// @param data Binary array listing the payments in which the user was referenced.
-    /// @param index selecting the disputed payment
+    /// @param disputedPaymentIndex index selecting the disputed payment
 
     function challenge_3(
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config, 
         bytes memory data, 
-        uint32 index) 
+        uint32 disputedPaymentIndex) 
         public 
     {  
         require(collectSlot.status == 3);
-        require(index < data.length/12, "invalid index");
+        require(disputedPaymentIndex < data.length/12, "invalid index");
         require (block.number < collectSlot.block, "challenge time has passed");
         require(collectSlot.data == keccak256(data), "data mismatch");
-        (collectSlot.challengeAmount, collectSlot.index) = getDataAtIndex(data, index);
+        (collectSlot.challengeAmount, collectSlot.index) = getDataAtIndex(data, disputedPaymentIndex);
         collectSlot.status = 4;
         collectSlot.block = getFutureBlock(config.challengeStepBlocks);
     }
