@@ -22,7 +22,7 @@ In addition, it includes many relevant features, like meta-transactions for end-
 ### General Overview
 
 1. Registration of all parties involved, where 32-bit account ids are used.
-2. Buyers initiate payments by issuing a transfer transaction, which includes a per-destination amount and a somewhat-compressed list of seller-ids. 
+2. Buyers initiate payments by issuing a registerPayment transaction, which includes a per-destination amount and a somewhat-compressed list of seller-ids. 
 3. Sellers wait to accumulate enough payments, then send a collect transaction specifying a range of payments and a total amount corresponding to their account.
 4. After a challenge period, the requested amount is added to the seller's balance.
 5. In the case of dispute, the seller lists the individual payments in which she is included. The challenger selects a single payment and requests a proof of inclusion. The loser pays for the verification game (stake).

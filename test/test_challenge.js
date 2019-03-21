@@ -133,11 +133,11 @@ contract("challenge", ()=> {
         {
             let lock = 0;
             if (i == 2) lock = 1;
-            let [ pid, t ] = await b.transfer(id, 10, 2, userid, lock);
+            let [ pid, t ] = await b.registerPayment(id, 10, 2, userid, lock);
             payid.push(pid);
             if (pid > maxPayIndex) maxPayIndex = pid;
         }
-        let [ pid, t ] = await b.transfer(id, 10, 2, [id], 0);
+        let [ pid, t ] = await b.registerPayment(id, 10, 2, [id], 0);
         if (pid > maxPayIndex) maxPayIndex = pid;
         otherIndex = pid;
         await utils.skipBlocks(b.unlockBlocks);

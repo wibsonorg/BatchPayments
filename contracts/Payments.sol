@@ -29,12 +29,12 @@ contract Payments is Accounts {
     /// @param amount amount of tokens to pay each destination. 
     /// @param fee Fee in tokens to be payed to the party providing the unlocking service
     /// @param payData efficient representation of the destination account list
-    /// @param newCount number of new destination accounts that will be reserved during the transfer transaction 
+    /// @param newCount number of new destination accounts that will be reserved during the registerPayment transaction 
     /// @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
     /// @param lock hash of the key locking this payment to help in atomic data swaps.  
     /// @param metadata Application specific data to be stored associated with the payment
 
-    function transfer(
+    function registerPayment(
         uint32 fromId, 
         uint64 amount, 
         uint64 fee,
@@ -59,7 +59,7 @@ contract Payments is Accounts {
         Account memory from = accounts[fromId];
 
         require(bytesPerId > 0, "bytes per Id should be positive");
-        require(from.owner == msg.sender, "only owner of id can transfer");
+        require(from.owner == msg.sender, "only owner of id can registerPayment");
         require((len-2) % bytesPerId == 0, "payData length is invalid");
 
         p.totalNumberOfPayees = SafeMath.add32(SafeMath.div32(len-2,bytesPerId),newCount);
@@ -86,7 +86,7 @@ contract Payments is Accounts {
     }
 
     /// @dev provide the required key, releasing the payment and enabling the buyer decryption the digital content
-    /// @param payIndex payment Index associated with the transfer operation.
+    /// @param payIndex payment Index associated with the registerPayment operation.
     /// @param unlockerId id of the party providing the unlocking service. Fees wil be payed to this id
     /// @param key Cryptographic key used to encrypt traded data
    
@@ -104,7 +104,7 @@ contract Payments is Accounts {
         return true;
     }
 
-    /// @dev Enables the buyer to recover funds associated with a transfer operation for which decryption keys were not provided.
+    /// @dev Enables the buyer to recover funds associated with a registerPayment operation for which decryption keys were not provided.
     /// @param payIndex Index of the payment transaction associated with this request. 
     /// @return true if the operation succeded.
 

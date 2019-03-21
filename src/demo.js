@@ -105,7 +105,7 @@ async function doStuff() {
         console.log("doing "+m+" transfers & unlocks");
         for(let i = 0; i<m; i++)
         {   
-            let [payIndex,] = await b.transfer(0,  10, 1, [1,2,3,4,5], utils.hashLock(unlocker, key));
+            let [payIndex,] = await b.registerPayment(0,  10, 1, [1,2,3,4,5], utils.hashLock(unlocker, key));
             p.push(payIndex);
             await b.unlock(payIndex, unlocker, key);
         }

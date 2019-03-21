@@ -86,10 +86,10 @@ async function bulkReg(count) {
     addStat("claimBulkRegistrationId", t.gasUsed);
 }
 
-async function transfer( amount, fee, count, lock, name) {
+async function registerPayment( amount, fee, count, lock, name) {
     let list = utils.randomIds(count, max);
     
-    let [pid, t] = await b.transfer(0, 10, 1, list, lock);
+    let [pid, t] = await b.registerPayment(0, 10, 1, list, lock);
     addStat(name, t.gasUsed);
 }
 
@@ -97,7 +97,7 @@ async function unlock() {
     let list = [];
     for(let i = 0; i<100; i++) list.push(i);
     let lock = utils.hashLock(id2, passcode);
-    let [pid, t] = await b.transfer(0, 10, 1, list, lock);
+    let [pid, t] = await b.registerPayment(0, 10, 1, list, lock);
     
     let t2 = await b.unlock(pid, id2, passcode);
     addStat("unlock", t2.gasUsed);
@@ -108,7 +108,7 @@ async function refundLockedPayment() {
     let list = [];
     for(let i = 0; i<100; i++) list.push(i);
     let lock = utils.hashLock(id2, passcode);
-    let [pid, t] = await b.transfer(0, 10, 1, list, lock);
+    let [pid, t] = await b.registerPayment(0, 10, 1, list, lock);
    
     await utils.skipBlocks(b.unlockBlocks);
 
@@ -165,8 +165,8 @@ async function doStuff() {
 
         for(let i = 0; i<run.length; i++) {
             let count = run[i];
-            await transfer(1, 2, count, 0, "transfer-"+count+"-nolock");
-            await transfer(1, 2, count, lock, "transfer-"+count+"-lock");
+            await registerPayment(1, 2, count, 0, "registerPayment-"+count+"-nolock");
+            await registerPayment(1, 2, count, lock, "registerPayment-"+count+"-lock");
             console.log(count);
         }    
     
