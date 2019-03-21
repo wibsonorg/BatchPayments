@@ -95,7 +95,7 @@ library MassExitLib {
             accounts[delegate].balance, 
             params.massExitStake);
 
-        slot.block = Challenge.futureBlock(params.massExitIdBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitIdBlocks);
         slot.status = 1;
     }
 
@@ -121,7 +121,7 @@ library MassExitLib {
         slot.challenger = challenger;
         slot.index = indexOf(sellerList, seller);
         slot.seller = seller;
-        slot.block = Challenge.futureBlock(params.massExitIdStepBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitIdStepBlocks);
         slot.status = 2;
     }
 
@@ -153,7 +153,7 @@ library MassExitLib {
             params.massExitChallengeStake);
 
         slot.challenger = 0;
-        slot.block = Challenge.futureBlock(params.massExitIdBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitIdBlocks);
         slot.status = 1;
     }
 
@@ -200,7 +200,7 @@ library MassExitLib {
         
         // give the delegate the oportunity to finish pending collects.
         slot.status = 3;
-        slot.block = Challenge.futureBlock(2*params.challengeBlocks); 
+        slot.block = Challenge.getFutureBlock(2*params.challengeBlocks); 
     }
 
     function challengeExitBalance_3(
@@ -214,7 +214,7 @@ library MassExitLib {
         require(block.number < slot.block, "challenge time has passed");
        
         slot.totalBalance = totalBalance;
-        slot.block = Challenge.futureBlock(params.massExitBalanceBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceBlocks);
         slot.status = 4;
     }
 
@@ -235,7 +235,7 @@ library MassExitLib {
             params.massExitChallengeStake);
 
         slot.challenger = challenger;
-        slot.block = Challenge.futureBlock(params.massExitBalanceStepBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceStepBlocks);
         slot.status = 5;
     }
 
@@ -251,7 +251,7 @@ library MassExitLib {
         require(balanceList.length == slot.listLength*8, "invalid balanceList");
 
         slot.hashBalanceList = keccak256(balanceList);
-        slot.block = Challenge.futureBlock(params.massExitBalanceStepBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceStepBlocks);
         slot.status = 6;
     }
 
@@ -272,7 +272,7 @@ library MassExitLib {
         slot.index = indexOf(sellerList, seller);
         slot.seller = seller;
         slot.sellerBalance = getBalanceAtIndex(balanceList, slot.index);
-        slot.block = Challenge.futureBlock(params.massExitBalanceStepBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceStepBlocks);
         slot.status = 7; 
     }
 
@@ -294,7 +294,7 @@ library MassExitLib {
         );
 
         slot.status = 4;
-        slot.block = Challenge.futureBlock(params.massExitBalanceBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceBlocks);
     }
 
     function challengeExit_collectSuccessful(
@@ -335,7 +335,7 @@ library MassExitLib {
                 )
         );
 
-        e.block = Challenge.futureBlock(params.massExitBalanceBlocks);
+        e.block = Challenge.getFutureBlock(params.massExitBalanceBlocks);
         e.status = 4;
     }
 

@@ -9,7 +9,7 @@ library Challenge {
     /// @param delta number of blocks into the future to calculate
     /// @return future block number
 
-    function futureBlock(uint delta) public view returns(uint64) {
+    function getFutureBlock(uint delta) public view returns(uint64) {
         return SafeMath.add64(block.number, delta);
     }
 
@@ -85,7 +85,7 @@ library Challenge {
         require (block.number < s.block, "challenge time has passed");
         s.status = 2;
         s.challenger = challenger;
-        s.block = futureBlock(config.challengeStepBlocks);
+        s.block = getFutureBlock(config.challengeStepBlocks);
         
         accounts[challenger].balance -= config.challengeStake;
     }
@@ -109,7 +109,7 @@ library Challenge {
 
         s.data = keccak256(data);
         s.status = 3;
-        s.block = futureBlock(config.challengeStepBlocks);
+        s.block = getFutureBlock(config.challengeStepBlocks);
     }
 
     /// @dev Internal function. Phase III of the challenging game
@@ -131,7 +131,7 @@ library Challenge {
         require(s.data == keccak256(data), "data mismatch");
         (s.challengeAmount, s.index) = getDataAtIndex(data, index);
         s.status = 4;
-        s.block = futureBlock(config.challengeStepBlocks);
+        s.block = getFutureBlock(config.challengeStepBlocks);
     }
 
     /// @dev Internal function. Phase IV of the challenging game
@@ -231,7 +231,7 @@ library Challenge {
         // reset slot to status=1, waiting for challenges
         s.challenger = 0;
         s.status = 1;
-        s.block = futureBlock(config.challengeBlocks);
+        s.block = getFutureBlock(config.challengeBlocks);
     }
 
 
