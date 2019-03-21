@@ -1,6 +1,7 @@
 pragma solidity ^0.4.10;
 
 import "./Merkle.sol";
+import "./SafeMath.sol";
 
 contract TestHelper  {
     constructor() public {
@@ -105,5 +106,40 @@ contract TestHelper  {
     function testlen(uint y, bytes memory x) public returns (uint256) {
         if (y==1234) return 0;
         return x.length;
+    }
+
+    // SafeMath functions
+    // uint64
+    function mul64(uint256 a, uint256 b) public returns (uint64) {
+        return SafeMath.mul64(a, b);
+    }
+
+    function div64(uint256 a, uint256 b) public returns (uint64) {
+        return SafeMath.div64(a, b);
+    }
+
+    function sub64(uint256 a, uint256 b) public returns (uint64) {
+        return SafeMath.sub64(a, b);
+    }
+
+    function add64(uint256 a, uint256 b) public returns (uint64) {
+        return SafeMath.add64(a, b);
+    }
+
+    // uint32
+    function mul32(uint256 a, uint256 b) public returns (uint32) {
+        return SafeMath.div32(a, b);
+    }
+
+    function div32(uint256 a, uint256 b) public returns (uint32) {
+        return SafeMath.div32(a, b);
+    }
+
+    function sub32(uint256 a, uint256 b) public returns (uint32) {
+        return SafeMath.sub32(a, b);
+    }
+
+    function add32(uint256 a, uint256 b) public returns (uint32) {
+        return SafeMath.add32(a, b);
     }
 }
