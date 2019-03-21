@@ -171,7 +171,7 @@ contract Payments is Accounts {
 
     /// @dev let users claim pending balance associated with prior transactions
     /// @param delegate id of the delegate account performing the operation on the name fo the user.
-    /// @param slot Individual slot used for the challenge game.
+    /// @param slotId Individual slot used for the challenge game.
     /// @param toAccountId Destination of the collect operation. 
     /// @param payIndex payIndex of the first payment index not covered by this application. 
     /// @param declaredAmount amount of tokens owed to this user account
@@ -182,7 +182,7 @@ contract Payments is Accounts {
 
     function collect(
         uint32 delegate,
-        uint32 slot,
+        uint32 slotId,
         uint32 toAccountId,
         uint32 payIndex,
         uint64 declaredAmount,
@@ -194,7 +194,7 @@ contract Payments is Accounts {
         
     {
         require(isAccountOwner(delegate), "invalid delegate");
-        _freeSlot(delegate, slot);
+        _freeSlot(delegate, slotId);
       
         Account memory acc = accounts[delegate];
         
@@ -212,7 +212,7 @@ contract Payments is Accounts {
         // Check if fee is valid
         require (fee <= declaredAmount, "fee is too big");
 
-        CollectSlot storage sl = collects[delegate][slot];
+        CollectSlot storage sl = collects[delegate][slotId];
      
         sl.delegate = delegate;
 
@@ -229,7 +229,7 @@ contract Payments is Accounts {
         uint64 needed = params.collectStake;
 
         // check if this is an instant collect
-        if (slot >= instantSlot) {
+        if (slotId >= instantSlot) {
             sl.delegateAmount = declaredAmount;
             tacc.balance = SafeMath.add64(
                 tacc.balance,
@@ -259,7 +259,7 @@ contract Payments is Accounts {
         accounts[toAccountId] = tacc;
 
         // check if the user is withdrawing its balance
-        if (destination != address(0) && slot >= instantSlot) {
+        if (destination != address(0) && slotId >= instantSlot) {
             accounts[toAccountId].balance = 0;
             require(token.transfer(destination, tacc.balance), "transfer failed");
         } 
