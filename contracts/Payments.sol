@@ -172,7 +172,7 @@ contract Payments is Accounts {
     /// @dev let users claim pending balance associated with prior transactions
     /// @param delegate id of the delegate account performing the operation on the name fo the user.
     /// @param slot Individual slot used for the challenge game.
-    /// @param to Destination of the collect operation. 
+    /// @param toAccountId Destination of the collect operation. 
     /// @param payIndex payIndex of the first payment index not covered by this application. 
     /// @param amount amount of tokens owed to this user account
     /// @param fee fee in tokens to be paid for the end user help.
@@ -183,7 +183,7 @@ contract Payments is Accounts {
     function collect(
         uint32 delegate,
         uint32 slot,
-        uint32 to, 
+        uint32 toAccountId,
         uint32 payIndex,
         uint64 amount,
         uint64 fee, 
@@ -198,10 +198,10 @@ contract Payments is Accounts {
       
         Account memory acc = accounts[delegate];
         
-        // Check to is valid
-        require(to <= accounts.length, "to must be a valid account id");
+        // Check toAccountId is valid
+        require(toAccountId <= accounts.length, "toAccountId must be a valid account id");
 
-        Account memory tacc = accounts[to];
+        Account memory tacc = accounts[toAccountId];
         require(tacc.owner != 0, "account registration has to be completed");
 
         // Check payIndex is valid
@@ -216,9 +216,9 @@ contract Payments is Accounts {
      
         sl.delegate = delegate;
 
-        if (delegate != to) {
-            // If "to" != delegate, check who signed this transaction
-            bytes32 hash = keccak256(abi.encodePacked(address(this), delegate, to, tacc.collected, payIndex, amount, fee, destination)); 
+        if (delegate != toAccountId) {
+            // If "toAccountId" != delegate, check who signed this transaction
+            bytes32 hash = keccak256(abi.encodePacked(address(this), delegate, toAccountId, tacc.collected, payIndex, amount, fee, destination)); 
             
             require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
         }
@@ -251,16 +251,16 @@ contract Payments is Accounts {
         balanceSub(delegate, needed);
         
         sl.amount = amount;
-        sl.to = to;
+        sl.to = toAccountId;
         sl.block = uint64(block.number + params.challengeBlocks);
         sl.status = 1;
         
         tacc.collected = uint32(payIndex);
-        accounts[to] = tacc;
+        accounts[toAccountId] = tacc;
 
         // check if the user is withdrawing its balance
         if (destination != address(0) && slot >= instantSlot) {
-            accounts[to].balance = 0;
+            accounts[toAccountId].balance = 0;
             require(token.transfer(destination, tacc.balance), "transfer failed");
         } 
     }
