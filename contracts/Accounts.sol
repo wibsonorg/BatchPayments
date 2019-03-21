@@ -20,10 +20,6 @@ contract Accounts is Data {
         return isValidId(id) && msg.sender == accounts[id].addr;
     }
 
-    function isClaimedId(uint id) public view returns (bool) {
-        return isValidId(id) && accounts[id].addr != 0;
-    }
-
     modifier validId(uint id) {
         require(isValidId(id), "id is not valid");
         _;
@@ -34,11 +30,6 @@ contract Accounts is Data {
         _;
     }
     
-    modifier claimedId(uint id) {
-        require(isClaimedId(id), "account has no associated address");
-        _;
-    }
-
 
     /// @dev Reserve accounts but delay assigning addresses
     /// Accounts will be claimed later using MerkleTree's rootHash
