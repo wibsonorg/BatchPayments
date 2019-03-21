@@ -15,11 +15,11 @@ library Merkle {
     /// @dev calculates a root hash associated with a merkle proof
     /// @param proof array of proof hashes
     /// @param key index of the leaf element list
-    /// @param value the leaf element to verify on the set.
+    /// @param leaf the leaf element to verify on the set.
     /// @return the hash of the merkle proof. Should match the merkle root if the proof is valid
 
-    function getProofRootHash(uint256[] memory proof, uint256 key, uint256 value) public pure  returns(bytes32) {
-        bytes32 hash = keccak256(abi.encodePacked(value));
+    function getProofRootHash(uint256[] memory proof, uint256 key, uint256 leaf) public pure  returns(bytes32) {
+        bytes32 hash = keccak256(abi.encodePacked(leaf));
         uint256 k = key;
         for(uint i = 0; i<proof.length; i++) {
             uint256 bit = k % 2;
