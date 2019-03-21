@@ -87,8 +87,8 @@ contract TestHelper  {
         return addr;
     }
 
-    function getHash(uint256 a, uint256 b) public pure returns (bytes32) {
-        return Merkle.getHash(a,b);
+    function combinedHash(uint256 a, uint256 b) public pure returns (bytes32) {
+        return Merkle.combinedHash(a,b);
     }
 
     function getProofRootHash(uint256[] memory proof, uint256 key, uint256 value) public pure  returns(bytes32) {

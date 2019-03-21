@@ -8,7 +8,7 @@ library Merkle {
     /// @param b Hash of the right child node
     /// @return sha3 hash of the resulting node
 
-    function getHash(uint256 a, uint256 b) public pure returns(bytes32) {
+    function combinedHash(uint256 a, uint256 b) public pure returns(bytes32) {
         return keccak256(abi.encodePacked(a, b));
     }
 
@@ -26,9 +26,9 @@ library Merkle {
             k = k / 2;
 
             if (bit == 0)
-                hash = getHash(uint256(hash), proof[i]);
+                hash = combinedHash(uint256(hash), proof[i]);
             else
-                hash = getHash(proof[i], uint256(hash));
+                hash = combinedHash(proof[i], uint256(hash));
         }
         return hash;
     }

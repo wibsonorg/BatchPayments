@@ -34,7 +34,7 @@ describe('merkle lib', ()=> {
             let b = new BigNumber("0x656e12c23977562f7e6d670a904415c6624227a00805bc9be064529a9f3d3a99");
 
             let v0 = merkle.sha3_2(a,b);
-            let v1 = await testhelper.getHash(a,b)
+            let v1 = await testhelper.combinedHash(a,b)
         
             assert.equal(v0, v1);
          });
