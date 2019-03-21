@@ -119,7 +119,7 @@ contract('Payments', (addr)=> {
             let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
             await utils.skipBlocks(unlockBlocks);
-            let v2 = await bp.refund(payId);
+            let v2 = await bp.refundLockedPayment(payId);
 
             // check original balance didn't change
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
@@ -130,7 +130,7 @@ contract('Payments', (addr)=> {
             let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
             let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
-            await assertRequire(bp.refund(payId), "Hash lock has not expired yet");
+            await assertRequire(bp.refundLockedPayment(payId), "Hash lock has not expired yet");
 
             // check balance
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();

@@ -104,7 +104,7 @@ async function unlock() {
 }
 
 
-async function refund() {
+async function refundLockedPayment() {
     let list = [];
     for(let i = 0; i<100; i++) list.push(i);
     let lock = utils.hashLock(id2, passcode);
@@ -112,8 +112,8 @@ async function refund() {
    
     await utils.skipBlocks(b.unlockBlocks);
 
-    let t2 = await b.refund(pid);
-    addStat("refund", t2.gasUsed);
+    let t2 = await b.refundLockedPayment(pid);
+    addStat("refundLockedPayment", t2.gasUsed);
 }
 
 async function withdraw(amount) {
@@ -171,7 +171,7 @@ async function doStuff() {
         }    
     
         await unlock();
-        await refund();
+        await refundLockedPayment();
         await collect();
         await challenge();
 

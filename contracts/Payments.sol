@@ -108,7 +108,7 @@ contract Payments is Accounts {
     /// @param payIndex Index of the payment transaction associated with this request. 
     /// @return true if the operation succeded.
 
-    function refund(uint payIndex) public returns (bool) {
+    function refundLockedPayment(uint payIndex) public returns (bool) {
         require(payIndex < payments.length, "invalid payment Id");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
