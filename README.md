@@ -22,7 +22,7 @@ In addition, it includes many relevant features, like meta-transactions for end-
 ### General Overview
 
 1. Registration of all parties involved, where 32-bit account ids are used.
-2. Buyers initiate payments by issuing a transfer transaction, which includes a per-destination amount and a somewhat-compressed list of seller-ids. 
+2. Buyers initiate payments by issuing a registerPayment transaction, which includes a per-destination amount and a somewhat-compressed list of seller-ids. 
 3. Sellers wait to accumulate enough payments, then send a collect transaction specifying a range of payments and a total amount corresponding to their account.
 4. After a challenge period, the requested amount is added to the seller's balance.
 5. In the case of dispute, the seller lists the individual payments in which she is included. The challenger selects a single payment and requests a proof of inclusion. The loser pays for the verification game (stake).
@@ -75,13 +75,13 @@ The BatchPayment contract can be instantiated to act as an optimization proxy fo
 
 ### Roles
 There are five different roles on the BatchPayment ecosystem: buyer, seller, unlocker, delegate and monitor.
-Players may interact with BatchPayment in  more than one of these roles, depending on the circumstance. All roles will be identify by an account  id obtained during registration.
+Players may interact with BatchPayment in  more than one of these roles, depending on the circumstance. All roles will be identified by an account id obtained during registration.
 
 #### Buyer
 The buyer deposits tokens into the BatchPayment contract, and uses her balance to pay sellers.
 
 #### Seller
-The seller participates in several operations with one or many buyers, and collects afterwards her earnings in her account. The balance could be withdrawn into an erc20 token account. For seller operation.
+The seller participates in several operations with one or many buyers, and collects afterwards her earnings in her account. The balance could be withdrawn into an erc20 token account.
 
 #### Unlocker
 The unlocker looks for a locked payment issued by a buyer, which references a key she possess, and provides the required key in exchange for a fee. This releases the payment to both sellers and unlocker. 
@@ -99,7 +99,7 @@ There are four data structures maintained on contract storage.  Accounts, paymen
 
 **Account** is an array which stores the account address, balance and latest collected payment associated with an id.
 
-**BulkRecord** is an array used to store information about ids reservation, including the merkle-tree root hash which will allow a user to later claim an individual id, and associate it with her address.
+**BulkRegistration** is an array used to store information about ids reservation, including the merkle-tree root hash which will allow a user to later claim an individual id, and associate it with her address.
 
 **Payment** is an array which stores the per-destination amount, the hash of the destination list, as well as other miscellaneous elements associated with each individual payment.
 
@@ -124,7 +124,7 @@ Alternatively, executing a deposit operation with a user id of -1, would registe
 **Bulk Registration**
 The bulkRegistration function can be used to reserve a range of ids simultaneously. The sender specifies the number of accounts to reserve and provides the root hash of the merkle tree holding the list of addresses. This information is saved on contract storage to allow verification. 
 
-At a later time, the claimId function can be used to assign an address to a pre-reserved account. The sender specifies the account-id, the bulkRegistration-id, and a merkle proof referencing the address. 
+At a later time, the claimBulkRegistrationId function can be used to assign an address to a pre-reserved account. The sender specifies the account-id, the bulkRegistration-id, and a merkle proof referencing the address. 
 
 **Registration on initial deposit**
 In addition, specifying -1 as an account number while sending a token deposit to the BatchPayment contract, will register a new account. 

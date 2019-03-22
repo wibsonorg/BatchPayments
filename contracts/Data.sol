@@ -5,27 +5,27 @@ import "./IERC20.sol";
 
 contract Data {
     struct Account {
-        address addr;
+        address owner;
         uint64  balance;
-        uint32  collected;
+        uint32  lastCollectedPaymentId;
     }
 
-    struct BulkRecord {
+    struct BulkRegistration {
         bytes32 rootHash;
-        uint32  n;
-        uint32  minId;
+        uint32  recordCount;
+        uint32  smallestRecordId;
     }
 
     struct Payment {
-        uint32  from;
+        uint32  fromAccountId;
         uint64  amount;
         uint64  fee;
-        uint32  minId;  
-        uint32  maxId;
-        uint32  totalCount;
-        uint64  block;
-        bytes32 hash;
-        bytes32 lock;
+        uint32  smallestAccountId;
+        uint32  greatestAccountId;
+        uint32  totalNumberOfPayees;
+        uint64  lockTimeoutBlockNumber;
+        bytes32 paymentDataHash;
+        bytes32 lockingKeyHash;
         bytes32 metadata;
     }
 
@@ -45,7 +45,7 @@ contract Data {
         bytes32 data;
     }
 
-    struct Params {
+    struct Config {
         uint32 maxBulk;                                
         uint32 maxTransfer;               
         uint32 challengeBlocks;               
@@ -61,13 +61,11 @@ contract Data {
         uint64 massExitChallengeStake;     
     }
 
-
-    Params public params;
+    Config public params;
     address public owner;
-   
-    uint public constant maxAccount = 2**32-1;      // Maximum account id (32-bits)
-    uint public constant newAccount = 2**256-1;     // Request registration of new account
-    uint public constant instantSlot = 32768;
 
+    uint public constant maxAccountId = 2**32-1;      // Maximum account id (32-bits)
+    uint public constant newAccountFlag = 2**256-1; // Request registration of new account
+    uint public constant instantSlot = 32768;
    
 }

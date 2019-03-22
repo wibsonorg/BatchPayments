@@ -37,12 +37,12 @@ async function doStuff() {
 
     let t1 = await bp.register();
     await t1;
-    let id1 = await bp.accountsLength.call() - 1;
+    let id1 = await bp.getAccountsLength.call() - 1;
 
     let t2 = await bp.register();
     await t2;
  
-    let delegate = await bp.accountsLength.call() - 1;
+    let delegate = await bp.getAccountsLength.call() - 1;
 
 
     console.log("registered "+id1+" & "+delegate);
@@ -51,7 +51,7 @@ async function doStuff() {
     await st.approve(bp.address, amount);
     let t0 = await bp.deposit(amount, -1); 
     await t0;
-    let id = await bp.accountsLength.call() - 1;
+    let id = await bp.getAccountsLength.call() - 1;
     
     console.log("Desposited on "+id);
 
@@ -67,9 +67,9 @@ async function doStuff() {
     list[0] = id1;
     let data = utils.getPayData(list);
     
-    console.log("Transfer from "+id);
+    console.log("PaymentRegistered from "+id);
     
-    let v1 = await bp.transfer(id, 1, 0, data, newIds, 0x1234, 0, 0);
+    let v1 = await bp.registerPayment(id, 1, 0, data, newIds, 0x1234, 0, 0);
     
     await v1;
     console.log(v1.receipt.gasUsed);

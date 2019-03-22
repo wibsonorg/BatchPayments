@@ -81,7 +81,7 @@ async function doStuff() {
         console.log("claiming "+nbulk+" accounts");
         let w = []
         for(let i = 0; i<nbulk; i++) {
-            w.push( b.claimId(bulk, list[i], i+bulk.minId));
+            w.push( b.claimBulkRegistrationId(bulk, list[i], i+bulk.smallestAccountId));
         }
         await Promise.all(w);
 
@@ -105,7 +105,7 @@ async function doStuff() {
         console.log("doing "+m+" transfers & unlocks");
         for(let i = 0; i<m; i++)
         {   
-            let [payIndex,] = await b.transfer(0,  10, 1, [1,2,3,4,5], utils.hashLock(unlocker, key));
+            let [payIndex,] = await b.registerPayment(0,  10, 1, [1,2,3,4,5], utils.hashLock(unlocker, key));
             p.push(payIndex);
             await b.unlock(payIndex, unlocker, key);
         }
