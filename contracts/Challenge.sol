@@ -17,7 +17,10 @@ library Challenge {
     /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
     /// @return the sum of the amounts referenced on the array.
 
-    function getDataSum(bytes memory data) public pure returns (uint sum) {
+    function getDataSum(bytes memory data) public pure returns (uint64 sum) {
+        require(data.length > 0, "no data provided");
+        require(data.length % 12 == 0, "wrong data format");
+
         uint n = data.length / 12;
         uint modulus = 2**64;
 
@@ -29,17 +32,13 @@ library Challenge {
         for(uint i = 0; i<n; i++) {
             // solium-disable-next-line security/no-inline-assembly
             assembly {
-                sum :=
-                    add(
-                        sum, 
-                        mod(
-                            mload(add(data, add(8, mul(i, 12)))), 
-                            modulus)
-                    )
+                let amount := mod(mload(add(data, add(8, mul(i, 12)))), modulus)
+                let result := add(sum, amount)
+                if or(gt(result, modulus), eq(result, modulus)) { revert (0, 0) }
+                sum := result
             }
         }
     }
-
 
     /// @dev Helper function that obtains the amount/payIndex pair located at position index
     /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
@@ -103,8 +102,6 @@ library Challenge {
     {
         require(s.status == 2, "wrong slot status");
         require (block.number < s.block, "challenge time has passed");
-
-        require(data.length % 12 == 0, "wrong data format");
         require (getDataSum(data) == s.amount, "data doesn't represent collected amount");
 
         s.data = keccak256(data);
