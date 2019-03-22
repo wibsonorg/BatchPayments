@@ -39,6 +39,7 @@ contract Accounts is Data {
         _;
     }
 
+
     /// @dev Reserve accounts but delay assigning addresses.
     /// Accounts will be claimed later using MerkleTree's rootHash.
     /// @param bulkSize Number of accounts to reserve.
