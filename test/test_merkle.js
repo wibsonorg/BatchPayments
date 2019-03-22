@@ -34,7 +34,7 @@ describe('merkle lib', ()=> {
             let b = new BigNumber("0x656e12c23977562f7e6d670a904415c6624227a00805bc9be064529a9f3d3a99");
 
             let v0 = merkle.sha3_2(a,b);
-            let v1 = await testhelper.getHash(a,b)
+            let v1 = await testhelper.combinedHash(a,b)
         
             assert.equal(v0, v1);
          });
@@ -94,7 +94,7 @@ describe('merkle lib', ()=> {
 
             for(let i = 0; i<v.length; i++) {
                 let proof = merkle.getProof(tree, i);
-                let x = merkle.evalProof(proof, v[i]);
+                let x = merkle.getProofRootHash(proof, v[i]);
                 assert.equal(tree.roothash, x);
             }
         });
@@ -113,7 +113,7 @@ describe('merkle lib', ()=> {
                     if (proof[j].d == 'l') key = key + 1;
                 }
 
-                let x = await testhelper.evalProof.call(pp, key, v[i]);
+                let x = await testhelper.getProofRootHash.call(pp, key, v[i]);
                 assert.equal(tree.roothash, x);
             }
         })

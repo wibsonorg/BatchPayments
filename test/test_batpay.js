@@ -31,7 +31,7 @@ contract('BatPay', (addr)=> {
     let a1 = addr[1];
 
     let bp, tAddress, st;
-    const newAccount = new BigNumber(2).pow(256).minus(1);
+    const newAccountFlag = new BigNumber(2).pow(256).minus(1);
 
     before(async ()=> {
         let ret = await utils.getInstances();
@@ -50,11 +50,11 @@ contract('BatPay', (addr)=> {
 
     describe ("misc", ()=> {
         it('cannot obtain the balance for invalid id', async ()=> {
-            let l0 = await bp.accountsLength.call();
+            let l0 = await bp.getAccountsLength.call();
             let invalid_id = l0.toNumber();
 
-            await assertRequire(bp.balanceOf(invalid_id),   "id is not valid");
-            await assertRequire(bp.balanceOf(invalid_id+1), "id is not valid");
+            await assertRequire(bp.balanceOf(invalid_id),   "accountId is not valid");
+            await assertRequire(bp.balanceOf(invalid_id+1), "accountId is not valid");
         })
 
     });

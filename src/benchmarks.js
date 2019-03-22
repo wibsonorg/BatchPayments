@@ -82,38 +82,38 @@ async function bulkReg(count) {
     let bulk = await b.bulkRegister(list);
     addStat("bulkRegister-"+count, bulk.recp.gasUsed);
 
-    let [id, addr, t] = await b.claimId(bulk, list[0], bulk.minId);
-    addStat("claimId", t.gasUsed);
+    let [id, addr, t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.smallestAccountId);
+    addStat("claimBulkRegistrationId", t.gasUsed);
 }
 
-async function transfer( amount, fee, count, lock, name) {
+async function registerPayment( amount, fee, count, lockingKeyHash, name) {
     let list = utils.randomIds(count, max);
     
-    let [pid, t] = await b.transfer(0, 10, 1, list, lock);
+    let [pid, t] = await b.registerPayment(0, 10, 1, list, lockingKeyHash);
     addStat(name, t.gasUsed);
 }
 
 async function unlock() {
     let list = [];
     for(let i = 0; i<100; i++) list.push(i);
-    let lock = utils.hashLock(id2, passcode);
-    let [pid, t] = await b.transfer(0, 10, 1, list, lock);
+    let lockingKeyHash = utils.hashLock(id2, passcode);
+    let [pid, t] = await b.registerPayment(0, 10, 1, list, lockingKeyHash);
     
     let t2 = await b.unlock(pid, id2, passcode);
     addStat("unlock", t2.gasUsed);
 }
 
 
-async function refund() {
+async function refundLockedPayment() {
     let list = [];
     for(let i = 0; i<100; i++) list.push(i);
-    let lock = utils.hashLock(id2, passcode);
-    let [pid, t] = await b.transfer(0, 10, 1, list, lock);
+    let lockingKeyHash = utils.hashLock(id2, passcode);
+    let [pid, t] = await b.registerPayment(0, 10, 1, list, lockingKeyHash);
    
     await utils.skipBlocks(b.unlockBlocks);
 
-    let t2 = await b.refund(pid);
-    addStat("refund", t2.gasUsed);
+    let t2 = await b.refundLockedPayment(pid);
+    addStat("refundLockedPayment", t2.gasUsed);
 }
 
 async function withdraw(amount) {
@@ -159,19 +159,19 @@ async function doStuff() {
         
         await withdraw(10);
 
-        let lock = utils.hashLock(0, passcode);
+        let lockingKeyHash = utils.hashLock(0, passcode);
         let run = [10,50,100,250,500,1000,2000,3000];
 
 
         for(let i = 0; i<run.length; i++) {
             let count = run[i];
-            await transfer(1, 2, count, 0, "transfer-"+count+"-nolock");
-            await transfer(1, 2, count, lock, "transfer-"+count+"-lock");
+            await registerPayment(1, 2, count, 0, "registerPayment-"+count+"-nolock");
+            await registerPayment(1, 2, count, lockingKeyHash, "registerPayment-"+count+"-lock");
             console.log(count);
         }    
     
         await unlock();
-        await refund();
+        await refundLockedPayment();
         await collect();
         await challenge();
 
