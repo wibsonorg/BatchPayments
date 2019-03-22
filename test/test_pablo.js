@@ -1,5 +1,5 @@
 var TestHelper = artifacts.require('./TestHelper');
-
+BigNumber = web3.BigNumber;
 
 async function assertFailure (promise) {
     try {
@@ -13,10 +13,17 @@ async function assertFailure (promise) {
     assert(false, "operation was expected to fail but succeeded");
 };
 
-describe('SafeMath', () =>{
+describe('SafeMath', () => {
+    var testhelper;
+
+    before(async()=>{
+        testhelper = await TestHelper.deployed();
+        return await testhelper;
+    });
+
     it('mul64 with trivial case (zero)', async() => {
         let x = await testhelper.mul64.call(0, 1);
-        assert.equal(0, x);
+        assert.equal(x.toNumber(), 0);
     });
 
     it('mul64 boundary for overflow', async() => {
@@ -24,7 +31,7 @@ describe('SafeMath', () =>{
         let b = (2**32)-1;
         let x = await testhelper.mul64.call(a, b);
         // should not revert
-        assert.equal(x, 2**64 - 2**32);
+        assert.equal(x.toNumber(), 2**64 - 2**32);
     });
 
     it('mul64 should check uint64 overflow', async() => {
@@ -47,14 +54,14 @@ describe('SafeMath', () =>{
         let a = 64;
         let b = 8;
         let c = await testhelper.div64.call(a, b);
-        assert.equal(c, 8);
+        assert.equal(c.toNumber(), 8);
     });
 
     it('div64 happy case with remainder = 1', async() => {
-        let a = 64;
-        let b = 9;
+        let a = 65;
+        let b = 8;
         let c = await testhelper.div64.call(a, b);
-        assert.equal(c, 8); // FAILS! 
+        assert.equal(c.toNumber(), 8);
     });
 
     it('sub64 should check uint64 overflow', async() => {
@@ -67,7 +74,7 @@ describe('SafeMath', () =>{
         let a = 14;
         let b = 4;
         let c = await testhelper.sub64.call(a, b);
-        assert.equal(c, 10);
+        assert.equal(c.toNumber(), 10);
     });
 
     it('sub64 cannot produce a negative result', async() => {
@@ -75,7 +82,7 @@ describe('SafeMath', () =>{
         let b = 14;
         assertFailure(testhelper.sub64.call(a, b));
     });
-    
+
     it('sub64 with result = 0', async() => {
         let a = 14;
         let b = 14;
@@ -93,21 +100,19 @@ describe('SafeMath', () =>{
         let a = 14;
         let b = 14;
         let c = await testhelper.add64.call(a, b);
-        assert.equal(c, 28);
+        assert.equal(c.toNumber(), 28);
     });
-});
 
-describe('SafeMath uint32 operations', () => {
     it('mul32 with trivial case (zero)', async() => {
         let x = await testhelper.mul32.call(0, 1);
-        assert.equal(0, x);
+        assert.equal(x.toNumber(), 0);
     });
 
     it('mul32 boundary for overflow', async() => {
         let a = 2**16;
         let b = (2**16)-1;
         let x = await testhelper.mul32.call(a, b);
-        assert.equal(x, 2**32 - 2**16);
+        assert.equal(x.toNumber(), 2**32 - 2**16);
         // should not revert
     });
 
@@ -131,14 +136,14 @@ describe('SafeMath uint32 operations', () => {
         let a = 64;
         let b = 8;
         let c = await testhelper.div32.call(a, b);
-        assert.equal(c, 8);
+        assert.equal(c.toNumber(), 8);
     });
 
     it('div32 happy case with remainder = 1', async() => {
-        let a = 64;
-        let b = 9;
+        let a = 65;
+        let b = 8;
         let c = await testhelper.div32.call(a, b);
-        assert.equal(c, 8); // FAILS! 
+        assert.equal(c.toNumber(), 8);
     });
 
     it('sub32 should check uint32 overflow', async() => {
@@ -151,7 +156,7 @@ describe('SafeMath uint32 operations', () => {
         let a = 14;
         let b = 4;
         let c = await testhelper.sub32.call(a, b);
-        assert.equal(c, 10);
+        assert.equal(c.toNumber(), 10);
     });
 
     it('sub32 cannot produce a negative result', async() => {
@@ -159,12 +164,12 @@ describe('SafeMath uint32 operations', () => {
         let b = 14;
         assertFailure(testhelper.sub32.call(a, b));
     });
-    
+
     it('sub32 with result = 0', async() => {
         let a = 14;
         let b = 14;
         let c = await testhelper.sub32.call(a, b);
-        assert.equal(c, 0);
+        assert.equal(c.toNumber(), 0);
     });
 
     it('add32 should check uint32 overflow', async() => {

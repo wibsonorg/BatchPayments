@@ -128,7 +128,7 @@ contract TestHelper  {
 
     // uint32
     function mul32(uint256 a, uint256 b) public returns (uint32) {
-        return SafeMath.div32(a, b);
+        return SafeMath.mul32(a, b);
     }
 
     function div32(uint256 a, uint256 b) public returns (uint32) {
