@@ -46,23 +46,25 @@ library Challenge {
     /// @return amount and payIndex requested 
 
     function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
+        require(data.length > 0, "no data provided");
+        require(data.length % 12 == 0, "wrong data format");
+
         uint mod1 = 2**64;
         uint mod2 = 2**32;
         uint i = index*12;
 
-        require(i <= data.length-12);
+        require(i <= data.length - 12, "invalid index");
 
         // solium-disable-next-line security/no-inline-assembly
-        assembly
-            {
-                amount := mod(
-                    mload(add(data, add(8, i))), 
-                    mod1)           
+        assembly {
+            amount := mod(
+                mload(add(data, add(8, i))),
+                mod1)
 
-                 payIndex := mod(
-                    mload(add(data, add(12, i))),
-                    mod2)
-            }
+            payIndex := mod(
+                mload(add(data, add(12, i))),
+                mod2)
+        }
     }
 
     /// @dev function. Phase I of the challenging game
@@ -123,7 +125,6 @@ library Challenge {
         public 
     {  
         require(s.status == 3);
-        require(index < data.length/12, "invalid index");
         require (block.number < s.block, "challenge time has passed");
         require(s.data == keccak256(data), "data mismatch");
         (s.challengeAmount, s.index) = getDataAtIndex(data, index);
