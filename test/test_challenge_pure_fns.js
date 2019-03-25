@@ -1,6 +1,7 @@
 const truffleAssertions = require('truffle-assertions');
 const Challenge = artifacts.require('Challenge');
 const { getChallengeData } = require('../lib/bat');
+const { getPayData } = require('../lib/utils');
 
 const { reverts, ErrorType } = truffleAssertions;
 const assertRevert = (promise, message) => reverts(promise, ErrorType.REVERT, message);
@@ -68,6 +69,17 @@ contract('Challenge', () => {
         it('rejects when index does not exist in data', async () => {
             const data = getChallengeData([10, 15], [0, 100]);
             await assertRevert(challenge.getDataAtIndex(data, 2));
+        });
+    });
+
+    describe('existsInPayData', () => {
+        it('returns true when the id is present in payData', async () => {
+            const exists = await challenge.existsInPayData(getPayData([10, 30]), 30);
+            assert.equal(exists, true);
+        });
+        it('returns false when the id is not present in payData', async () => {
+            const exists = await challenge.existsInPayData(getPayData([10, 30]), 20);
+            assert.equal(exists, false);
         });
     });
 });

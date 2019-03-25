@@ -67,6 +67,37 @@ library Challenge {
         }
     }
 
+    /// @dev Process payData, inspecting the list of ids. `payData` includes 2 header bytes,
+    ///   followed by n bytesPerId-bytes entries.
+    ///   PayData Format: [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
+    /// @param payData List of payees of a specific Payment, with the above format.
+    /// @param id ID to look for in `payData`
+    /// @return whether `id` is present or not in `payData`
+
+    function existsInPayData(bytes memory payData, uint id) public pure returns (bool exists) {
+        uint bytesPerId = uint(payData[1]);
+        uint modulus = 1 << SafeMath.mul(bytesPerId, 8);
+        uint currentId = 0;
+
+        exists = false;
+
+        for(uint i = 2; i < payData.length && !exists; i += bytesPerId) {
+            // Get next id delta from paydata
+            // currentId += payData[2+i*bytesPerId]
+
+            // solium-disable-next-line security/no-inline-assembly
+            assembly {
+                currentId := add(
+                    currentId,
+                    mod(
+                        mload(add(payData,add(i,bytesPerId))),
+                        modulus))
+            }
+
+            exists = (currentId == id);
+        }
+    }
+
     /// @dev function. Phase I of the challenging game
     /// @param collectSlot Collect slot
     /// @param config Various parameters
@@ -143,40 +174,19 @@ library Challenge {
         bytes memory payData) 
         public 
     {
-        require(collectSlot.status == 4);
+        require(collectSlot.status == 4, "wrong slot status");
         require(block.number < collectSlot.block, "challenge time has passed");
         require(collectSlot.index >= collectSlot.minPayIndex && collectSlot.index < collectSlot.maxPayIndex, "payment referenced is out of range");
         Data.Payment memory p = payments[collectSlot.index];
         require(keccak256(payData) == p.paymentDataHash, "payData is incorrect");
         require(p.lockingKeyHash == 0, "payment is locked");
         
-        uint bytesPerId = uint(payData[1]);
-        uint modulus = 1 << (8*bytesPerId);
-
-        uint id = 0;
         uint collected = 0;
 
         // Check if id is included in bulkRegistration within payment
-        if (collectSlot.to >= p.smallestAccountId && collectSlot.to < p.greatestAccountId) collected += p.amount;
-
-        // Process payData, inspecting the list of ids
-        // payData includes 2 header bytes, followed by n bytesPerId-bytes entries
-        // [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
-        for(uint i = 2; i < payData.length; i += bytesPerId) {
-            // Get next id delta from paydata 
-            // id += payData[2+i*bytesPerId]
-
-            // solium-disable-next-line security/no-inline-assembly
-            assembly {
-                id := add(
-                    id, 
-                    mod(
-                        mload(add(payData,add(i,bytesPerId))),
-                        modulus))
-            }
-            if (id == collectSlot.to) {
-                collected = SafeMath.add(collected, p.amount);
-            }
+        bool registeredInPayment = collectSlot.to >= p.smallestAccountId && collectSlot.to < p.greatestAccountId;
+        if (registeredInPayment || existsInPayData(payData, collectSlot.to)) {
+            collected = SafeMath.add(collected, p.amount);
         }
 
         require(collected == collectSlot.challengeAmount, "amount mismatch");
