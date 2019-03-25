@@ -18,6 +18,9 @@ library Challenge {
     /// @return the sum of the amounts referenced on the array.
 
     function getDataSum(bytes memory data) public pure returns (uint sum) {
+        require(data.length > 0, "no data provided");
+        require(data.length % 12 == 0, "wrong data format");
+        
         uint n = SafeMath.div(data.length, 12);
         uint modulus = 2**64;
 
@@ -29,17 +32,13 @@ library Challenge {
         for(uint i = 0; i<n; i++) {
             // solium-disable-next-line security/no-inline-assembly
             assembly {
-                sum :=
-                    add(
-                        sum, 
-                        mod(
-                            mload(add(data, add(8, mul(i, 12)))), 
-                            modulus)
-                    )
+                let amount := mod(mload(add(data, add(8, mul(i, 12)))), modulus)
+                let result := add(sum, amount)
+                if or(gt(result, modulus), eq(result, modulus)) { revert (0, 0) }
+                sum := result
             }
         }
     }
-
 
     /// @dev Helper function that obtains the amount/payIndex pair located at position index
     /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
@@ -47,23 +46,25 @@ library Challenge {
     /// @return amount and payIndex requested 
 
     function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
+        require(data.length > 0, "no data provided");
+        require(data.length % 12 == 0, "wrong data format");
+
         uint mod1 = 2**64;
         uint mod2 = 2**32;
         uint i = SafeMath.mul(index, 12);
 
-        require(i <= SafeMath.sub(data.length, 12));
+        require(i <= SafeMath.sub(data.length, 12), "invalid index");
 
         // solium-disable-next-line security/no-inline-assembly
-        assembly
-            {
-                amount := mod(
-                    mload(add(data, add(8, i))), 
-                    mod1)           
+        assembly {
+            amount := mod(
+                mload(add(data, add(8, i))),
+                mod1)
 
-                 payIndex := mod(
-                    mload(add(data, add(12, i))),
-                    mod2)
-            }
+            payIndex := mod(
+                mload(add(data, add(12, i))),
+                mod2)
+        }
     }
 
     /// @dev function. Phase I of the challenging game
@@ -103,8 +104,6 @@ library Challenge {
     {
         require(collectSlot.status == 2, "wrong slot status");
         require (block.number < collectSlot.block, "challenge time has passed");
-
-        require(data.length % 12 == 0, "wrong data format");
         require (getDataSum(data) == collectSlot.amount, "data doesn't represent collected amount");
 
         collectSlot.data = keccak256(data);
@@ -126,7 +125,6 @@ library Challenge {
         public 
     {  
         require(collectSlot.status == 3);
-        require(disputedPaymentIndex < SafeMath.div(data.length, 12), "invalid index");
         require (block.number < collectSlot.block, "challenge time has passed");
         require(collectSlot.data == keccak256(data), "data mismatch");
         (collectSlot.challengeAmount, collectSlot.index) = getDataAtIndex(data, disputedPaymentIndex);
