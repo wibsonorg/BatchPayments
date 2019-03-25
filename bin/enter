@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+#
+# Get a shell in an Ethereum equipped environment.
+#
+
+
+main() {
+    parse_args "$@"
+    load_env
+    start_env
+}
+
+usage() {
+    echo "Usage: $(basename $0) [ENVIRONMENT] [OPTION...]" >&2
+    echo >&2
+    echo "        ENVIRONMENT      Environment to enter to (development, test, docker). Default is development." >&2
+    echo >&2
+    echo "        -h, --help         Print help message." >&2
+    echo "        -o, --offchain     Do not start an Ethereum RPC client." >&2
+    echo >&2
+    return 1
+}
+
+parse_args() {
+    while (( "$#" )); do
+        case "$1" in
+            -h|--help)
+                usage
+                ;;
+            -o|--offchain)
+                LAUNCH_ETH_CLIENT=false
+                shift 1
+                ;;
+            --) # end argument parsing
+                shift
+                break
+                ;;
+            -*|--*=) # unsupported flags
+                echo "Error: Unsupported flag $1" >&2
+                exit 1
+                ;;
+            *) # preserve positional arguments
+                PARAMS="$PARAMS $1"
+                shift
+                ;;
+        esac
+    done
+
+    # set positional arguments in their proper place
+    eval set -- "$PARAMS"
+
+    # Set defaults
+    ENVIRONMENT=${1:-development}
+    LAUNCH_ETH_CLIENT=${LAUNCH_ETH_CLIENT:-true}
+    return 0
+}
+
+load_env() {
+    [ ! -f "$BASEPATH/config/$ENVIRONMENT.env" ] && env_not_found
+
+    set -o allexport
+    source "$BASEPATH/config/$ENVIRONMENT.env"
+    set +o allexport
+}
+
+env_not_found() {
+    printf "${red}"
+    printf "Wrong value for ENVIRONMENT.">&2
+    echo >&2
+    printf "Permitted values: development, test, docker"
+    echo >&2
+    echo >&2
+    printf "${nocolor}"
+    usage
+}
+
+start_env() {
+    [ -z "$LOG_FILE" ] && echo "Set LOG_FILE var in your $ENVIRONMENT.env file"
+    echo
+    echo "$green[I]$nocolor Using log file $LOG_FILE."
+
+    if [ "$ENVIRONMENT" = "docker" ]; then
+        launch_docker
+    else
+        launch_eth_client
+    fi
+}
+
+launch_docker() {
+    # Docker needs to run as superuser.
+    sudo true
+
+    echo "$green[I]$nocolor Launching docker container."
+    sudo -E docker-compose up &> "$LOG_FILE" &
+    containerPID=$!
+
+    # Wait for container to be ready and get a shell attached to it.
+    echo "$green[I]$nocolor Attaching to the running container..."
+    echo
+    sleep 1s && sudo docker exec -ti batchpayments_truffle_1 bash
+}
+
+launch_eth_client() {
+    echo "$green[I]$nocolor Launching $ENVIRONMENT environment."
+    # eval $ETH_CLIENT &> "$LOG_FILE" &
+    # eval '$ETH_CLIENT &> "$LOG_FILE" &'
+    eval "$ETH_CLIENT &> '$LOG_FILE' &"
+    ethclientPID=$!
+    $SHELL
+}
+
+# Magic one-liner to get full app base path
+BASEPATH="$(dirname ""$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"")"
+
+# Imports
+source "$BASEPATH/bin/colors.sh"
+source "$BASEPATH/bin/exceptions.sh"
+
+# Traps
+trap exit_hook EXIT
+
+# Exit if any pipeline returns a non-zero status
+set -e
+
+# Print a trace of commands if DEBUG=true is preprended
+[ -n "$DEBUG" ] && set -x
+
+
+main "$@"

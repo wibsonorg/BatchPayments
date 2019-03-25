@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-#
-# Get a bash shell in a dockerized environment.
-#
-
-docker exec -ti batchpayments_truffle_1 bash
