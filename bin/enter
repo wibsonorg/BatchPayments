@@ -102,8 +102,6 @@ launch_docker() {
 
 launch_eth_client() {
     echo "$green[I]$nocolor Launching $ENVIRONMENT environment."
-    # eval $ETH_CLIENT &> "$LOG_FILE" &
-    # eval '$ETH_CLIENT &> "$LOG_FILE" &'
     eval "$ETH_CLIENT &> '$LOG_FILE' &"
     ethclientPID=$!
     $SHELL
