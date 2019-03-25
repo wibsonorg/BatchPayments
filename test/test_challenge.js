@@ -131,11 +131,13 @@ contract("challenge", ()=> {
         slot++;
         for(let i = 0; i<nPays; i++) 
         {
-            let [ pid, t ] = await b.transfer(id, 10, 2, userid, 0);
+            let lockingKeyHash = 0;
+            if (i == 2) lockingKeyHash = 1;
+            let [ pid, t ] = await b.registerPayment(id, 10, 2, userid, lockingKeyHash);
             payid.push(pid);
             if (pid > maxPayIndex) maxPayIndex = pid;
         }
-        let [ pid, t ] = await b.transfer(id, 10, 2, [id], 0);
+        let [ pid, t ] = await b.registerPayment(id, 10, 2, [id], 0);
         if (pid > maxPayIndex) maxPayIndex = pid;
         otherIndex = pid;
         await utils.skipBlocks(b.unlockBlocks);
@@ -213,5 +215,18 @@ contract("challenge", ()=> {
         await assertRequire(
             challenge(id, slot, challenger, data, index, payList),
             "amount mismatch");
+    });
+
+    
+    it('should reject a locked payment', async ()=>{
+        data.pop();
+        data.push(otherIndex);
+        let index = 2;
+        let payIndex = data[index];
+        let payList = b.getPayList(payIndex);
+        
+        await assertRequire(
+            challenge(id, slot, challenger, data, index, payList),
+            "payment is locked");
     });
 });

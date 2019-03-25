@@ -41,7 +41,7 @@ contract MassExit is Payments {
         defaultMonitor = _monitor;
     }
 
-    function setMonitor(uint32 id, address _monitor) public onlyOwnerId(id) {
+    function setMonitor(uint32 id, address _monitor) public onlyAccountOwner(id) {
         monitor[id] = _monitor;
     }
 
@@ -53,7 +53,7 @@ contract MassExit is Payments {
     )
     public
     enabled()
-    onlyOwnerId(delegate) 
+    onlyAccountOwner(delegate) 
     {
         MassExitLib.startExit(
             exits[delegate][exitId], 
@@ -72,7 +72,7 @@ contract MassExit is Payments {
         bytes  sellerList
         ) 
         public
-        onlyOwnerId(challenger)
+        onlyAccountOwner(challenger)
         validId(delegate)
     {
         MassExitLib.challengeExitId_1(
@@ -92,7 +92,7 @@ contract MassExit is Payments {
         bytes monitorSignature
         ) 
         public
-        onlyOwnerId(delegate)
+        onlyAccountOwner(delegate)
     {
         uint32 seller = exits[delegate][exitId].seller;
         address mon = monitor[seller];
@@ -154,7 +154,7 @@ contract MassExit is Payments {
         uint64 totalBalance
         ) 
         public
-        onlyOwnerId(delegate) 
+        onlyAccountOwner(delegate) 
     {
         MassExitLib.challengeExitBalance_3(
             exits[delegate][exitId],
@@ -169,7 +169,7 @@ contract MassExit is Payments {
         uint32 challenger
         ) 
         public
-        onlyOwnerId(challenger)    
+        onlyAccountOwner(challenger)    
         validId(delegate)
     {
         MassExitLib.challengeExitBalance_4(
@@ -186,7 +186,7 @@ contract MassExit is Payments {
         bytes balanceList
         ) 
         public
-        onlyOwnerId(delegate)    
+        onlyAccountOwner(delegate)    
     {
         MassExitLib.challengeExitBalance_5(
             exits[delegate][exitId],
@@ -205,7 +205,7 @@ contract MassExit is Payments {
         public
         validId(delegate)    
     {
-        require(isOwnerId(exits[delegate][exitId].challenger), "only challenger");
+        require(isAccountOwner(exits[delegate][exitId].challenger), "only challenger");
   
         MassExitLib.challengeExitBalance_6(
             exits[delegate][exitId],
@@ -223,8 +223,8 @@ contract MassExit is Payments {
         uint32 exitId    
         )
         public 
-        onlyOwnerId(exitDelegate)
-        onlyOwnerId(delegate)
+        onlyAccountOwner(exitDelegate)
+        onlyAccountOwner(delegate)
     {
         MassExitLib.challengeExit_collectSuccessful(
             collects[delegate][slot],
@@ -244,7 +244,7 @@ contract MassExit is Payments {
         public
         validId(delegate)
         validId(exitDelegate)
-        onlyOwnerId(challenger)
+        onlyAccountOwner(challenger)
     {
         MassExitLib.challenge_accountClosed(
             collects[delegate][slot],

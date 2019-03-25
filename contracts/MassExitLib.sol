@@ -30,9 +30,9 @@ library MassExitLib {
 
     function getBalanceAtIndex(bytes memory data, uint index) public pure returns (uint64 amount) {
         uint mod1 = 2**64;
-        uint i = index*8;
+        uint i = SafeMath.mul(index, 8);
 
-        require(i <= data.length-8);
+        require(i <= SafeMath.sub(data.length, 8));
 
         // solium-disable-next-line security/no-inline-assembly
         assembly
@@ -52,7 +52,7 @@ library MassExitLib {
     function indexOf(bytes memory data, uint id) public pure returns (uint32) {
         require(data.length % 4 == 0, "invalid data length");
 
-        uint n = data.length / 4;
+        uint n = SafeMath.div(data.length, 4);
         uint modulus = 2**32;
 
         uint sum = 0;
@@ -75,7 +75,7 @@ library MassExitLib {
 
     function startExit(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts, 
         uint32  delegate,
         bytes sellerList,
@@ -88,20 +88,20 @@ library MassExitLib {
         require(sellerList.length < 2**32, "invalid list length");
     
         slot.delegate = delegate;
-        slot.listLength = uint32(sellerList.length / 4);
+        slot.listLength = SafeMath.div32(sellerList.length, 4);
         slot.hashSellerList = keccak256(sellerList);
         slot.destination = destination;
         accounts[delegate].balance = SafeMath.sub64(
             accounts[delegate].balance, 
             params.massExitStake);
 
-        slot.block = Challenge.futureBlock(params.massExitIdBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitIdBlocks);
         slot.status = 1;
     }
 
     function challengeExitId_1(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts, 
         uint32 challenger,
         uint32 seller,
@@ -121,13 +121,13 @@ library MassExitLib {
         slot.challenger = challenger;
         slot.index = indexOf(sellerList, seller);
         slot.seller = seller;
-        slot.block = Challenge.futureBlock(params.massExitIdStepBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitIdStepBlocks);
         slot.status = 2;
     }
 
     function challengeExitId_2(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts, 
         bytes sellerSignature,
         bytes monitorSignature,
@@ -144,7 +144,7 @@ library MassExitLib {
             slot.destination 
             ));
 
-        require(Challenge.recoverHelper(hash, sellerSignature) == accounts[slot.seller].addr, "invalid seller signature");
+        require(Challenge.recoverHelper(hash, sellerSignature) == accounts[slot.seller].owner, "invalid seller signature");
         require(Challenge.recoverHelper(hash, monitorSignature) == monitorAddress, "invalid monitor address");
 
         // Challenge Failed. 
@@ -153,13 +153,13 @@ library MassExitLib {
             params.massExitChallengeStake);
 
         slot.challenger = 0;
-        slot.block = Challenge.futureBlock(params.massExitIdBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitIdBlocks);
         slot.status = 1;
     }
 
     function challengeExit_success(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts) 
         public
     {
@@ -191,7 +191,7 @@ library MassExitLib {
  
     function startExitBalance(
         ExitSlot storage slot, 
-        Data.Params storage params  
+        Data.Config storage params  
         )
         public
     {
@@ -200,12 +200,12 @@ library MassExitLib {
         
         // give the delegate the oportunity to finish pending collects.
         slot.status = 3;
-        slot.block = Challenge.futureBlock(2*params.challengeBlocks); 
+        slot.block = Challenge.getFutureBlock(2*params.challengeBlocks); 
     }
 
     function challengeExitBalance_3(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         uint64 totalBalance
        ) 
         public 
@@ -214,13 +214,13 @@ library MassExitLib {
         require(block.number < slot.block, "challenge time has passed");
        
         slot.totalBalance = totalBalance;
-        slot.block = Challenge.futureBlock(params.massExitBalanceBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceBlocks);
         slot.status = 4;
     }
 
     function challengeExitBalance_4(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts,
         uint32 challenger
        ) 
@@ -235,13 +235,13 @@ library MassExitLib {
             params.massExitChallengeStake);
 
         slot.challenger = challenger;
-        slot.block = Challenge.futureBlock(params.massExitBalanceStepBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceStepBlocks);
         slot.status = 5;
     }
 
     function challengeExitBalance_5(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         bytes balanceList
        ) 
         public 
@@ -251,13 +251,13 @@ library MassExitLib {
         require(balanceList.length == slot.listLength*8, "invalid balanceList");
 
         slot.hashBalanceList = keccak256(balanceList);
-        slot.block = Challenge.futureBlock(params.massExitBalanceStepBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceStepBlocks);
         slot.status = 6;
     }
 
     function challengeExitBalance_6(
         ExitSlot storage slot, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         bytes sellerList,
         bytes balanceList,
         uint32 seller
@@ -272,13 +272,13 @@ library MassExitLib {
         slot.index = indexOf(sellerList, seller);
         slot.seller = seller;
         slot.sellerBalance = getBalanceAtIndex(balanceList, slot.index);
-        slot.block = Challenge.futureBlock(params.massExitBalanceStepBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceStepBlocks);
         slot.status = 7; 
     }
 
     function challengerTimeout(
         ExitSlot storage slot,
-        Data.Params storage params,
+        Data.Config storage params,
         Data.Account[] storage accounts)
         public
     {
@@ -294,13 +294,13 @@ library MassExitLib {
         );
 
         slot.status = 4;
-        slot.block = Challenge.futureBlock(params.massExitBalanceBlocks);
+        slot.block = Challenge.getFutureBlock(params.massExitBalanceBlocks);
     }
 
     function challengeExit_collectSuccessful(
         Data.CollectSlot storage s,
         ExitSlot storage e, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts)
         public
     {   
@@ -323,9 +323,9 @@ library MassExitLib {
 
         s.status = 0;
 
-        // Challenges from exits shouldn't modify seller.collected
-        if (accounts[s.to].collected > s.minPayIndex)
-            accounts[s.to].collected = s.minPayIndex;
+        // Challenges from exits shouldn't modify seller.lastCollectedPaymentId
+        if (accounts[s.to].lastCollectedPaymentId > s.minPayIndex)
+            accounts[s.to].lastCollectedPaymentId = s.minPayIndex;
 
         accounts[s.delegate].balance = SafeMath.add64(
             accounts[s.delegate].balance,
@@ -335,14 +335,14 @@ library MassExitLib {
                 )
         );
 
-        e.block = Challenge.futureBlock(params.massExitBalanceBlocks);
+        e.block = Challenge.getFutureBlock(params.massExitBalanceBlocks);
         e.status = 4;
     }
 
     function challenge_accountClosed(
         Data.CollectSlot storage s,
         ExitSlot storage e, 
-        Data.Params storage params, 
+        Data.Config storage params, 
         Data.Account[] storage accounts,
         uint32 challenger,
         bytes sellerList
@@ -372,9 +372,9 @@ library MassExitLib {
         // Check seller is included on List
         indexOf(sellerList, s.to);
 
-        // Challenges from exits shouldn't modify seller.collected
-        if (accounts[s.to].collected > s.minPayIndex)
-            accounts[s.to].collected = s.minPayIndex;
+        // Challenges from exits shouldn't modify seller.lastCollectedPaymentId
+        if (accounts[s.to].lastCollectedPaymentId > s.minPayIndex)
+            accounts[s.to].lastCollectedPaymentId = s.minPayIndex;
  
         // challenger wins stake
         accounts[challenger].balance = SafeMath.add64(

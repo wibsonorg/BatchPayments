@@ -30,7 +30,7 @@ contract('Payments', (addr)=> {
 
 
     let bp, tAddress, st;
-    const newAccount = new BigNumber(2).pow(256).minus(1);
+    const newAccountFlag = new BigNumber(2).pow(256).minus(1);
 
     before(async function () {
         this.timeout(10000);
@@ -44,7 +44,7 @@ contract('Payments', (addr)=> {
     });
 
 
-    describe("transfer", ()=> {
+    describe("registerPayment", ()=> {
         const rootHash = 0x1234;
         const new_count = 0;
         const metadata = 0;
@@ -58,7 +58,7 @@ contract('Payments', (addr)=> {
         let from_id;
         let t0;
         let key;
-        let lock;
+        let lockingKeyHash;
         let b0;
         let unlockBlocks;
 
@@ -69,14 +69,14 @@ contract('Payments', (addr)=> {
             total_amount = amount_each * list.length + fee;
 
             // put enough funds to transfer and bulk register ids
-            await st.approve(bp.address, total_amount);
-            t0 = await bp.deposit(total_amount, newAccount);
-            from_id = await bp.accountsLength.call() - 1;
+            await st.approve(bp.address, total_amount*2);
+            t0 = await bp.deposit(total_amount*2, newAccountFlag);
+            from_id = await bp.getAccountsLength.call() - 1;
             v0 = await bp.bulkRegister(list.length, rootHash);
 
-            // create lock
+            // create lockingKeyHash
             key = "this-is-the-key";
-            lock = utils.hashLock(0, key);
+            lockingKeyHash = utils.hashLock(0, key);
             unlockBlocks = (await bp.params.call())[6].toNumber();
 
             // initial balance
@@ -84,17 +84,17 @@ contract('Payments', (addr)=> {
         })
 
         it('should support up 100s of ids', async ()=> {
-            // transfer(fromId, amount, fee, payData, newCount, roothash, lock, metadata)
-            await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
+            // registerPayment(fromId, amount, fee, payData, newCount, roothash, lockingKeyHash, metadata)
+            await bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata);
 
             // check balance
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
             assert.equal(b0, b1 + total_amount);
         });
 
-        it('should accept transfer+unlock with good key', async ()=> {
-            let v1 = await bp.transfer(from_id, 1, fee, pay_data, new_count, rootHash, lock, metadata);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+        it('should accept registerPayment+unlock with good key', async ()=> {
+            let v1 = await bp.registerPayment(from_id, 1, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata);
+            let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
             await bp.unlock(payId, unlocker_id, key);
 
@@ -103,9 +103,9 @@ contract('Payments', (addr)=> {
             assert.equal(b0, b1 + total_amount);
         });
 
-        it('should reject transfer+unlock with bad key', async ()=> {
-            let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+        it('should reject registerPayment+unlock with bad key', async ()=> {
+            let v1 = await bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata);
+            let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
             await assertRequire(bp.unlock(payId, unlocker_id, "not-the-key"), "Invalid key");
 
@@ -114,82 +114,125 @@ contract('Payments', (addr)=> {
             assert.equal(b0, b1 + total_amount);
         });
 
-        it('should accept transfer+refund after timeout', async ()=> {
-            let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+        it('should accept registerPayment+refund after timeout', async ()=> {
+            let v1 = await bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata);
+            let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
             await utils.skipBlocks(unlockBlocks);
-            let v2 = await bp.refund(payId);
+            let v2 = await bp.refundLockedPayment(payId);
 
             // check original balance didn't change
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
             assert.equal(b0, b1);
         });
 
-        it('should reject transfer+refund before timeout', async ()=> {
-            let v1 = await bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata);
-            let payId = (await bp.paymentsLength.call()).toNumber() - 1;
+        it('should reject registerPayment+refund before timeout', async ()=> {
+            let v1 = await bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata);
+            let payId = (await bp.getPaymentsLength.call()).toNumber() - 1;
 
-            await assertRequire(bp.refund(payId), "Hash lock has not expired yet");
+            await assertRequire(bp.refundLockedPayment(payId), "Hash lock has not expired yet");
 
             // check balance
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
             assert.equal(b0, b1 + total_amount);
         });
 
-        it('should reject transfer if bytes per id is 0', async ()=> {
+        it('should reject registerPayment if bytes per id is 0', async ()=> {
             const bytesPerId = 0;
             pay_data = new web3.BigNumber("0xff" + utils.hex(bytesPerId));
 
-            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata), "revert bytes per Id should be positive");
+            await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), "revert bytes per Id should be positive");
 
             // check original balance didn't change
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
             assert.equal(b0, b1);
         });
 
-        it('should reject transfer if bytes payData length is invalid', async ()=> {
+        it('should reject registerPayment if bytes payData length is invalid', async ()=> {
             const bytesPerId = 4;
             const data = "0000005"
             pay_data = new web3.BigNumber("0xff" + utils.hex(bytesPerId) + data);
 
-            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, new_count, rootHash, lock, metadata), "payData length is invalid");
+            await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), "payData length is invalid");
 
             // check original balance didn't change
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
             assert.equal(b0, b1);
         });
 
-        it('should reject transfer if there are too many payees', async ()=> {
+        it('should reject registerPayment if there are too many payees', async ()=> {
             // NOTE: there are 2 checks that depend on newCount:
             //   1. (payData.length-2) / bytesPerId + newCount < maxTransfer = 100000
-            //   2. accounts.length + newCount < maxAccount = 2 ** 32
+            //   2. accounts.length + newCount < maxAccountId = 2 ** 32
             //
             // because 100000 < 2 ** 32 we can only trigger the first condition
             let toobig_count = 100000; // this should actually be bp.maxTransfer, however it crashes
 
-            await assertRequire(bp.transfer(from_id, amount_each, fee, pay_data, toobig_count, rootHash, lock, metadata), "Cannot register this number of ids simultaneously");
+            await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, toobig_count, rootHash, lockingKeyHash, metadata), "too many payees");
 
             // check original balance didn't change
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
             assert.equal(b0, b1);
         });
 
-        it('should reject transfer if balance is not enough', async ()=> {
+        it('should reject registerPayment if balance is not enough', async ()=> {
             let balance = await bp.balanceOf(from_id);
             let new_count = list.length;
             let invalid_amount = balance + 1;
 
-            await assertRequire(bp.transfer(from_id, invalid_amount, fee, pay_data, new_count, rootHash, lock, metadata), "not enough funds");
+            await assertRequire(bp.registerPayment(from_id, invalid_amount, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), "not enough funds");
 
             // check original balance didn't change
             let b1 = (await bp.balanceOf.call(from_id)).toNumber();
             assert.equal(b0, b1);
         });
+
+        it('should correctly substract balance on registerPayment with new-count=0', async()=> {
+            let balance0 = await bp.balanceOf(from_id);
+            let new_count = 0;
+
+            await bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata);
+            let balance1 = await bp.balanceOf(from_id);
+
+            assert.equal(balance0 - balance1, total_amount);
+        });
+
+        
+        it('should correctly substract balance on registerPayment with new-count=10', async()=> {
+            let balance0 = await bp.balanceOf(from_id);
+            let new_count = 10;
+
+            await bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata);
+            let balance1 = await bp.balanceOf(from_id);
+
+            assert.equal(balance0 - balance1, total_amount + amount_each * new_count);
+        });
+
+        it('should correctly substract balance on registerPayment with new-count=1', async()=> {
+            let balance0 = await bp.balanceOf(from_id);
+            let new_count = 1;
+
+            await bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata);
+            let balance1 = await bp.balanceOf(from_id);
+
+            assert.equal(balance0 - balance1, total_amount + amount_each * new_count);
+        });
+
+        
+        it('should correctly substract balance on registerPayment with no payData', async()=> {
+            let balance0 = await bp.balanceOf(from_id);
+            let new_count = 10;
+            
+            let pdata = pay_data = utils.getPayData([]);
+            await bp.registerPayment(from_id, amount_each, fee, pdata, new_count, rootHash, lockingKeyHash, metadata);
+            let balance1 = await bp.balanceOf(from_id);
+
+            assert.equal(balance0 - balance1, fee + amount_each * new_count);
+        });
     });
 
 
-    describe("collect", ()=> {
+    describe("collect", () => {
         let b,id;
         let acc;
         let userid = [];
@@ -215,7 +258,7 @@ contract('Payments', (addr)=> {
 
             for(let i = 0; i<nPays; i++) 
             {
-                let [ pid, t ] = await b.transfer(id, 10, 2, userid, 0);
+                let [ pid, t ] = await b.registerPayment(id, 10, 2, userid, 0);
                 payid.push(pid);
                 if (pid > maxPayIndex) maxPayIndex = pid;
             }
@@ -340,28 +383,28 @@ contract('Payments', (addr)=> {
             let mid = userid[6];
             let slot = b.instantSlot+2;
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
-            let [addr,balance,collected] = await b.getAccount(mid);
+            let [addr,balance,lastCollectedPaymentId] = await b.getAccount(mid);
 
             let fee = Math.floor(amount/3);
             let b0 = (await b.balanceOf(mid)).toNumber();
             let c0 = (await b.balanceOf(id)).toNumber();
             let d0 = (await b.tokenBalance(acc[1])).toNumber();
 
-            assertRequire(b.collect(id, slot, mid, collected, maxPayIndex+1, amount, amount/3, acc[1]), "payIndex is not a valid value");
+            assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, maxPayIndex+1, amount, amount/3, acc[1]), "payIndex is not a valid value");
     
         });
         it('should reject if invalid payIndex', async ()=>{
             let mid = userid[6];
             let slot = b.instantSlot+2;
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
-            let [addr,balance,collected] = await b.getAccount(mid);
+            let [addr,balance,lastCollectedPaymentId] = await b.getAccount(mid);
 
             let fee = Math.floor(amount/3);
             let b0 = (await b.balanceOf(mid)).toNumber();
             let c0 = (await b.balanceOf(id)).toNumber();
             let d0 = (await b.tokenBalance(acc[1])).toNumber();
 
-            assertRequire(b.collect(id, slot, mid, collected, (await b.paymentsLength())+100, amount, amount/3, acc[1]), "invalid payIndex");
+            assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, (await b.getPaymentsLength())+100, amount, amount/3, acc[1]), "invalid payIndex");
     
         });
         
@@ -369,7 +412,7 @@ contract('Payments', (addr)=> {
             let mid = userid[6];
             let slot = b.instantSlot+2;
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
-            let [addr,balance,collected] = await b.getAccount(mid);
+            let [addr,balance,lastCollectedPaymentId] = await b.getAccount(mid);
 
             let fee = Math.floor(amount/3);
             let b0 = (await b.balanceOf(mid)).toNumber();
@@ -383,14 +426,14 @@ contract('Payments', (addr)=> {
             let mid = userid[7];
             let slot = b.instantSlot+2;
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
-            let [addr,balance,collected] = await b.getAccount(mid);
+            let [addr,balance,lastCollectedPaymentId] = await b.getAccount(mid);
 
             let fee = Math.floor(amount/3);
             let b0 = (await b.balanceOf(mid)).toNumber();
             let c0 = (await b.balanceOf(id)).toNumber();
             let d0 = (await b.tokenBalance(acc[1])).toNumber();
 
-            assertRequire(b.collect(id, slot, 1000000, collected+1, maxPayIndex, amount, amount/3, 0), "Bad user signature");
+            assertRequire(b.collect(id, slot, 1000000, lastCollectedPaymentId+1, maxPayIndex, amount, amount/3, 0), "Bad user signature");
         });
     });
 
