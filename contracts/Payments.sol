@@ -252,7 +252,7 @@ contract Payments is Accounts {
         
         sl.amount = declaredAmount;
         sl.to = toAccountId;
-        sl.block = uint64(block.number + params.challengeBlocks);
+        sl.block = SafeMath.add64(block.number, params.challengeBlocks);
         sl.status = 1;
         
         tacc.lastCollectedPaymentId = uint32(payIndex);

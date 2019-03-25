@@ -18,7 +18,7 @@ library Challenge {
     /// @return the sum of the amounts referenced on the array.
 
     function getDataSum(bytes memory data) public pure returns (uint sum) {
-        uint n = data.length / 12;
+        uint n = SafeMath.div(data.length, 12);
         uint modulus = 2**64;
 
         sum = 0;
@@ -49,9 +49,9 @@ library Challenge {
     function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
         uint mod1 = 2**64;
         uint mod2 = 2**32;
-        uint i = index*12;
+        uint i = SafeMath.mul(index, 12);
 
-        require(i <= data.length-12);
+        require(i <= SafeMath.sub(data.length, 12));
 
         // solium-disable-next-line security/no-inline-assembly
         assembly
@@ -126,7 +126,7 @@ library Challenge {
         public 
     {  
         require(collectSlot.status == 3);
-        require(disputedPaymentIndex < data.length/12, "invalid index");
+        require(disputedPaymentIndex < SafeMath.div(data.length, 12), "invalid index");
         require (block.number < collectSlot.block, "challenge time has passed");
         require(collectSlot.data == keccak256(data), "data mismatch");
         (collectSlot.challengeAmount, collectSlot.index) = getDataAtIndex(data, disputedPaymentIndex);
@@ -177,7 +177,7 @@ library Challenge {
                         modulus))
             }
             if (id == collectSlot.to) {
-                collected += p.amount;
+                collected = SafeMath.add(collected, p.amount);
             }
         }
 
