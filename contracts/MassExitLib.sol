@@ -30,9 +30,9 @@ library MassExitLib {
 
     function getBalanceAtIndex(bytes memory data, uint index) public pure returns (uint64 amount) {
         uint mod1 = 2**64;
-        uint i = index*8;
+        uint i = SafeMath.mul(index, 8);
 
-        require(i <= data.length-8);
+        require(i <= SafeMath.sub(data.length, 8));
 
         // solium-disable-next-line security/no-inline-assembly
         assembly
@@ -52,7 +52,7 @@ library MassExitLib {
     function indexOf(bytes memory data, uint id) public pure returns (uint32) {
         require(data.length % 4 == 0, "invalid data length");
 
-        uint n = data.length / 4;
+        uint n = SafeMath.div(data.length, 4);
         uint modulus = 2**32;
 
         uint sum = 0;
@@ -88,7 +88,7 @@ library MassExitLib {
         require(sellerList.length < 2**32, "invalid list length");
     
         slot.delegate = delegate;
-        slot.listLength = uint32(sellerList.length / 4);
+        slot.listLength = SafeMath.div32(sellerList.length, 4);
         slot.hashSellerList = keccak256(sellerList);
         slot.destination = destination;
         accounts[delegate].balance = SafeMath.sub64(

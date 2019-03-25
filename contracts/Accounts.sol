@@ -52,7 +52,7 @@ contract Accounts is Data {
 
         emit BulkRegister(bulkSize, accounts.length, bulkRegistrations.length);
         bulkRegistrations.push(BulkRegistration(rootHash, uint32(bulkSize), uint32(accounts.length)));
-        accounts.length += bulkSize;
+        accounts.length = SafeMath.add(accounts.length, bulkSize);
     }
 
     /// @dev Complete registration for a reserved account by showing the bulkRegistration-id and Merkle proof associated with this address
@@ -66,7 +66,7 @@ contract Accounts is Data {
         uint smallestAccountId = bulkRegistrations[bulkId].smallestRecordId;
         uint n = bulkRegistrations[bulkId].recordCount;
         bytes32 rootHash = bulkRegistrations[bulkId].rootHash;
-        bytes32 hash = Merkle.getProofRootHash(proof, accountId - smallestAccountId, uint256(addr));
+        bytes32 hash = Merkle.getProofRootHash(proof, SafeMath.sub(accountId, smallestAccountId), uint256(addr));
         
         require(accountId >= smallestAccountId && accountId < smallestAccountId+n, "the accountId specified is not part of that bulk registration slot");
         require(hash == rootHash, "invalid Merkle proof");
