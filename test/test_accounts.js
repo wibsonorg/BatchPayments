@@ -1,6 +1,7 @@
 var StandardToken = artifacts.require('StandardToken');
 var BatPay = artifacts.require('BatPay');
-const catchRevert = require('./exceptions').catchRevert;
+// const catchError = require('./exceptions').catchError;
+const catchError = require('./exceptions');
 const truffleAssertions = require('truffle-assertions');
 const assertRequire = truffleAssertions.reverts;
 const assertPasses = truffleAssertions.passes;
@@ -32,26 +33,25 @@ contract('Accounts', (addr)=> {
     const newAccountFlag = new BigNumber(2).pow(256).minus(1);
 
     before(async ()=> {
-        await utils.skipBlocks(1);
+        // await utils.skipBlocks(1);
         let ret = await utils.getInstances();
         bp = ret.bp;
         st = ret.token;
-
         test = await TestHelper.new();
 
         let params = await bp.params.call();
-
       });
 
     describe('deposits', ()=> {
         it('Should fail on not enough approval', async ()=> {
-            const amount = 100;
-            await st.approve(bp.address, amount-1);
-            await catchRevert(bp.deposit(amount, newAccountFlag));
+            const amount = 100
 
-            await st.approve(bp.address, 0);
-            await catchRevert(bp.deposit(amount, newAccountFlag));
-        });
+            await st.approve(bp.address, amount - 1)
+            await catchError(bp.deposit(amount, newAccountFlag), 'revert')
+            
+            await st.approve(bp.address, 0)
+            await catchError(bp.deposit(amount, newAccountFlag), 'revert')
+        })
 
         it('Should accept deposits for new accounts', async ()=> {
             const initial = await st.balanceOf.call(a0);
@@ -82,7 +82,7 @@ contract('Accounts', (addr)=> {
             assert.equal(v1.toNumber(), 2*amount);
         });
 
-        it('Should reject 0-token deposits', async ()=> {
+        it('Should reject 0-token deposits', async () => {
             await assertRequire(bp.deposit(0, newAccountFlag), "amount should be positive");
         });
     });
@@ -123,8 +123,8 @@ contract('Accounts', (addr)=> {
             id = id.toNumber()-1;  // this is a dangerous way to obtain the ID of the newAccountFlag, as many accounts c
 
             await bp.withdraw(1, id); // make sure we can actually do a withdraw using a valid id
-            await catchRevert(bp.withdraw(amount/2, id+1)); // try with invalid id
-        });
+            await catchError(bp.withdraw(amount/2, id+1), 'revert') // try with invalid id
+        })
 
         it('Should reject withdrawals for sums larger than balance', async ()=> {
             const amount = 100;
