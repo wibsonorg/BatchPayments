@@ -1,5 +1,9 @@
-var TestHelper = artifacts.require('./TestHelper');
-BigNumber = web3.BigNumber;
+const chai = require('chai')
+const { MAX_UINT32 } = require('./constants');
+const TestHelper = artifacts.require('./TestHelper')
+BigNumber = web3.BigNumber
+chai.use(require('chai-bignumber')(BigNumber)).should();
+
 
 async function assertFailure (promise) {
     try {
