@@ -16,6 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "ethereumjs-abi": "^0.6.5",
+    "truffle": "^4.1.15",
     "truffle-assertions": "^0.7.2"
   }
 }
