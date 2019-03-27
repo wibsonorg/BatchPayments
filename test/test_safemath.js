@@ -20,7 +20,7 @@ async function assertFailure (promise) {
 describe('SafeMath', () => {
     var testhelper;
 
-    before(async()=>{
+    before(async() => {
         testhelper = await TestHelper.deployed();
         return await testhelper;
     });
@@ -41,17 +41,17 @@ describe('SafeMath', () => {
     it('mul64 should check uint64 overflow', async() => {
         let a = 2**32;
         let b = 2**32;
-        assertFailure(testhelper.mul64.call(a, b));
+        await assertFailure(testhelper.mul64.call(a, b));
     });
 
     it('div64 should fail when divide by zero', async() => {
-        assertFailure(testhelper.div64.call(10, 0));
+        await assertFailure(testhelper.div64.call(10, 0));
     });
 
     it('div64 should fail with remainder larger than uint64', async() => {
         let a = 8**64;
         let b = 2**64;
-        assertFailure(testhelper.div64.call(a, b));
+        await assertFailure(testhelper.div64.call(a, b));
     });
 
     it('div64 happy case with reaminder = 0', async() => {
@@ -71,7 +71,7 @@ describe('SafeMath', () => {
     it('sub64 should check uint64 overflow', async() => {
         let a = 10**64;
         let b = 2**64;
-        assertFailure(testhelper.sub64.call(a, b));
+        await assertFailure(testhelper.sub64.call(a, b));
     });
 
     it('sub64 with positive result', async() => {
@@ -84,7 +84,7 @@ describe('SafeMath', () => {
     it('sub64 cannot produce a negative result', async() => {
         let a = 4;
         let b = 14;
-        assertFailure(testhelper.sub64.call(a, b));
+        await assertFailure(testhelper.sub64.call(a, b));
     });
 
     it('sub64 with result = 0', async() => {
@@ -97,7 +97,7 @@ describe('SafeMath', () => {
     it('add64 should check uint64 overflow', async() => {
         let a = 10**64;
         let b = 10**64;
-        assertFailure(testhelper.add64.call(a, b));
+        await assertFailure(testhelper.add64.call(a, b));
     });
 
     it('add64 should happy case', async() => {
@@ -123,17 +123,17 @@ describe('SafeMath', () => {
     it('mul32 should check uint32 overflow', async() => {
         let a = 2**16;
         let b = 2**16;
-        assertFailure(testhelper.mul32.call(a, b));
+        await assertFailure(testhelper.mul32.call(a, b));
     });
 
     it('div32 should fail when divide by zero', async() => {
-        assertFailure(testhelper.div32.call(10, 0));
+        await assertFailure(testhelper.div32.call(10, 0));
     });
 
     it('div32 should fail with remainder larger than uint32', async() => {
         let a = 8**32;
         let b = 2**32;
-        assertFailure(testhelper.div32.call(a, b));
+        await assertFailure(testhelper.div32.call(a, b));
     });
 
     it('div32 happy case with remainder = 0', async() => {
