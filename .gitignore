@@ -22,6 +22,9 @@ blockchain/history
 # truffle
 .tern-port
 
+# Env configurations
+config/*.env
+
 # testchain data and passphrases
 config/testchain/data
 config/testchain/secret
