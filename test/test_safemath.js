@@ -149,43 +149,53 @@ describe('SafeMath', () => {
         let c = await testhelper.div32.call(a, b);
         assert.equal(c.toNumber(), 8);
     });
+    describe('sub32', () => {
+        it('should check uint32 overflow', async() => {
+            let a = 10**32;
+            let b = 2**32;
+            await assertFailure(testhelper.sub32.call(a, b));
+        });
 
-    it('sub32 should check uint32 overflow', async() => {
-        let a = 10**32;
-        let b = 2**32;
-        assertFailure(testhelper.sub32.call(a, b));
-    });
+        it('with positive result', async() => {
+            let a = 14;
+            let b = 4;
+            let c = await testhelper.sub32.call(a, b);
+            assert.equal(c.toNumber(), 10);
+        });
 
-    it('sub32 with positive result', async() => {
-        let a = 14;
-        let b = 4;
-        let c = await testhelper.sub32.call(a, b);
-        assert.equal(c.toNumber(), 10);
-    });
+        it('cannot produce a negative result', async() => {
+            let a = 4;
+            let b = 14;
+            await assertFailure(testhelper.sub32.call(a, b));
+        });
 
-    it('sub32 cannot produce a negative result', async() => {
-        let a = 4;
-        let b = 14;
-        assertFailure(testhelper.sub32.call(a, b));
-    });
+        it('with result = 0', async() => {
+            let a = 14;
+            let b = 14;
+            let c = await testhelper.sub32.call(a, b);
+            assert.equal(c.toNumber(), 0);
+        });
+    })
 
-    it('sub32 with result = 0', async() => {
-        let a = 14;
-        let b = 14;
-        let c = await testhelper.sub32.call(a, b);
-        assert.equal(c.toNumber(), 0);
-    });
+    describe('add32', () => {
+        it('adds correctly', async() => {
+            const a = 14;
+            const b = 14;
+            const c = await testhelper.add32.call(a, b);
+            assert.equal(c, 28);
+        });
 
-    it('add32 should check uint32 overflow', async() => {
-        let a = 10**32;
-        let b = 10**32;
-        assertFailure(testhelper.add32.call(a, b));
-    });
+        it('correctly adds up to maximum value', async() => {
+            const a = MAX_UINT32.minus(1)
+            const b = new BigNumber('1')
+            const c = await testhelper.add32.call(a, b)
+            c.should.be.bignumber.equal(a.add(b));
+        });
 
-    it('add32 should happy case', async() => {
-        let a = 14;
-        let b = 14;
-        let c = await testhelper.add32.call(a, b);
-        assert.equal(c, 28);
+        it('fails on overflow', async() => {
+            const a = MAX_UINT32
+            const b = new BigNumber('1')
+            await assertFailure(testhelper.add32.call(a, b))
+        });
     });
 });
