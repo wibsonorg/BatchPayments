@@ -16,6 +16,10 @@ contract Payments is Accounts {
         uint amount
     );
     event PaymentUnlocked(uint indexed payIndex, bytes key);
+    /**
+     * Event for collection logging. Off-chain monitoring services may listen
+     * to this event to trigger challenges.
+     */
     event Collect(
         uint indexed delegate,
         uint indexed slot,
@@ -139,6 +143,7 @@ contract Payments is Accounts {
  
         // Complete refund
         balanceAdd(p.fromAccountId, total);
+        return true;
     }
 
 
@@ -198,20 +203,20 @@ contract Payments is Accounts {
         uint32 toAccountId,
         uint32 payIndex,
         uint64 declaredAmount,
-        uint64 fee, 
+        uint64 fee,
         address destination,
         bytes memory signature
         )
         public
-        
+
     {
         require(isAccountOwner(delegate), "invalid delegate");
         _freeSlot(delegate, slotId);
-      
+
         Account memory acc = accounts[delegate];
-        
+
         // Check toAccountId is valid
-        require(toAccountId <= accounts.length, "toAccountId must be a valid account id");
+        require(isValidId(toAccountId), "toAccountId must be a valid account id");
 
         Account memory tacc = accounts[toAccountId];
         require(tacc.owner != 0, "account registration has to be completed");
@@ -237,7 +242,7 @@ contract Payments is Accounts {
 
         sl.minPayIndex = tacc.lastCollectedPaymentId;
         sl.maxPayIndex = payIndex;
-
+        
         uint64 needed = params.collectStake;
 
         // check if this is an instant collect
@@ -274,7 +279,8 @@ contract Payments is Accounts {
         if (destination != address(0) && slotId >= instantSlot) {
             accounts[toAccountId].balance = 0;
             require(token.transfer(destination, tacc.balance), "transfer failed");
-        } 
+        }
+        emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
     }
 
 
