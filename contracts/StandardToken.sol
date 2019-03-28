@@ -5,7 +5,7 @@ import "./IERC20.sol";
 
 contract StandardToken is IERC20 {
     using SafeMath for uint;
-      
+
     string internal _name;
     string internal _symbol;
     uint8 internal _decimals;
