@@ -9,15 +9,27 @@ import "./Challenge.sol";
 /// steps of the collect challenge game
 
 contract Payments is Accounts {
-    event PaymentRegistered(uint payIndex, uint from, uint totalNumberOfPayees, uint amount);
-    event PaymentUnlocked(uint payIndex, bytes key);
-    event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
-    event Challenge_1(uint delegate, uint slot, uint challenger);
-    event Challenge_2(uint delegate, uint slot);
-    event Challenge_3(uint delegate, uint slot, uint index);
-    event Challenge_4(uint delegate, uint slot);
-    event Challenge_success(uint delegate, uint slot);
-    event Challenge_failed(uint delegate, uint slot);  
+    event PaymentRegistered(
+        uint indexed payIndex,
+        uint indexed from,
+        uint totalNumberOfPayees,
+        uint amount
+    );
+    event PaymentUnlocked(uint indexed payIndex, bytes key);
+    event Collect(
+        uint delegate,
+        uint indexed slot,
+        uint indexed to,
+        uint fromPayindex,
+        uint toPayIndex,
+        uint amount
+    );
+    event Challenge_1(uint delegate, uint indexed slot, uint challenger);
+    event Challenge_2(uint delegate, uint indexed slot);
+    event Challenge_3(uint delegate, uint indexed slot, uint index);
+    event Challenge_4(uint delegate, uint indexed slot);
+    event Challenge_success(uint delegate, uint indexed slot);
+    event Challenge_failed(uint delegate, uint indexed slot);  
 
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
