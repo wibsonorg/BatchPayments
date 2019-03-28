@@ -199,7 +199,7 @@ contract Payments is Accounts {
         Account memory acc = accounts[delegate];
         
         // Check toAccountId is valid
-        require(toAccountId <= accounts.length, "toAccountId must be a valid account id");
+        require(isValidId(toAccountId), "toAccountId must be a valid account id");
 
         Account memory tacc = accounts[toAccountId];
         require(tacc.owner != 0, "account registration has to be completed");
