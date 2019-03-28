@@ -61,7 +61,7 @@ library SafeMath {
 
     function add32(uint256 a, uint256 b) internal pure returns (uint32) {
         uint256 c = a+b;
-        assert (c >= a && c < 2**64);
+        assert (c >= a && c < 2**32);
         return uint32(c);
     }
 
