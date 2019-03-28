@@ -17,19 +17,19 @@ contract Payments is Accounts {
     );
     event PaymentUnlocked(uint indexed payIndex, bytes key);
     event Collect(
-        uint delegate,
+        uint indexed delegate,
         uint indexed slot,
         uint indexed to,
         uint fromPayindex,
         uint toPayIndex,
         uint amount
     );
-    event Challenge_1(uint delegate, uint indexed slot, uint challenger);
-    event Challenge_2(uint delegate, uint indexed slot);
-    event Challenge_3(uint delegate, uint indexed slot, uint index);
-    event Challenge_4(uint delegate, uint indexed slot);
-    event Challenge_success(uint delegate, uint indexed slot);
-    event Challenge_failed(uint delegate, uint indexed slot);  
+    event Challenge_1(uint indexed delegate, uint indexed slot, uint challenger);
+    event Challenge_2(uint indexed delegate, uint indexed slot);
+    event Challenge_3(uint indexed delegate, uint indexed slot, uint index);
+    event Challenge_4(uint indexed delegate, uint indexed slot);
+    event Challenge_success(uint indexed delegate, uint indexed slot);
+    event Challenge_failed(uint indexed delegate, uint indexed slot);  
 
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
