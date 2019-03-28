@@ -132,6 +132,7 @@ contract Payments is Accounts {
  
         // Complete refund
         balanceAdd(p.fromAccountId, total);
+        return true;
     }
 
 
