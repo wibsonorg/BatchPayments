@@ -23,7 +23,7 @@ async function skipBlocks(n) {
 }
 
 
-contract('Payments', (addr)=> {
+contract('Payments', (addr) => {
   
     let a0 = addr[0];
     let a1 = addr[1];
@@ -265,16 +265,19 @@ contract('Payments', (addr)=> {
 
             await utils.skipBlocks(b.unlockBlocks);
         });
-        it('should collect', async ()=>{
+
+        it('should collect', async () => {
             let mid = userid[0];
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
             let b0 = (await b.balanceOf(mid)).toNumber();
-            await b.collect(id, 0, mid, 0, maxPayIndex+1, amount, 0, 0);
+            const txr = await b.collect(id, 0, mid, 0, maxPayIndex+1, amount, 0, 0);
             await utils.skipBlocks(b.challengeBlocks);
             await b.freeSlot(id, 0);
             let b1 = (await b.balanceOf(mid)).toNumber();
             assert.equal(b0+amount,b1);
+            eventEmitted(txr, 'Collect')
         });
+
         it('should instant-collect', async ()=>{
             let mid = userid[1];
             let amount = await b.getCollectAmount(mid, 0, maxPayIndex+1);
@@ -292,7 +295,7 @@ contract('Payments', (addr)=> {
             await utils.skipBlocks(b.challengeBlocks);
             let amount2 = await b.getCollectAmount(mid, maxPayIndex/2, maxPayIndex+1);
             // await b.freeSlot(id, 1);
-            let r1 = await b.collect(id, 1, mid, maxPayIndex/2, maxPayIndex+1, amount2, 0, 0);
+            await b.collect(id, 1, mid, maxPayIndex/2, maxPayIndex+1, amount2, 0, 0);
             let b1 = (await b.balanceOf(mid)).toNumber();
             await utils.skipBlocks(b.challengeBlocks);
             await b.freeSlot(id, 1);
