@@ -1,5 +1,6 @@
 pragma solidity ^0.4.24;
 
+
 library SafeMath {
     function mul64(uint256 a, uint256 b) internal pure returns (uint64) {
         if (a == 0) {
@@ -29,7 +30,7 @@ library SafeMath {
 
     function add64(uint256 a, uint256 b) internal pure returns (uint64) {
         uint256 c = a+b;
-        assert (c >= a && c < 2**64);
+        assert(c >= a && c < 2**64);
         return uint64(c);
     }
 
@@ -61,7 +62,7 @@ library SafeMath {
 
     function add32(uint256 a, uint256 b) internal pure returns (uint32) {
         uint256 c = a+b;
-        assert (c >= a && c < 2**32);
+        assert(c >= a && c < 2**32);
         return uint32(c);
     }
 

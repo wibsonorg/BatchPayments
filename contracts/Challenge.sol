@@ -1,14 +1,17 @@
 pragma solidity ^0.4.24;
-/// @title Challenge helper library
+
 
 import "./Data.sol";
 import "./SafeMath.sol";
 
-library Challenge {
-    /// @dev calculates new block numbers based on the current block and a delta constant specified by the protocol policy
-    /// @param delta number of blocks into the future to calculate
-    /// @return future block number
 
+/// @title Challenge helper library
+library Challenge {
+
+    /// @dev calculates new block numbers based on the current block and a
+    ///      delta constant specified by the protocol policy.
+    /// @param delta number of blocks into the future to calculate.
+    /// @return future block number.
     function getFutureBlock(uint delta) public view returns(uint64) {
         return SafeMath.add64(block.number, delta);
     }
@@ -29,7 +32,7 @@ library Challenge {
         // Get the sum of the stated amounts in data 
         // Each entry in data is [8-bytes amount][4-bytes payIndex]
 
-        for(uint i = 0; i<n; i++) {
+        for (uint i = 0; i < n; i++) {
             // solium-disable-next-line security/no-inline-assembly
             assembly {
                 let amount := mod(mload(add(data, add(8, mul(i, 12)))), modulus)
@@ -44,7 +47,6 @@ library Challenge {
     /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
     /// @param index Array item requested
     /// @return amount and payIndex requested 
-
     function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
         require(data.length > 0, "no data provided");
         require(data.length % 12 == 0, "wrong data format");
@@ -145,7 +147,8 @@ library Challenge {
     {
         require(collectSlot.status == 4);
         require(block.number < collectSlot.block, "challenge time has passed");
-        require(collectSlot.index >= collectSlot.minPayIndex && collectSlot.index < collectSlot.maxPayIndex, "payment referenced is out of range");
+        require(collectSlot.index >= collectSlot.minPayIndex && collectSlot.index < collectSlot.maxPayIndex,
+            "payment referenced is out of range");
         Data.Payment memory p = payments[collectSlot.index];
         require(keccak256(payData) == p.paymentDataHash, "payData is incorrect");
         require(p.lockingKeyHash == 0, "payment is locked");
@@ -189,7 +192,6 @@ library Challenge {
     /// @param collectSlot Collect slot
     /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
-
    
     function challenge_success(
         Data.CollectSlot storage collectSlot, 
@@ -197,7 +199,8 @@ library Challenge {
         Data.Account[] storage accounts) 
         public 
     {
-        require((collectSlot.status == 2 || collectSlot.status == 4) && block.number >= collectSlot.block, "challenge not finished");
+        require((collectSlot.status == 2 || collectSlot.status == 4) && block.number >= collectSlot.block,
+            "challenge not finished");
 
         accounts[collectSlot.challenger].balance = SafeMath.add64(
             accounts[collectSlot.challenger].balance,
@@ -206,19 +209,19 @@ library Challenge {
         collectSlot.status = 0;
     }
 
-    /// @dev Internal function. The delegate proved the challenger wrong, or the challenger failed to respond on time. The delegae collects the stake.
+    /// @dev Internal function. The delegate proved the challenger wrong, or
+    ///      the challenger failed to respond on time. The delegae collects the stake.
     /// @param collectSlot Collect slot
     /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
-
-
     function challenge_failed(
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config,
         Data.Account[] storage accounts) 
         public 
     {
-        require(collectSlot.status == 5 || (collectSlot.status == 3 && block.number >= collectSlot.block), "challenge not completed");
+        require(collectSlot.status == 5 || (collectSlot.status == 3 && block.number >= collectSlot.block),
+            "challenge not completed");
 
         // Challenge failed
         // delegate wins Stake

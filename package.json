@@ -2,14 +2,16 @@
   "name": "batchpayments",
   "version": "1.0.0",
   "private": true,
-  "description": "a batch payments solution for ethereum",
+  "description": "A batch payments solution for ethereum",
   "main": "",
   "directories": {
     "lib": "lib",
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test"
+    "test": "truffle test",
+    "lint": "npm run lint:sol",
+    "lint:sol": "solhint contracts/**/*.sol || :"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "chai-bignumber": "^3.0.0"
+    "chai-bignumber": "^3.0.0",
+    "solhint": "^2.0.0"
   }
 }

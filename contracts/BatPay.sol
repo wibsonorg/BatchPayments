@@ -1,19 +1,20 @@
 pragma solidity ^0.4.24;
+
+
 import "./IERC20.sol";
 import "./Accounts.sol";
 import "./Payments.sol";
 import "./SafeMath.sol";
 
+
 /// @title BatchPayment processing
 /// @notice This contract allows to scale ERC-20 token transfer for fees or micropayments
 /// on the few-buyers / many-sellers setting.
+contract BatPay is Accounts, Payments {
 
-contract BatPay is Accounts, Payments
-{  
     /*
      * Public functions
      */
-
     /// @dev Contract constructor, sets ERC20 token this contract will use for payments
     /// @param _token ERC20 contract address
     /// @param maxBulk Maximum number of users to registers in a single bulkRegister
