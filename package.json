@@ -9,6 +9,10 @@
     "test": "test"
   },
   "scripts": {
+    "lint": "npm run lint:sol",
+    "lint:js": "standard || :",
+    "lint:js:fix": "standard --fix || :",
+    "lint:sol": "solhint contracts/**/*.sol || :",
     "test": "truffle test"
   },
   "keywords": [],
