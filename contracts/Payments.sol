@@ -9,7 +9,7 @@ import "./Challenge.sol";
 /// steps of the collect challenge game
 
 contract Payments is Accounts {
-    event PaymentRegistered(uint payIndex, uint from, uint totalNumberOfPayees, uint amount);
+    event PaymentRegistered(uint payIndex, uint32 from, uint32 totalNumberOfPayees, uint64 amount);
     event PaymentUnlocked(uint payIndex, bytes key);
     event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
     event Challenge_1(uint delegate, uint slot, uint challenger);
@@ -50,7 +50,7 @@ contract Payments is Accounts {
         p.amount = amount;
         p.fee = fee;
         p.lockingKeyHash = lockingKeyHash;
-        p.lockTimeoutBlockNumber = SafeMath.add64(block.number,params.unlockBlocks);
+          p.lockTimeoutBlockNumber = SafeMath.add64(uint(block.number),uint(params.unlockBlocks));
 
         require(isValidId(fromId), "invalid fromId");
         uint len = payData.length;
@@ -62,17 +62,17 @@ contract Payments is Accounts {
         require(from.owner == msg.sender, "only owner of id can registerPayment");
         require((len-2) % bytesPerId == 0, "payData length is invalid");
 
-        p.totalNumberOfPayees = SafeMath.add32(SafeMath.div32(len-2,bytesPerId),newCount);
+        p.totalNumberOfPayees = SafeMath.add32(SafeMath.div(uint(len-2),uint(bytesPerId)),uint(newCount));
         require(p.totalNumberOfPayees < params.maxTransfer, "too many payees");
 
-        uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalNumberOfPayees), fee); 
+        uint64 total = SafeMath.add64(SafeMath.mul(uint(amount), uint(p.totalNumberOfPayees)), uint(fee));
         require (total <= from.balance, "not enough funds");
 
-        from.balance = SafeMath.sub64(from.balance, total);
+        from.balance = SafeMath.sub64(from.balance, uint(total));
         accounts[fromId] = from;
 
         p.smallestAccountId = uint32(accounts.length);
-        p.greatestAccountId = SafeMath.add32(p.smallestAccountId, newCount); 
+        p.greatestAccountId = SafeMath.add32(uint(p.smallestAccountId), uint(newCount));
         if (newCount > 0) {
             bulkRegister(newCount, rootHash);
         }
@@ -90,7 +90,8 @@ contract Payments is Accounts {
     /// @param unlockerId id of the party providing the unlocking service. Fees wil be payed to this id
     /// @param key Cryptographic key used to encrypt traded data
    
-    function unlock(uint32 payIndex, uint32 unlockerId, bytes memory key) public returns(bool) {
+
+    function unlock(uint payIndex, uint unlockerId, bytes memory key) public returns(bool) {
         require(payIndex < payments.length, "invalid payIndex");
         require(isValidId(unlockerId), "Invalid unlockerId");
         require(block.number < payments[payIndex].lockTimeoutBlockNumber, "Hash lock expired");
@@ -117,7 +118,7 @@ contract Payments is Accounts {
         require(p.totalNumberOfPayees > 0, "payment already refunded");
         
         uint64 total = SafeMath.add64(
-            SafeMath.mul64(p.totalNumberOfPayees, p.amount),
+            SafeMath.mul(p.totalNumberOfPayees, p.amount),
             p.fee);
 
         p.totalNumberOfPayees = 0;
@@ -126,7 +127,7 @@ contract Payments is Accounts {
         payments[payIndex] = p;
  
         // Complete refund
-        balanceAdd(p.fromAccountId, total);
+        balanceAdd(uint(p.fromAccountId), total);
     }
 
 
@@ -136,15 +137,15 @@ contract Payments is Accounts {
 
         if (s.status == 0) return;
 
-        require (s.status == 1 && block.number >= s.block, "slot not available"); 
-    
-        // Refund Stake 
-        balanceAdd(delegate, SafeMath.add64(s.delegateAmount, params.collectStake));
+        require (s.status == 1 && block.number >= s.block, "slot not available");
+
+        // Refund Stake
+        balanceAdd(uint(delegate), SafeMath.add64(uint(s.delegateAmount), uint(params.collectStake)));
 
         uint64 balance = SafeMath.add64(
-            accounts[s.to].balance, 
-            SafeMath.sub64(s.amount, s.delegateAmount));
-        
+            accounts[s.to].balance,
+            SafeMath.sub(uint(s.amount), uint(s.delegateAmount)));
+
         uint amount = 0;
 
         if (s.addr != address(0)) {
@@ -164,7 +165,7 @@ contract Payments is Accounts {
     /// @param slot id of the slot requested for the duration of the challenge game
 
     function freeSlot(uint32 delegate, uint32 slot) public {
-        require(isAccountOwner(delegate), "only delegate can call");
+        require(isAccountOwner(uint(delegate)), "only delegate can call");
         _freeSlot(delegate, slot);
     }
     
@@ -193,7 +194,7 @@ contract Payments is Accounts {
         public
         
     {
-        require(isAccountOwner(delegate), "invalid delegate");
+        require(isAccountOwner(uint(delegate)), "invalid delegate");
         _freeSlot(delegate, slotId);
       
         Account memory acc = accounts[delegate];
@@ -233,13 +234,13 @@ contract Payments is Accounts {
             sl.delegateAmount = declaredAmount;
             tacc.balance = SafeMath.add64(
                 tacc.balance,
-                SafeMath.sub64(declaredAmount, fee));
+                SafeMath.sub(uint(declaredAmount), uint(fee)));
 
             sl.addr = address(0);
             needed = SafeMath.add64(
-                needed, 
-                SafeMath.sub64(declaredAmount, fee));
-        } else 
+                needed,
+                SafeMath.sub(uint(declaredAmount), uint(fee)));
+        } else
         {   // not instant-collect
             sl.addr = destination;
             sl.delegateAmount = fee;
@@ -252,7 +253,7 @@ contract Payments is Accounts {
         
         sl.amount = declaredAmount;
         sl.to = toAccountId;
-        sl.block = SafeMath.add64(block.number, params.challengeBlocks);
+        sl.block = SafeMath.add64(block.number, uint(params.challengeBlocks));
         sl.status = 1;
         
         tacc.lastCollectedPaymentId = uint32(payIndex);
