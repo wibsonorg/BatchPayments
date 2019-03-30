@@ -5,10 +5,18 @@ import "./Data.sol";
 import "./SafeMath.sol";
 
 library Challenge {
+
+    /**
+     * @dev Reverts if challenge period has expired.
+     */
+    modifier challengeNotExpired(Data.CollectSlot collectSlot) {
+        require(block.number < collectSlot.block, "Challenge has expired");
+        _;
+    }
+
     /// @dev calculates new block numbers based on the current block and a delta constant specified by the protocol policy
     /// @param delta number of blocks into the future to calculate
     /// @return future block number
-
     function getFutureBlock(uint delta) public view returns(uint64) {
         return SafeMath.add64(block.number, delta);
     }
@@ -16,7 +24,6 @@ library Challenge {
     /// @dev Inspects the compact payment list provided and calculates the sum of the amounts referenced
     /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
     /// @return the sum of the amounts referenced on the array.
-
     function getDataSum(bytes memory data) public pure returns (uint sum) {
         require(data.length > 0, "no data provided");
         require(data.length % 12 == 0, "wrong data format");
@@ -77,13 +84,14 @@ library Challenge {
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config, 
         Data.Account[] storage accounts, 
-        uint32 challenger) 
+        uint32 challenger
+    )
         public 
+        challengeNotExpired(collectSlot)
     {
         require(accounts[challenger].balance >= config.challengeStake, "not enough balance");
  
-        require(collectSlot.status == 1, "slot is not available for challenge");      
-        require (block.number < collectSlot.block, "challenge time has passed");
+        require(collectSlot.status == 1, "slot is not available for challenge");
         collectSlot.status = 2;
         collectSlot.challenger = challenger;
         collectSlot.block = getFutureBlock(config.challengeStepBlocks);
@@ -99,11 +107,12 @@ library Challenge {
     function challenge_2(
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config, 
-        bytes memory data) 
+        bytes memory data
+    )
         public 
+        challengeNotExpired(collectSlot)
     {
         require(collectSlot.status == 2, "wrong slot status");
-        require (block.number < collectSlot.block, "challenge time has passed");
         require (getDataSum(data) == collectSlot.amount, "data doesn't represent collected amount");
 
         collectSlot.data = keccak256(data);
@@ -121,11 +130,12 @@ library Challenge {
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config, 
         bytes memory data, 
-        uint32 disputedPaymentIndex) 
+        uint32 disputedPaymentIndex
+    )
         public 
+        challengeNotExpired(collectSlot)
     {  
         require(collectSlot.status == 3);
-        require (block.number < collectSlot.block, "challenge time has passed");
         require(collectSlot.data == keccak256(data), "data mismatch");
         (collectSlot.challengeAmount, collectSlot.index) = getDataAtIndex(data, disputedPaymentIndex);
         collectSlot.status = 4;
@@ -140,11 +150,12 @@ library Challenge {
     function challenge_4(
         Data.CollectSlot storage collectSlot,
         Data.Payment[] storage payments, 
-        bytes memory payData) 
+        bytes memory payData
+    )
         public 
+        challengeNotExpired(collectSlot)
     {
         require(collectSlot.status == 4);
-        require(block.number < collectSlot.block, "challenge time has passed");
         require(collectSlot.index >= collectSlot.minPayIndex && collectSlot.index < collectSlot.maxPayIndex, "payment referenced is out of range");
         Data.Payment memory p = payments[collectSlot.index];
         require(keccak256(payData) == p.paymentDataHash, "payData is incorrect");
