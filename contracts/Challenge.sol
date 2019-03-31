@@ -7,11 +7,27 @@ import "./SafeMath.sol";
 library Challenge {
 
     /**
-     * @dev Reverts if challenge period has expired.
+     * @dev Reverts if challenge period has expired or Collect Slot status is not a valid one.
      */
-    modifier challengeNotExpired(Data.CollectSlot collectSlot) {
-        require(block.number < collectSlot.block, "Challenge has expired");
+    modifier onlyValidCollectSlot(Data.CollectSlot storage collectSlot, uint8 validStatus) {
+        require(!challengeHasExpired(collectSlot), "Challenge has expired");
+        require(isSlotStatusValid(collectSlot, validStatus), "Wrong Collect Slot status");
         _;
+    }
+
+    /**
+     * @return true if the current block number is greater or equal than the allowed
+     *         block for this challenge.
+     */
+    function challengeHasExpired(Data.CollectSlot storage collectSlot) public view returns (bool) {
+        return collectSlot.block <= block.number;
+    }
+
+    /**
+     * @return true if the Slot status is valid.
+     */
+    function isSlotStatusValid(Data.CollectSlot storage collectSlot, uint8 validStatus) public view returns (bool) {
+        return collectSlot.status == validStatus;
     }
 
     /// @dev calculates new block numbers based on the current block and a delta constant specified by the protocol policy
@@ -86,12 +102,11 @@ library Challenge {
         Data.Account[] storage accounts, 
         uint32 challenger
     )
-        public 
-        challengeNotExpired(collectSlot)
+        public
+        onlyValidCollectSlot(collectSlot, 1)
     {
         require(accounts[challenger].balance >= config.challengeStake, "not enough balance");
  
-        require(collectSlot.status == 1, "slot is not available for challenge");
         collectSlot.status = 2;
         collectSlot.challenger = challenger;
         collectSlot.block = getFutureBlock(config.challengeStepBlocks);
@@ -109,10 +124,9 @@ library Challenge {
         Data.Config storage config, 
         bytes memory data
     )
-        public 
-        challengeNotExpired(collectSlot)
+        public
+        onlyValidCollectSlot(collectSlot, 2)
     {
-        require(collectSlot.status == 2, "wrong slot status");
         require (getDataSum(data) == collectSlot.amount, "data doesn't represent collected amount");
 
         collectSlot.data = keccak256(data);
@@ -132,10 +146,9 @@ library Challenge {
         bytes memory data, 
         uint32 disputedPaymentIndex
     )
-        public 
-        challengeNotExpired(collectSlot)
+        public
+        onlyValidCollectSlot(collectSlot, 3)
     {  
-        require(collectSlot.status == 3);
         require(collectSlot.data == keccak256(data), "data mismatch");
         (collectSlot.challengeAmount, collectSlot.index) = getDataAtIndex(data, disputedPaymentIndex);
         collectSlot.status = 4;
@@ -152,10 +165,9 @@ library Challenge {
         Data.Payment[] storage payments, 
         bytes memory payData
     )
-        public 
-        challengeNotExpired(collectSlot)
+        public
+        onlyValidCollectSlot(collectSlot, 4)
     {
-        require(collectSlot.status == 4);
         require(collectSlot.index >= collectSlot.minPayIndex && collectSlot.index < collectSlot.maxPayIndex, "payment referenced is out of range");
         Data.Payment memory p = payments[collectSlot.index];
         require(keccak256(payData) == p.paymentDataHash, "payData is incorrect");
@@ -205,7 +217,8 @@ library Challenge {
     function challenge_success(
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config,
-        Data.Account[] storage accounts) 
+        Data.Account[] storage accounts
+    ) 
         public 
     {
         require((collectSlot.status == 2 || collectSlot.status == 4) && block.number >= collectSlot.block, "challenge not finished");
@@ -226,7 +239,8 @@ library Challenge {
     function challenge_failed(
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config,
-        Data.Account[] storage accounts) 
+        Data.Account[] storage accounts
+    ) 
         public 
     {
         require(collectSlot.status == 5 || (collectSlot.status == 3 && block.number >= collectSlot.block), "challenge not completed");
