@@ -14,7 +14,16 @@ library Merkle {
 
     /// @dev calculates a root hash associated with a merkle proof
     /// @param proof array of proof hashes
-    /// @param key index of the leaf element list
+    /// @param key index of the leaf element list.
+    ///        this key indicates the specific position of the leaf
+    ///        in the merkle tree. It will be used to know if the
+    ///        node that will be hashed along with the proof node
+    ///        is placed on the right or the left of the current
+    ///        tree level. That is achieved by doing the modulo of
+    ///        the current key/position. A new level of nodes will
+    ///        be evaluated after that, and the new left or right
+    ///        position is obtained by doing the same operation, 
+    ///        after dividing the key/position by two.
     /// @param leaf the leaf element to verify on the set.
     /// @return the hash of the merkle proof. Should match the merkle root if the proof is valid
 

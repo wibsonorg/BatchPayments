@@ -9,15 +9,31 @@ import "./Challenge.sol";
 /// steps of the collect challenge game
 
 contract Payments is Accounts {
-    event PaymentRegistered(uint payIndex, uint from, uint totalNumberOfPayees, uint amount);
-    event PaymentUnlocked(uint payIndex, bytes key);
-    event Collect(uint delegate, uint slot, uint to, uint fromPayindex, uint toPayIndex, uint amount);
-    event Challenge_1(uint delegate, uint slot, uint challenger);
-    event Challenge_2(uint delegate, uint slot);
-    event Challenge_3(uint delegate, uint slot, uint index);
-    event Challenge_4(uint delegate, uint slot);
-    event Challenge_success(uint delegate, uint slot);
-    event Challenge_failed(uint delegate, uint slot);  
+    event PaymentRegistered(
+        uint indexed payIndex,
+        uint indexed from,
+        uint totalNumberOfPayees,
+        uint amount
+    );
+    event PaymentUnlocked(uint indexed payIndex, bytes key);
+    /**
+     * Event for collection logging. Off-chain monitoring services may listen
+     * to this event to trigger challenges.
+     */
+    event Collect(
+        uint indexed delegate,
+        uint indexed slot,
+        uint indexed to,
+        uint fromPayindex,
+        uint toPayIndex,
+        uint amount
+    );
+    event Challenge_1(uint indexed delegate, uint indexed slot, uint challenger);
+    event Challenge_2(uint indexed delegate, uint indexed slot);
+    event Challenge_3(uint indexed delegate, uint indexed slot, uint index);
+    event Challenge_4(uint indexed delegate, uint indexed slot);
+    event Challenge_success(uint indexed delegate, uint indexed slot);
+    event Challenge_failed(uint indexed delegate, uint indexed slot);  
 
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
@@ -31,7 +47,14 @@ contract Payments is Accounts {
     /// @param payData efficient representation of the destination account list
     /// @param newCount number of new destination accounts that will be reserved during the registerPayment transaction 
     /// @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
-    /// @param lockingKeyHash hash of the key locking this payment to help in atomic data swaps.  
+    /// @param lockingKeyHash This hash will later be used by the `unlock`
+    ///         function to unlock the payment we are registering. The
+    ///         `lockingKeyHash` must be equal to the keccak256 of the packed
+    ///         encoding of the unlockerAccountId and the key used by the
+    ///         unlocker to encrypt the traded data:
+    ///             keccak256(abi.encodePacked(unlockerAccountId, key))
+    /// @param lockingKeyHash hash resulting of calculating the keccak256 of
+    ///        of the key locking this payment to help in atomic data swaps.
     /// @param metadata Application specific data to be stored associated with the payment
 
     function registerPayment(
@@ -87,18 +110,18 @@ contract Payments is Accounts {
 
     /// @dev provide the required key, releasing the payment and enabling the buyer decryption the digital content
     /// @param payIndex payment Index associated with the registerPayment operation.
-    /// @param unlockerId id of the party providing the unlocking service. Fees wil be payed to this id
+    /// @param unlockerAccountId id of the party providing the unlocking service. Fees wil be payed to this id
     /// @param key Cryptographic key used to encrypt traded data
    
-    function unlock(uint32 payIndex, uint32 unlockerId, bytes memory key) public returns(bool) {
+    function unlock(uint32 payIndex, uint32 unlockerAccountId, bytes memory key) public returns(bool) {
         require(payIndex < payments.length, "invalid payIndex");
-        require(isValidId(unlockerId), "Invalid unlockerId");
+        require(isValidId(unlockerAccountId), "Invalid unlockerAccountId");
         require(block.number < payments[payIndex].lockTimeoutBlockNumber, "Hash lock expired");
-        bytes32 h = keccak256(abi.encodePacked(unlockerId, key));
+        bytes32 h = keccak256(abi.encodePacked(unlockerAccountId, key));
         require(h == payments[payIndex].lockingKeyHash, "Invalid key");
-        
+
         payments[payIndex].lockingKeyHash = bytes32(0);
-        balanceAdd(unlockerId, payments[payIndex].fee);
+        balanceAdd(unlockerAccountId, payments[payIndex].fee);
         
         emit PaymentUnlocked(payIndex, key);
         return true;
@@ -127,6 +150,7 @@ contract Payments is Accounts {
  
         // Complete refund
         balanceAdd(p.fromAccountId, total);
+        return true;
     }
 
 
@@ -186,20 +210,20 @@ contract Payments is Accounts {
         uint32 toAccountId,
         uint32 payIndex,
         uint64 declaredAmount,
-        uint64 fee, 
+        uint64 fee,
         address destination,
         bytes memory signature
         )
         public
-        
+
     {
         require(isAccountOwner(delegate), "invalid delegate");
         _freeSlot(delegate, slotId);
-      
+
         Account memory acc = accounts[delegate];
-        
+
         // Check toAccountId is valid
-        require(toAccountId <= accounts.length, "toAccountId must be a valid account id");
+        require(isValidId(toAccountId), "toAccountId must be a valid account id");
 
         Account memory tacc = accounts[toAccountId];
         require(tacc.owner != 0, "account registration has to be completed");
@@ -225,7 +249,7 @@ contract Payments is Accounts {
 
         sl.minPayIndex = tacc.lastCollectedPaymentId;
         sl.maxPayIndex = payIndex;
-
+        
         uint64 needed = params.collectStake;
 
         // check if this is an instant collect
@@ -262,7 +286,8 @@ contract Payments is Accounts {
         if (destination != address(0) && slotId >= instantSlot) {
             accounts[toAccountId].balance = 0;
             require(token.transfer(destination, tacc.balance), "transfer failed");
-        } 
+        }
+        emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
     }
 
 
