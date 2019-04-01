@@ -72,14 +72,17 @@ contract('Challenge', () => {
         });
     });
 
-    describe('existsInPayData', () => {
-        it('returns true when the id is present in payData', async () => {
-            const exists = await challenge.existsInPayData(getPayData([10, 30]), 30);
-            assert.equal(exists, true);
+    describe('getPayDataSum', () => {
+        const payData = getPayData([10, 10, 30, 30, 40]);
+        const amount = 10;
+
+        it('returns the sum when the id is present in payData', async () => {
+            const result = await challenge.getPayDataSum(payData, 30, amount);
+            assert.equal(Number(result), 20, 'wrong amount');
         });
         it('returns false when the id is not present in payData', async () => {
-            const exists = await challenge.existsInPayData(getPayData([10, 30]), 20);
-            assert.equal(exists, false);
+            const result = await challenge.getPayDataSum(payData, 20, amount);
+            assert.equal(Number(result), 0, 'wrong amount');
         });
     });
 });

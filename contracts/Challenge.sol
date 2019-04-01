@@ -67,21 +67,23 @@ library Challenge {
         }
     }
 
-    /// @dev Process payData, inspecting the list of ids. `payData` includes 2 header bytes,
-    ///   followed by n bytesPerId-bytes entries.
-    ///   PayData Format: [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
+    /// @dev Process payData, inspecting the list of ids, accumulating the amount for
+    ///    each entry of `id`.
+    ///   `payData` includes 2 header bytes, followed by n bytesPerId-bytes entries.
+    ///   `payData` format: [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
     /// @param payData List of payees of a specific Payment, with the above format.
     /// @param id ID to look for in `payData`
-    /// @return whether `id` is present or not in `payData`
+    /// @param amount amount per occurrence of `id` in `payData`
+    /// @return the amount sum for all occurrences of `id` in `payData`
 
-    function existsInPayData(bytes memory payData, uint id) public pure returns (bool exists) {
+    function getPayDataSum(bytes memory payData, uint id, uint amount) public pure returns (uint sum) {
         uint bytesPerId = uint(payData[1]);
         uint modulus = 1 << SafeMath.mul(bytesPerId, 8);
         uint currentId = 0;
 
-        exists = false;
+        sum = 0;
 
-        for(uint i = 2; i < payData.length && !exists; i += bytesPerId) {
+        for(uint i = 2; i < payData.length; i += bytesPerId) {
             // Get next id delta from paydata
             // currentId += payData[2+i*bytesPerId]
 
@@ -90,11 +92,11 @@ library Challenge {
                 currentId := add(
                     currentId,
                     mod(
-                        mload(add(payData,add(i,bytesPerId))),
+                        mload(add(payData,add(i, bytesPerId))),
                         modulus))
-            }
 
-            exists = (currentId == id);
+                if eq(currentId, id) { sum := add(sum, amount) }
+            }
         }
     }
 
@@ -181,11 +183,10 @@ library Challenge {
         require(keccak256(payData) == p.paymentDataHash, "payData is incorrect");
         require(p.lockingKeyHash == 0, "payment is locked");
         
-        uint collected = 0;
+        uint collected = getPayDataSum(payData, collectSlot.to, p.amount);
 
         // Check if id is included in bulkRegistration within payment
-        bool registeredInPayment = collectSlot.to >= p.smallestAccountId && collectSlot.to < p.greatestAccountId;
-        if (registeredInPayment || existsInPayData(payData, collectSlot.to)) {
+        if (collectSlot.to >= p.smallestAccountId && collectSlot.to < p.greatestAccountId) {
             collected = SafeMath.add(collected, p.amount);
         }
 
