@@ -1,6 +1,7 @@
 const truffleAssertions = require('truffle-assertions');
 const Challenge = artifacts.require('Challenge');
 const { getChallengeData } = require('../lib/bat');
+const { getPayData } = require('../lib/utils');
 
 const { reverts, ErrorType } = truffleAssertions;
 const assertRevert = (promise, message) => reverts(promise, ErrorType.REVERT, message);
@@ -68,6 +69,34 @@ contract('Challenge', () => {
         it('rejects when index does not exist in data', async () => {
             const data = getChallengeData([10, 15], [0, 100]);
             await assertRevert(challenge.getDataAtIndex(data, 2));
+        });
+    });
+
+    describe('getPayDataSum', () => {
+        const payData = getPayData([10, 10, 30, 30, 40]);
+        const amount = 10;
+
+        it('returns the sum when the id is present in payData', async () => {
+            const result = await challenge.getPayDataSum(payData, 30, amount);
+            assert.equal(Number(result), 20, 'wrong summarization');
+        });
+        it('returns 0 when the id is not present in payData', async () => {
+            const result = await challenge.getPayDataSum(payData, 20, amount);
+            assert.equal(Number(result), 0, 'wrong summarization');
+        });
+        it('rejects when the payData has wrong format', async () => {
+            await assertRevert(
+                challenge.getPayDataSum('0x', 30, amount),
+                'must fail when payData has zero length'
+            );
+            await assertRevert(
+                challenge.getPayDataSum('0xff0400000a000005', 30, amount),
+                'must fail when record size is lower than expected',
+            );
+            await assertRevert(
+                challenge.getPayDataSum('0xff04000000000a0000000005', 30, amount),
+                'must fail when record is greater than expected',
+            );
         });
     });
 });
