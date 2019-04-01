@@ -20,13 +20,13 @@ library Challenge {
     function getDataSum(bytes memory data) public pure returns (uint sum) {
         require(data.length > 0, "no data provided");
         require(data.length % 12 == 0, "wrong data format");
-        
+
         uint n = SafeMath.div(data.length, 12);
         uint modulus = 2**64;
 
         sum = 0;
 
-        // Get the sum of the stated amounts in data 
+        // Get the sum of the stated amounts in data
         // Each entry in data is [8-bytes amount][4-bytes payIndex]
 
         for(uint i = 0; i<n; i++) {
@@ -43,7 +43,7 @@ library Challenge {
     /// @dev Helper function that obtains the amount/payIndex pair located at position index
     /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
     /// @param index Array item requested
-    /// @return amount and payIndex requested 
+    /// @return amount and payIndex requested
 
     function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
         require(data.length > 0, "no data provided");
@@ -74,33 +74,33 @@ library Challenge {
     /// @param challenger id of the challenger user
 
     function challenge_1(
-        Data.CollectSlot storage collectSlot, 
-        Data.Config storage config, 
-        Data.Account[] storage accounts, 
-        uint32 challenger) 
-        public 
+        Data.CollectSlot storage collectSlot,
+        Data.Config storage config,
+        Data.Account[] storage accounts,
+        uint32 challenger)
+        public
     {
         require(accounts[challenger].balance >= config.challengeStake, "not enough balance");
- 
-        require(collectSlot.status == 1, "slot is not available for challenge");      
+
+        require(collectSlot.status == 1, "slot is not available for challenge");
         require (block.number < collectSlot.block, "challenge time has passed");
         collectSlot.status = 2;
         collectSlot.challenger = challenger;
         collectSlot.block = getFutureBlock(config.challengeStepBlocks);
-        
+
         accounts[challenger].balance -= config.challengeStake;
     }
 
     /// @dev Internal function. Phase II of the challenging game
     /// @param collectSlot Collect slot
-    /// @param config Various parameters   
+    /// @param config Various parameters
     /// @param data Binary array listing the payments in which the user was referenced.
 
     function challenge_2(
-        Data.CollectSlot storage collectSlot, 
-        Data.Config storage config, 
-        bytes memory data) 
-        public 
+        Data.CollectSlot storage collectSlot,
+        Data.Config storage config,
+        bytes memory data)
+        public
     {
         require(collectSlot.status == 2, "wrong slot status");
         require (block.number < collectSlot.block, "challenge time has passed");
@@ -118,13 +118,13 @@ library Challenge {
     /// @param disputedPaymentIndex index selecting the disputed payment
 
     function challenge_3(
-        Data.CollectSlot storage collectSlot, 
-        Data.Config storage config, 
-        bytes memory data, 
-        uint32 disputedPaymentIndex) 
-        public 
-    {  
-        require(collectSlot.status == 3);
+        Data.CollectSlot storage collectSlot,
+        Data.Config storage config,
+        bytes memory data,
+        uint32 disputedPaymentIndex)
+        public
+    {
+        require(collectSlot.status == 3, "wrong slot status");
         require (block.number < collectSlot.block, "challenge time has passed");
         require(collectSlot.data == keccak256(data), "data mismatch");
         (collectSlot.challengeAmount, collectSlot.index) = getDataAtIndex(data, disputedPaymentIndex);
@@ -139,17 +139,17 @@ library Challenge {
 
     function challenge_4(
         Data.CollectSlot storage collectSlot,
-        Data.Payment[] storage payments, 
-        bytes memory payData) 
-        public 
+        Data.Payment[] storage payments,
+        bytes memory payData)
+        public
     {
-        require(collectSlot.status == 4);
+        require(collectSlot.status == 4, "wrong slot status");
         require(block.number < collectSlot.block, "challenge time has passed");
         require(collectSlot.index >= collectSlot.minPayIndex && collectSlot.index < collectSlot.maxPayIndex, "payment referenced is out of range");
         Data.Payment memory p = payments[collectSlot.index];
         require(keccak256(payData) == p.paymentDataHash, "payData is incorrect");
         require(p.lockingKeyHash == 0, "payment is locked");
-        
+
         uint bytesPerId = uint(payData[1]);
         uint modulus = 1 << (8*bytesPerId);
 
@@ -163,13 +163,13 @@ library Challenge {
         // payData includes 2 header bytes, followed by n bytesPerId-bytes entries
         // [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
         for(uint i = 2; i < payData.length; i += bytesPerId) {
-            // Get next id delta from paydata 
+            // Get next id delta from paydata
             // id += payData[2+i*bytesPerId]
 
             // solium-disable-next-line security/no-inline-assembly
             assembly {
                 id := add(
-                    id, 
+                    id,
                     mod(
                         mload(add(payData,add(i,bytesPerId))),
                         modulus))
@@ -184,18 +184,18 @@ library Challenge {
         collectSlot.status = 5;
     }
 
-    /// @dev the challenge was completed successfully, or the delegate failed to respond on time. 
+    /// @dev the challenge was completed successfully, or the delegate failed to respond on time.
     /// The challenger will collect the stake.
     /// @param collectSlot Collect slot
     /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
 
-   
+
     function challenge_success(
-        Data.CollectSlot storage collectSlot, 
+        Data.CollectSlot storage collectSlot,
         Data.Config storage config,
-        Data.Account[] storage accounts) 
-        public 
+        Data.Account[] storage accounts)
+        public
     {
         require((collectSlot.status == 2 || collectSlot.status == 4) && block.number >= collectSlot.block, "challenge not finished");
 
@@ -213,10 +213,10 @@ library Challenge {
 
 
     function challenge_failed(
-        Data.CollectSlot storage collectSlot, 
+        Data.CollectSlot storage collectSlot,
         Data.Config storage config,
-        Data.Account[] storage accounts) 
-        public 
+        Data.Account[] storage accounts)
+        public
     {
         require(collectSlot.status == 5 || (collectSlot.status == 3 && block.number >= collectSlot.block), "challenge not completed");
 
@@ -271,6 +271,6 @@ library Challenge {
             return address(0);
         }
 
-        return ecrecover(prefixedHash, v, r, s); 
+        return ecrecover(prefixedHash, v, r, s);
     }
 }
