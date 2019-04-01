@@ -50,13 +50,13 @@ library Challenge {
     function getDataSum(bytes memory data) public pure returns (uint sum) {
         require(data.length > 0, "no data provided");
         require(data.length % 12 == 0, "wrong data format");
-        
+
         uint n = SafeMath.div(data.length, 12);
         uint modulus = 2**64;
 
         sum = 0;
 
-        // Get the sum of the stated amounts in data 
+        // Get the sum of the stated amounts in data
         // Each entry in data is [8-bytes amount][4-bytes payIndex]
 
         for (uint i = 0; i < n; i++) {
@@ -70,12 +70,11 @@ library Challenge {
         }
     }
 
-    /**
-     * @dev Helper function that obtains the amount/payIndex pair located at position index
-     * @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
-     * @param index Array item requested
-     * @return amount and payIndex requested 
-     */
+    /// @dev Helper function that obtains the amount/payIndex pair located at position index
+    /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
+    /// @param index Array item requested
+    /// @return amount and payIndex requested
+
     function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
         require(data.length > 0, "no data provided");
         require(data.length % 12 == 0, "wrong data format");
@@ -156,7 +155,7 @@ library Challenge {
         collectSlot.status = 2;
         collectSlot.challenger = challenger;
         collectSlot.block = getFutureBlock(config.challengeStepBlocks);
-        
+
         accounts[challenger].balance -= config.challengeStake;
     }
 
@@ -222,7 +221,7 @@ library Challenge {
         Data.Payment memory p = payments[collectSlot.index];
         require(keccak256(payData) == p.paymentDataHash, "payData is incorrect");
         require(p.lockingKeyHash == 0, "payment is locked");
-        
+
         uint collected = getPayDataSum(payData, collectSlot.to, p.amount);
 
         // Check if id is included in bulkRegistration within payment
@@ -235,15 +234,15 @@ library Challenge {
         collectSlot.status = 5;
     }
 
-    /**
-     * @dev the challenge was completed successfully, or the delegate failed to respond on time. 
-     * The challenger will collect the stake.
-     * @param collectSlot Collect slot
-     * @param config Various parameters
-     * @param accounts a reference to the main accounts array
-     */
+    /// @dev the challenge was completed successfully, or the delegate failed to respond on time.
+    /// The challenger will collect the stake.
+    /// @param collectSlot Collect slot
+    /// @param config Various parameters
+    /// @param accounts a reference to the main accounts array
+
+
     function challenge_success(
-        Data.CollectSlot storage collectSlot, 
+        Data.CollectSlot storage collectSlot,
         Data.Config storage config,
         Data.Account[] storage accounts
     ) 
@@ -267,7 +266,7 @@ library Challenge {
      * @param accounts a reference to the main accounts array
      */
     function challenge_failed(
-        Data.CollectSlot storage collectSlot, 
+        Data.CollectSlot storage collectSlot,
         Data.Config storage config,
         Data.Account[] storage accounts
     )
@@ -327,6 +326,6 @@ library Challenge {
             return address(0);
         }
 
-        return ecrecover(prefixedHash, v, r, s); 
+        return ecrecover(prefixedHash, v, r, s);
     }
 }
