@@ -1,0 +1,56 @@
+Starting batchpayments_truffle_1 ... 
+[1A[2KStarting batchpayments_truffle_1 ... [32mdone[0m[1BAttaching to batchpayments_truffle_1
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.002] Maximum peer count                       [32mETH[0m=25 [32mLES[0m=0 [32mtotal[0m=25
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.005] Starting peer-to-peer node               [32minstance[0m=Geth/v1.8.23-stable-c9427004/linux-amd64/go1.10.4
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.005] Allocated cache and file handles         [32mdatabase[0m=/src/config/testchain/data/geth/chaindata [32mcache[0m=512 [32mhandles[0m=524288
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.020] Initialised chain configuration          [32mconfig[0m="{ChainID: 987 Homestead: 0 DAO: <nil> DAOSupport: false EIP150: <nil> EIP155: 0 EIP158: 0 Byzantium: 0 Constantinople: <nil>  ConstantinopleFix: <nil> Engine: unknown}"
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.020] Disk storage enabled for ethash caches   [32mdir[0m=/src/config/testchain/data/geth/ethash [32mcount[0m=3
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.020] Disk storage enabled for ethash DAGs     [32mdir[0m=/root/.ethash                          [32mcount[0m=2
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.020] Initialising Ethereum protocol           [32mversions[0m="[63 62]" [32mnetwork[0m=316507
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.074] Loaded most recent local header          [32mnumber[0m=1696 [32mhash[0m=4833b7…002c1e [32mtd[0m=319878981 [32mage[0m=38s
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.074] Loaded most recent local full block      [32mnumber[0m=1696 [32mhash[0m=4833b7…002c1e [32mtd[0m=319878981 [32mage[0m=38s
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.074] Loaded most recent local fast block      [32mnumber[0m=1696 [32mhash[0m=4833b7…002c1e [32mtd[0m=319878981 [32mage[0m=38s
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.074] Loaded local transaction journal         [32mtransactions[0m=0 [32mdropped[0m=0
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.074] Regenerated local transaction journal    [32mtransactions[0m=0 [32maccounts[0m=0
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.074] Blockchain not empty, fast sync disabled 
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.081] New local node record                    [32mseq[0m=3 [32mid[0m=da0f230fc327d279 [32mip[0m=127.0.0.1 [32mudp[0m=0 [32mtcp[0m=30303
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.081] Started P2P networking                   [32mself[0m="enode://d7cf6e1fe598340768fc61313a47d3099374e879fc19076800be82f2371183d948b7c8d50d2d15d32cf6ae9b8b3d77db18ff3fce62256bcc9d8d6d3682fcbf70@127.0.0.1:30303?discport=0"
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.083] IPC endpoint opened                      [32murl[0m=/src/config/testchain/data/geth.ipc
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.084] HTTP endpoint opened                     [32murl[0m=http://127.0.0.1:9656               [32mcors[0m= [32mvhosts[0m=localhost
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.084] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.084] Referring to accounts by order in the keystore folder is dangerous! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.084] This functionality is deprecated and will be removed in the future! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.084] Please use explicit addresses! (can search via `geth account list`) 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.084] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:52.822] Unlocked account                         [32maddress[0m=0x9EbD1709EA1bb9F6101a7abb8eA427C95a65c156
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.822] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.822] Referring to accounts by order in the keystore folder is dangerous! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.822] This functionality is deprecated and will be removed in the future! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.822] Please use explicit addresses! (can search via `geth account list`) 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:52.822] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:53.584] Unlocked account                         [32maddress[0m=0xD9ec843db4075b79CC2fBad2121f95Bb9615FfB4
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:53.584] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:53.584] Referring to accounts by order in the keystore folder is dangerous! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:53.584] This functionality is deprecated and will be removed in the future! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:53.584] Please use explicit addresses! (can search via `geth account list`) 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:53.584] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:54.268] Unlocked account                         [32maddress[0m=0xeaBcFF3ed3a8BcFc52899b5e8516072a202a65dF
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:54.268] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:54.268] Referring to accounts by order in the keystore folder is dangerous! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:54.268] This functionality is deprecated and will be removed in the future! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:54.268] Please use explicit addresses! (can search via `geth account list`) 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:54.268] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:55.008] Unlocked account                         [32maddress[0m=0xb1BAcc8890aa9CAFa7F6193e5BAb4067eC5bCcb7
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:55.008] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:55.008] Referring to accounts by order in the keystore folder is dangerous! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:55.008] This functionality is deprecated and will be removed in the future! 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:55.008] Please use explicit addresses! (can search via `geth account list`) 
+[36mtruffle_1  |[0m [33mWARN [0m[03-27|15:00:55.008] ------------------------------------------------------------------- 
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:55.673] Unlocked account                         [32maddress[0m=0xC4bE259E2B2C8B97307621b17c4C4aD3C7c0F993
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:55.673] Transaction pool price threshold updated [32mprice[0m=1000000000
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:55.673] Updated mining threads                   [32mthreads[0m=1
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:55.673] Transaction pool price threshold updated [32mprice[0m=1000000000
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:55.673] Etherbase automatically configured       [32maddress[0m=0x9EbD1709EA1bb9F6101a7abb8eA427C95a65c156
+[36mtruffle_1  |[0m [32mINFO [0m[03-27|15:00:55.674] Commit new mining work                   [32mnumber[0m=1697 [32msealhash[0m=4b7748…6a06d8 [32muncles[0m=0 [32mtxs[0m=0 [32mgas[0m=0 [32mfees[0m=0 [32melapsed[0m=238.662µs
+Stopping batchpayments_truffle_1 ... 
+[1A[2KStopping batchpayments_truffle_1 ... [32mdone[0m[1BGracefully stopping... (press Ctrl+C again to force)

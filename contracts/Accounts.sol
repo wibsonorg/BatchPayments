@@ -111,10 +111,11 @@ contract Accounts is Data {
         return ret;
     }
 
-    /// @dev withdraw tokens from the batchpayment contract into the original address
-    /// @param amount Amount of tokens to withdraw
-    /// @param accountId Id of the user requesting the withdraw.
-
+    /**
+     * @dev withdraw tokens from the BatchPayment contract into the original address.
+     * @param amount Amount of tokens to withdraw.
+     * @param accountId Id of the user requesting the withdraw. 
+     */
     function withdraw(uint64 amount, uint256 accountId)
         public
         onlyAccountOwner(accountId)
