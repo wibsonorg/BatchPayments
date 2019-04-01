@@ -1,7 +1,9 @@
 pragma solidity ^0.4.10;
 
+
 import "./SafeMath.sol";
 import "./IERC20.sol";
+
 
 contract StandardToken is IERC20 {
     using SafeMath for uint;
@@ -25,28 +27,32 @@ contract StandardToken is IERC20 {
     function name()
         public
         view
-        returns (string) {
+        returns (string)
+    {
         return _name;
     }
 
     function symbol()
         public
         view
-        returns (string) {
+        returns (string)
+    {
         return _symbol;
     }
 
     function decimals()
         public
         view
-        returns (uint8) {
+        returns (uint8)
+    {
         return _decimals;
     }
 
     function totalSupply()
         public
         view
-        returns (uint256) {
+        returns (uint256)
+    {
         return _totalSupply;
     }
 
