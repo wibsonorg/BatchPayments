@@ -1,4 +1,5 @@
 pragma solidity ^0.4.24;
+
 import "./Data.sol";
 import "./SafeMath.sol";
 

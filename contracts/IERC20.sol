@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 /// @title ERC20 interface
-/// @dev see https://github.com/ethereum/EIPs/issues/20
+/// @notice see https://github.com/ethereum/EIPs/issues/20
 
 interface IERC20 {
   function totalSupply() external view returns (uint256);

@@ -1,11 +1,12 @@
 pragma solidity ^0.4.24;
+
 import "./Payments.sol";
 import "./SafeMath.sol";
 import "./MassExitLib.sol";
 
-/// @title MassExit, lets a group of users exit the contract together to minimize
-///        associated transaction costs. This contract is mainly a wrapper to
-///        `MassExitLib`
+/// @title MassExit, lets a group of users exit the contract together to
+///        minimize associated transaction costs. This contract is mainly a
+///        wrapper to `MassExitLib`
 
 contract MassExit is Payments {
     mapping (uint32 => mapping(uint32 => MassExitLib.ExitSlot)) exits;
