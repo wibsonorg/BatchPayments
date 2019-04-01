@@ -217,7 +217,7 @@ library Challenge {
         Data.Payment memory p = payments[collectSlot.index];
         require(keccak256(payData) == p.paymentDataHash, "payData is incorrect");
         require(p.lockingKeyHash == 0, "payment is locked");
-        
+
         uint collected = getPayDataSum(payData, collectSlot.to, p.amount);
 
         // Check if id is included in bulkRegistration within payment
@@ -230,8 +230,6 @@ library Challenge {
         collectSlot.status = 5;
     }
 
-    /// @dev the challenge was completed successfully, or the delegate failed
-    ///      to respond on time. The challenger will collect the stake.
     /// @param collectSlot Collect slot
     /// @param config Various parameters
     /// @param accounts a reference to the main accounts array

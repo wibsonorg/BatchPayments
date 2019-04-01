@@ -57,8 +57,8 @@ contract StandardToken is IERC20 {
     }
 
     function transfer(address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[msg.sender]);
+        require(_to != address(0), "invalid _to address");
+        require(_value <= balances[msg.sender], "sender does not have enough balance");
         balances[msg.sender] = SafeMath.sub(balances[msg.sender], _value);
         balances[_to] = SafeMath.add(balances[_to], _value);
         emit Transfer(msg.sender, _to, _value);
@@ -70,9 +70,9 @@ contract StandardToken is IERC20 {
     }
 
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[_from]);
-        require(_value <= allowed[_from][msg.sender]);
+        require(_to != address(0), "invalid _to address");
+        require(_value <= balances[_from], "sender does not have enough balance");
+        require(_value <= allowed[_from][msg.sender], "sender does not have enough allowed balance");
 
         balances[_from] = SafeMath.sub(balances[_from], _value);
         balances[_to] = SafeMath.add(balances[_to], _value);
