@@ -1,8 +1,12 @@
- pragma solidity ^0.4.24;
-/// @title Data Structures for BatPay: Accounts, Payments & Challenge
+pragma solidity ^0.4.24;
+
 
 import "./IERC20.sol";
 
+
+/**
+ * @title Data Structures for BatPay: Accounts, Payments & Challenge
+ */
 contract Data {
     struct Account {
         address owner;
