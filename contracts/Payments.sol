@@ -386,7 +386,7 @@ contract Payments is Accounts {
             payData
             );
 
-        emit Challenge_4(delegate, slot);
+        emit Challenge4(delegate, slot);
     }
 
     /// @dev the challenge was completed successfully. The delegate stake is slashed.

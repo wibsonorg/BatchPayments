@@ -293,7 +293,7 @@ library Challenge {
         uint8 v;
 
         // Check the signature length
-        if (sig.length != 65) {
+        if (_sig.length != 65) {
             return (address(0));
         }
 
