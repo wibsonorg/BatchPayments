@@ -1,16 +1,14 @@
 pragma solidity ^0.4.10;
 
+
 import "./Merkle.sol";
 import "./SafeMath.sol";
 
 /// @title helper contract that is used from tests
 
-contract TestHelper  {
-    constructor() public {
-    }
+contract TestHelper {
 
-    function skip() public {
-    }
+    function skip() public {}
 
     /// @dev Calculate the hash of given bytes
     /// @param x a bytes value
@@ -22,7 +20,7 @@ contract TestHelper  {
 
     /// @dev Recover signer address from a message by using their signature
     /// @param _hash bytes32 message, the hash is the signed message. What is recovered is the signer address.
-    /// @param _sig bytes signature, the signature is generated using web3.eth.sign()
+    /// @param _sig bytes signature, the signature is generated using `web3.eth.sign()`
 
     function recover(bytes32 _hash, bytes _sig)
         public
@@ -90,9 +88,13 @@ contract TestHelper  {
         uint32 toId,
         uint32 fromPay,
         uint32 toPay,
-        uint64 amount)
-    public pure returns(bytes32) {
-        return keccak256(abi.encodePacked(delegate, toId, fromPay, toPay, amount));
+        uint64 amount
+    )
+        public
+        pure
+        returns(bytes32)
+    {
+        return keccak256(abi.encodePacked(delegate, toId, fromPay, toPay, amount)); 
     }
 
     /// TODO: complete this one
@@ -118,7 +120,7 @@ contract TestHelper  {
     /// @dev wrapper. see `Merkle` contract
 
     function combinedHash(uint256 a, uint256 b) public pure returns (bytes32) {
-        return Merkle.combinedHash(a,b);
+        return Merkle.combinedHash(a, b);
     }
 
     /// @dev wrapper. see `Merkle` contract
@@ -132,7 +134,7 @@ contract TestHelper  {
 
     function test(uint y, bytes memory x) public returns (uint256) {
         uint256 ret = y;
-        for(uint i = 0; i<x.length && i < 32; i++) ret = ret * 256 + uint(x[i]);
+        for (uint i = 0; i < x.length && i < 32; i++) ret = ret * 256 + uint(x[i]);
 
         return ret;
     }
@@ -141,7 +143,7 @@ contract TestHelper  {
     /// @dev TBC
 
     function testlen(uint y, bytes memory x) public returns (uint256) {
-        if (y==1234) return 0;
+        if (y == 1234) return 0;
         return x.length;
     }
 

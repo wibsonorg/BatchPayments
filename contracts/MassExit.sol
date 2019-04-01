@@ -1,7 +1,9 @@
 pragma solidity ^0.4.24;
+
 import "./Payments.sol";
 import "./SafeMath.sol";
 import "./MassExitLib.sol";
+
 
 /// @title MassExit, lets a group of users exit the contract together to minimize
 ///        associated transaction costs. This contract is mainly a wrapper to
@@ -71,9 +73,9 @@ contract MassExit is Payments {
         bytes sellerList,
         address destination
     )
-    public
-    enabled()
-    onlyAccountOwner(delegate)
+        public
+        enabled()
+        onlyAccountOwner(delegate) 
     {
         MassExitLib.startExit(
             exits[delegate][exitId],
@@ -92,7 +94,7 @@ contract MassExit is Payments {
         uint32 challenger,
         uint32 seller,
         bytes  sellerList
-        )
+    )
         public
         onlyAccountOwner(challenger)
         validId(delegate)
@@ -114,7 +116,7 @@ contract MassExit is Payments {
         uint32 exitId,
         bytes sellerSignature,
         bytes monitorSignature
-        )
+    ) 
         public
         onlyAccountOwner(delegate)
     {
@@ -137,7 +139,7 @@ contract MassExit is Payments {
     function challengeExit_success(
         uint32 delegate,
         uint32 exitId
-        )
+    ) 
         public
         validId(delegate)
     {
@@ -152,7 +154,7 @@ contract MassExit is Payments {
     function challengerTimeout(
         uint32 delegate,
         uint32 exitId
-        )
+    ) 
         public
         validId(delegate)
     {
@@ -173,7 +175,7 @@ contract MassExit is Payments {
         MassExitLib.startExitBalance(
             exits[delegate][exitId],
             params
-            );
+        );
     }
 
     /// @dev see `MassExitLib` method
@@ -182,7 +184,7 @@ contract MassExit is Payments {
         uint32 delegate,
         uint32 exitId,
         uint64 totalBalance
-        )
+    ) 
         public
         onlyAccountOwner(delegate)
     {
@@ -199,7 +201,7 @@ contract MassExit is Payments {
         uint32 delegate,
         uint32 exitId,
         uint32 challenger
-        )
+    ) 
         public
         onlyAccountOwner(challenger)
         validId(delegate)
@@ -218,7 +220,7 @@ contract MassExit is Payments {
         uint32 delegate,
         uint32 exitId,
         bytes balanceList
-        )
+    ) 
         public
         onlyAccountOwner(delegate)
     {
@@ -237,7 +239,7 @@ contract MassExit is Payments {
         bytes sellerList,
         bytes balanceList,
         uint32 seller
-        )
+    ) 
         public
         validId(delegate)
     {
@@ -258,9 +260,9 @@ contract MassExit is Payments {
         uint32 delegate,
         uint32 slot,
         uint32 exitDelegate,
-        uint32 exitId
-        )
-        public
+        uint32 exitId    
+    )
+        public 
         onlyAccountOwner(exitDelegate)
         onlyAccountOwner(delegate)
     {
@@ -268,7 +270,8 @@ contract MassExit is Payments {
             collects[delegate][slot],
             exits[exitDelegate][exitId],
             params,
-            accounts);
+            accounts
+        );
     }
 
     /// @dev see `MassExitLib` method
@@ -294,5 +297,4 @@ contract MassExit is Payments {
             challenger,
             sellerList);
     }
-
 }
