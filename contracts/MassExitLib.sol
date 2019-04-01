@@ -26,7 +26,7 @@ library MassExitLib {
     /// @dev Gets balance at `index`
     /// @param data binary array of balances.
     /// @param index of the element we are looking for
-    /// @return balance
+    /// @return balance (as a uint64)
 
     function getBalanceAtIndex(bytes memory data, uint index) public pure returns (uint64 amount) {
         uint mod1 = 2**64;
@@ -140,7 +140,7 @@ library MassExitLib {
         bytes sellerSignature,
         bytes monitorSignature,
         address monitorAddress
-        )
+    )
         public
     {
         require(slot.status == 2, "invalid status");
@@ -152,8 +152,10 @@ library MassExitLib {
             slot.destination
             ));
 
-        require(Challenge.recoverHelper(hash, sellerSignature) == accounts[slot.seller].owner, "invalid seller signature");
-        require(Challenge.recoverHelper(hash, monitorSignature) == monitorAddress, "invalid monitor address");
+        require(Challenge.recoverHelper(hash, sellerSignature) == accounts[slot.seller].owner,
+            "invalid seller signature");
+        require(Challenge.recoverHelper(hash, monitorSignature) == monitorAddress,
+            "invalid monitor address");
 
         // Challenge Failed.
         accounts[slot.delegate].balance = SafeMath.add64(
@@ -171,7 +173,6 @@ library MassExitLib {
         Data.Account[] storage accounts)
         public
     {
-
         require(
             slot.status == 2 || slot.status == 3 || slot.status == 5 || slot.status == 7,
             "invalid status");
@@ -198,9 +199,9 @@ library MassExitLib {
     }
 
     function startExitBalance(
-        ExitSlot storage slot,
-        Data.Config storage params
-        )
+        ExitSlot storage slot, 
+        Data.Config storage params  
+    )
         public
     {
         require(slot.status == 1, "invalid status");
@@ -215,8 +216,8 @@ library MassExitLib {
         ExitSlot storage slot,
         Data.Config storage params,
         uint64 totalBalance
-       )
-        public
+    ) 
+        public 
     {
         require(slot.status == 3, "invalid status");
         require(block.number < slot.block, "challenge time has passed");
@@ -231,8 +232,8 @@ library MassExitLib {
         Data.Config storage params,
         Data.Account[] storage accounts,
         uint32 challenger
-       )
-        public
+    )
+        public 
     {
         require(slot.status == 4, "invalid status");
         require(block.number < slot.block, "challenge time has passed");
@@ -251,8 +252,8 @@ library MassExitLib {
         ExitSlot storage slot,
         Data.Config storage params,
         bytes balanceList
-       )
-        public
+    ) 
+        public 
     {
         require(slot.status == 5, "invalid status");
         require(block.number < slot.block, "challenge time has passed");
@@ -269,7 +270,7 @@ library MassExitLib {
         bytes sellerList,
         bytes balanceList,
         uint32 seller
-       )
+    ) 
         public
     {
         require(slot.status == 6, "invalid status");
@@ -355,7 +356,7 @@ library MassExitLib {
         uint32 challenger,
         bytes sellerList
     )
-    public
+        public
     {
         require (s.status == 1, "slot is not available for challenge");
         require (block.number <= s.block, "challenge time has passed");
