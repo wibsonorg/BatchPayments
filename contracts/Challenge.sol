@@ -77,7 +77,11 @@ library Challenge {
     /// @return the amount sum for all occurrences of `id` in `payData`
 
     function getPayDataSum(bytes memory payData, uint id, uint amount) public pure returns (uint sum) {
+        require(payData.length > 0, "no payData provided");
+
         uint bytesPerId = uint(payData[1]);
+        require((payData.length - 2) % bytesPerId == 0, "wrong payData format");
+
         uint modulus = 1 << SafeMath.mul(bytesPerId, 8);
         uint currentId = 0;
 

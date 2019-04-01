@@ -78,11 +78,25 @@ contract('Challenge', () => {
 
         it('returns the sum when the id is present in payData', async () => {
             const result = await challenge.getPayDataSum(payData, 30, amount);
-            assert.equal(Number(result), 20, 'wrong amount');
+            assert.equal(Number(result), 20, 'wrong summarization');
         });
-        it('returns false when the id is not present in payData', async () => {
+        it('returns 0 when the id is not present in payData', async () => {
             const result = await challenge.getPayDataSum(payData, 20, amount);
-            assert.equal(Number(result), 0, 'wrong amount');
+            assert.equal(Number(result), 0, 'wrong summarization');
+        });
+        it('rejects when the payData has wrong format', async () => {
+            await assertRevert(
+                challenge.getPayDataSum('0x', 30, amount),
+                'must fail when payData has zero length'
+            );
+            await assertRevert(
+                challenge.getPayDataSum('0xff0400000a000005', 30, amount),
+                'must fail when record size is lower than expected',
+            );
+            await assertRevert(
+                challenge.getPayDataSum('0xff04000000000a0000000005', 30, amount),
+                'must fail when record is greater than expected',
+            );
         });
     });
 });
