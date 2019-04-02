@@ -1,12 +1,9 @@
 pragma solidity ^0.4.24;
 
-
 import "./IERC20.sol";
 
+/// @title Data Structures for BatPay: Accounts, Payments & Challenge
 
-/**
- * @title Data Structures for BatPay: Accounts, Payments & Challenge
- */
 contract Data {
     struct Account {
         address owner;
@@ -50,26 +47,26 @@ contract Data {
     }
 
     struct Config {
-        uint32 maxBulk;                                
-        uint32 maxTransfer;               
-        uint32 challengeBlocks;               
-        uint32 challengeStepBlocks;      
+        uint32 maxBulk;
+        uint32 maxTransfer;
+        uint32 challengeBlocks;
+        uint32 challengeStepBlocks;
         uint64 collectStake;
-        uint64 challengeStake;     
-        uint32 unlockBlocks;  
+        uint64 challengeStake;
+        uint32 unlockBlocks;
         uint32 massExitIdBlocks;
         uint32 massExitIdStepBlocks;
         uint32 massExitBalanceBlocks;
-        uint32 massExitBalanceStepBlocks;  
+        uint32 massExitBalanceStepBlocks;
         uint64 massExitStake;
-        uint64 massExitChallengeStake;     
+        uint64 massExitChallengeStake;
     }
 
     Config public params;
     address public owner;
 
-    uint public constant maxAccountId = 2**32-1;      // Maximum account id (32-bits)
+    uint public constant maxAccountId = 2**32-1;    // Maximum account id (32-bits)
     uint public constant newAccountFlag = 2**256-1; // Request registration of new account
     uint public constant instantSlot = 32768;
-   
+
 }

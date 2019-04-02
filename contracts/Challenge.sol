@@ -1,52 +1,48 @@
 pragma solidity ^0.4.24;
 
-
 import "./Data.sol";
 import "./SafeMath.sol";
 
+/// @title Challenge helper library
 
-/**
- * @title Challenge helper library
- */
 library Challenge {
-    /**
-     * @dev Reverts if challenge period has expired or Collect Slot status is not a valid one.
-     */
+
+    /// @dev Reverts if challenge period has expired or Collect Slot status is not a valid one.
+
     modifier onlyValidCollectSlot(Data.CollectSlot storage collectSlot, uint8 validStatus) {
         require(!challengeHasExpired(collectSlot), "Challenge has expired");
         require(isSlotStatusValid(collectSlot, validStatus), "Wrong Collect Slot status");
         _;
     }
 
-    /**
-     * @return true if the current block number is greater or equal than the allowed
-     *         block for this challenge.
-     */
+    /// @return true if the current block number is greater or equal than the allowed
+    ///         block for this challenge.
+
     function challengeHasExpired(Data.CollectSlot storage collectSlot) public view returns (bool) {
         return collectSlot.block <= block.number;
     }
 
-    /**
-     * @return true if the Slot status is valid.
-     */
+    /// @return true if the Slot status is valid.
+
     function isSlotStatusValid(Data.CollectSlot storage collectSlot, uint8 validStatus) public view returns (bool) {
         return collectSlot.status == validStatus;
     }
 
-    /** @dev calculates new block numbers based on the current block and a
-     *      delta constant specified by the protocol policy.
-     * @param delta number of blocks into the future to calculate.
-     * @return future block number.
-     */
+    /// @dev calculates new block numbers based on the current block and a
+    ///      delta constant specified by the protocol policy.
+    /// @param delta number of blocks into the future to calculate.
+    /// @return future block number.
+
     function getFutureBlock(uint delta) public view returns(uint64) {
         return SafeMath.add64(block.number, delta);
     }
 
-    /**
-     * @dev Inspects the compact payment list provided and calculates the sum of the amounts referenced
-     * @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
-     * @return the sum of the amounts referenced on the array.
-     */
+    /// @dev Inspects the compact payment list provided and calculates the sum
+    ///      of the amounts referenced
+    /// @param data binary array, with 12 bytes per item. 8-bytes amount,
+    ///        4-bytes payment index.
+    /// @return the sum of the amounts referenced on the array.
+
     function getDataSum(bytes memory data) public pure returns (uint sum) {
         require(data.length > 0, "no data provided");
         require(data.length % 12 == 0, "wrong data format");
@@ -64,14 +60,17 @@ library Challenge {
             assembly {
                 let amount := mod(mload(add(data, add(8, mul(i, 12)))), modulus)
                 let result := add(sum, amount)
-                if or(gt(result, modulus), eq(result, modulus)) { revert (0, 0) }
-                sum := result
+                switch or(gt(result, modulus), eq(result, modulus))
+                case 1 { revert (0, 0) }
+                default { sum := result }
             }
         }
     }
 
-    /// @dev Helper function that obtains the amount/payIndex pair located at position index
-    /// @param data binary array, with 12 bytes per item. 8-bytes amount, 4-bytes payment index.
+    /// @dev Helper function that obtains the amount/payIndex pair located
+    ///      at position `index`
+    /// @param data binary array, with 12 bytes per item. 8-bytes amount,
+    ///        4-bytes payment index.
     /// @param index Array item requested
     /// @return amount and payIndex requested
 
@@ -134,13 +133,12 @@ library Challenge {
         }
     }
 
-    /**
-     * @dev function. Phase I of the challenging game
-     * @param collectSlot Collect slot
-     * @param config Various parameters
-     * @param accounts a reference to the main accounts array
-     * @param challenger id of the challenger user
-     */
+    /// @dev function. Phase I of the challenging game
+    /// @param collectSlot Collect slot
+    /// @param config Various parameters
+    /// @param accounts a reference to the main accounts array
+    /// @param challenger id of the challenger user
+
     function challenge_1(
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config, 
@@ -159,12 +157,11 @@ library Challenge {
         accounts[challenger].balance -= config.challengeStake;
     }
 
-    /**
-     * @dev Internal function. Phase II of the challenging game
-     * @param collectSlot Collect slot
-     * @param config Various parameters   
-     * @param data Binary array listing the payments in which the user was referenced.
-     */
+    /// @dev Internal function. Phase II of the challenge game
+    /// @param collectSlot Collect slot
+    /// @param config Various parameters
+    /// @param data Binary array listing the payments in which the user was referenced.
+
     function challenge_2(
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config, 
@@ -180,13 +177,12 @@ library Challenge {
         collectSlot.block = getFutureBlock(config.challengeStepBlocks);
     }
 
-    /**
-     * @dev Internal function. Phase III of the challenging game
-     * @param collectSlot Collect slot
-     * @param config Various parameters
-     * @param data Binary array listing the payments in which the user was referenced.
-     * @param disputedPaymentIndex index selecting the disputed payment
-     */
+    /// @dev Internal function. Phase III of the challenge game
+    /// @param collectSlot Collect slot
+    /// @param config Various parameters
+    /// @param data Binary array listing the payments in which the user was referenced.
+    /// @param disputedPaymentIndex index selecting the disputed payment
+
     function challenge_3(
         Data.CollectSlot storage collectSlot, 
         Data.Config storage config, 
@@ -202,12 +198,12 @@ library Challenge {
         collectSlot.block = getFutureBlock(config.challengeStepBlocks);
     }
 
-    /**
-     * @dev Internal function. Phase IV of the challenging game
-     * @param collectSlot Collect slot
-     * @param payments a reference to the BatPay payments array
-     * @param payData binary data describing the list of account receiving tokens on the selected transfer
-     */
+    /// @dev Internal function. Phase IV of the challenge game
+    /// @param collectSlot Collect slot
+    /// @param payments a reference to the BatPay payments array
+    /// @param payData binary data describing the list of account receiving
+    ///        tokens on the selected transfer
+
     function challenge_4(
         Data.CollectSlot storage collectSlot,
         Data.Payment[] storage payments, 
@@ -234,12 +230,9 @@ library Challenge {
         collectSlot.status = 5;
     }
 
-    /// @dev the challenge was completed successfully, or the delegate failed to respond on time.
-    /// The challenger will collect the stake.
     /// @param collectSlot Collect slot
     /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
-
 
     function challenge_success(
         Data.CollectSlot storage collectSlot,
@@ -258,13 +251,12 @@ library Challenge {
         collectSlot.status = 0;
     }
 
-    /**
-     * @dev Internal function. The delegate proved the challenger wrong, or
-     *      the challenger failed to respond on time. The delegae collects the stake.
-     * @param collectSlot Collect slot
-     * @param config Various parameters
-     * @param accounts a reference to the main accounts array
-     */
+    /// @dev Internal function. The delegate proved the challenger wrong,
+    ///      or the challenger failed to respond on time. The delegae collects the stake.
+    /// @param collectSlot Collect slot
+    /// @param config Various parameters
+    /// @param accounts a reference to the main accounts array
+
     function challenge_failed(
         Data.CollectSlot storage collectSlot,
         Data.Config storage config,
@@ -287,13 +279,12 @@ library Challenge {
         collectSlot.block = getFutureBlock(config.challengeBlocks);
     }
 
-    /**
-     * @dev Helps verify a ECDSA signature, while recovering the signing address.
-     * @param hash Hash of the signed message
-     * @param sig binary representation of the r, s & v parameters.
-     * @return address of the signer if data provided is valid, zero otherwise.
-     */
-    function recoverHelper(bytes32 hash, bytes sig) public pure returns (address) {
+    /// @dev Helps verifying a ECDSA signature, while recovering the signing address.
+    /// @param hash Hash of the signed message
+    /// @param _sig binary representation of the r, s & v parameters.
+    /// @return address of the signer if data provided is valid, zero oterwise.
+
+    function recoverHelper(bytes32 hash, bytes _sig) public pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
 
@@ -302,7 +293,7 @@ library Challenge {
         uint8 v;
 
         // Check the signature length
-        if (sig.length != 65) {
+        if (_sig.length != 65) {
             return (address(0));
         }
 
@@ -311,9 +302,9 @@ library Challenge {
         // currently is to use assembly.
         // solium-disable-next-line security/no-inline-assembly
         assembly {
-        r := mload(add(sig, 32))
-        s := mload(add(sig, 64))
-        v := byte(0, mload(add(sig, 96)))
+            r := mload(add(_sig, 32))
+            s := mload(add(_sig, 64))
+            v := byte(0, mload(add(_sig, 96)))
         }
 
         // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
