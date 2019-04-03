@@ -256,8 +256,10 @@ library Challenge {
     )
         public
     {
-        require((collectSlot.status == 2 || collectSlot.status == 4) && block.number >= collectSlot.block,
-            "challenge not finished");
+        require((collectSlot.status == 2 || collectSlot.status == 4),
+            "Wrong Collect Slot status");
+        require(challengeHasExpired(collectSlot),
+            "Challenge not yet finished");
 
         accounts[collectSlot.challenger].balance = SafeMath.add64(
             accounts[collectSlot.challenger].balance,
