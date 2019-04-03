@@ -171,7 +171,9 @@ contract Accounts is Data {
     internal
     validId(accountId)
     {
-        accounts[accountId].balance = SafeMath.sub64(accounts[accountId].balance, amount);
+        uint64 balance = accounts[accountId].balance;
+        require (balance >= amount, "not enough funds");
+        accounts[accountId].balance = SafeMath.sub64(balance, amount);
     }
 
     /// @dev returns the balance associated with the account in tokens
