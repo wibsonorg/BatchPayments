@@ -85,7 +85,7 @@ contract Accounts is Data {
     /// @param accountId Id of the account to be registered.
     /// @param bulkId BulkRegistration id for the transaction reserving this account
 
-    function claimBulkRegistrationId(address addr, uint256[] memory proof, uint accountId, uint bulkId) public {
+    function claimBulkRegistrationId(address addr, bytes32[] memory proof, uint accountId, uint bulkId) public {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
         uint smallestAccountId = bulkRegistrations[bulkId].smallestRecordId;
         uint n = bulkRegistrations[bulkId].recordCount;

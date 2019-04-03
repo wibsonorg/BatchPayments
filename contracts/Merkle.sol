@@ -8,7 +8,7 @@ library Merkle {
     /// @param b Hash of the right child node
     /// @return sha3 hash of the resulting node
 
-    function combinedHash(uint256 a, uint256 b) public pure returns(bytes32) {
+    function combinedHash(bytes32 a, bytes32 b) public pure returns(bytes32) {
         return keccak256(abi.encodePacked(a, b));
     }
 
@@ -28,7 +28,7 @@ library Merkle {
     /// @return the hash of the Merkle proof. Should match the Merkle root
     ///         if the proof is valid
 
-    function getProofRootHash(uint256[] memory proof, uint256 key, uint256 leaf) public pure returns(bytes32) {
+    function getProofRootHash(bytes32[] memory proof, uint256 key, uint256 leaf) public pure returns (bytes32) {
         bytes32 hash = keccak256(abi.encodePacked(leaf));
         uint256 k = key;
         for(uint i = 0; i<proof.length; i++) {
@@ -36,9 +36,9 @@ library Merkle {
             k = k / 2;
 
             if (bit == 0)
-                hash = combinedHash(uint256(hash), proof[i]);
+                hash = combinedHash(hash, proof[i]);
             else
-                hash = combinedHash(proof[i], uint256(hash));
+                hash = combinedHash(proof[i], hash);
         }
         return hash;
     }

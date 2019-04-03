@@ -119,13 +119,13 @@ contract TestHelper {
 
     /// @dev wrapper. see `Merkle` contract
 
-    function combinedHash(uint256 a, uint256 b) public pure returns (bytes32) {
+    function combinedHash(bytes32 a, bytes32 b) public pure returns (bytes32) {
         return Merkle.combinedHash(a, b);
     }
 
     /// @dev wrapper. see `Merkle` contract
 
-    function getProofRootHash(uint256[] memory proof, uint256 key, uint256 value) public pure  returns(bytes32) {
+    function getProofRootHash(bytes32[] memory proof, uint256 key, uint256 value) public pure returns (bytes32) {
         return Merkle.getProofRootHash(proof, key, value);
     }
 
