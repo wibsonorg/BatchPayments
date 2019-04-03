@@ -12,7 +12,7 @@ import "./SafeMath.sol";
 contract BatPay is Payments {
 
      /// @dev Contract constructor, sets ERC20 token this contract will use for payments
-     /// @param token_ ERC20 contract address
+     /// @param _token ERC20 contract address
      /// @param maxBulk Maximum number of users to register in a single bulkRegister
      /// @param maxTransfer Maximum number of destinations on a single payment
      /// @param challengeBlocks number of blocks to wait for a challenge
