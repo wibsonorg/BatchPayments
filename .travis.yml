@@ -19,7 +19,6 @@ install:
 
 before_script:
   - npm run lint
-#  - npm audit
   - npm run test:coverage
   - bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info
 
