@@ -3,9 +3,9 @@
   "extends": "solhint:all",
   "rules": {
     "indent": ["error", 4],
-
     "bracket-align": false,
     "compiler-fixed": false,
+    "function-max-lines": false,
     "mark-callable-contracts": false,
     "no-inline-assembly": false
   }
