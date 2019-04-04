@@ -128,7 +128,8 @@ library Challenge {
                         mload(add(payData,add(i, bytesPerId))),
                         modulus))
 
-                if eq(currentId, id) { sum := add(sum, amount) }
+                switch eq(currentId, id)
+                case 1 { sum := add(sum, amount) }
             }
         }
     }
