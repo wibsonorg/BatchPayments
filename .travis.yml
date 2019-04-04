@@ -5,7 +5,7 @@ node_js:
   - '8'
 
 env: 
-  - WORKING_DIR=wibson-batpay
+  - WORKING_DIR=.
 
 cache:
   directories:
@@ -19,8 +19,7 @@ install:
 
 before_script:
   - npm run lint
-#  - npm audit
-  - npm run test:coverage
-  - bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info
+#  - npm run test:coverage
+#  - bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info
 
 script: npm run test

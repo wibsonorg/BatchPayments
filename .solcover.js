@@ -1,10 +1,7 @@
 module.exports = {
-	    port: 8555,
-	# testrpcOptions: '-p 8545', //-u 0x54fd80d6ae7584d8e9a19fe1df43f04e5282cc43',
-	    testCommand: 'truffle test --network coverage',
-	    compileCommand: 'truffle compile', 
-	    norpc: true,
-	    dir: './SecretDir',
-	    copyPackages: ['zeppelin-solidity'],
-	    skipFiles: ['Routers/EtherRouter.sol']
+	port: 8555,
+	testCommand: '../node_modules/.bin/truffle test --network coverage',
+	compileCommand: '../node_modules/.bin/truffle compile --network coverage',
+	norpc: true,
+	copyPackages: ['zeppelin-solidity'],
 };
