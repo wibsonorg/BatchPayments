@@ -35,6 +35,8 @@ contract Payments is Accounts {
     event ChallengeSuccess(uint indexed delegate, uint indexed slot);
     event ChallengeFailed(uint indexed delegate, uint indexed slot);  
 
+    uint8 public constant payDataHeaderMarker = 0xff; // marker in payData header
+
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
 
@@ -49,7 +51,7 @@ contract Payments is Accounts {
 
         uint len = payData.length;
         require(len >= 2, "payData length should be >= 2");
-        require(payData[0] == 0xff, "payData header missing");
+        require(uint8(payData[0]) == payDataHeaderMarker, "payData header missing");
         uint bytesPerId = uint(payData[1]);
         require(bytesPerId > 0, "bytes per Id should be positive");
 
@@ -60,7 +62,7 @@ contract Payments is Accounts {
         require(len % bytesPerId == 0, "payData length is invalid");
 
         // calculate number of records
-        return SafeMath.div32(len, bytesPerId);
+        return SafeMath.div(len, bytesPerId);
     }
 
 
