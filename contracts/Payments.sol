@@ -35,8 +35,36 @@ contract Payments is Accounts {
     event ChallengeSuccess(uint indexed delegate, uint indexed slot);
     event ChallengeFailed(uint indexed delegate, uint indexed slot);  
 
+    uint8 public constant payDataHeaderMarker = 0xff; // marker in payData header
+
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
+
+
+    /// @dev calculates the number of accounts included in payData
+    /// @param payData efficient binary representation of a list of accountIds
+    /// @return number of accounts present
+
+    function getPayDataCount(bytes payData) internal pure returns (uint) {
+        // payData includes a 2 byte header and a list of ids
+        // [0xff][bytesPerId]
+
+        uint len = payData.length;
+        require(len >= 2, "payData length should be >= 2");
+        require(uint8(payData[0]) == payDataHeaderMarker, "payData header missing");
+        uint bytesPerId = uint(payData[1]);
+        require(bytesPerId > 0, "bytes per Id should be positive");
+
+        // substract header bytes
+        len -= 2;
+
+        // remaining bytes should be a multiple of bytesPerId
+        require(len % bytesPerId == 0, "payData length is invalid");
+
+        // calculate number of records
+        return SafeMath.div(len, bytesPerId);
+    }
+
 
     /// @dev Register token payment to multiple recipients
     /// @param fromId Account id for the originator of the transaction
@@ -66,41 +94,37 @@ contract Payments is Accounts {
     )
         external 
     {
+        require(isAccountOwner(fromId), "invalid fromId");
+
         Payment memory p;
+
+        // Prepare a Payment struct
         p.fromAccountId = fromId;
         p.amount = amount;
         p.fee = fee;
         p.lockingKeyHash = lockingKeyHash;
-        p.lockTimeoutBlockNumber = SafeMath.add64(block.number, params.unlockBlocks);
-
-        require(isValidId(fromId), "invalid fromId");
-        uint len = payData.length;
-        require(len > 1, "payData length is invalid");
-        uint bytesPerId = uint(payData[1]);
-        Account memory from = accounts[fromId];
-
-        require(bytesPerId > 0, "bytes per Id should be positive");
-        require(from.owner == msg.sender, "only owner of id can registerPayment");
-        require((len-2) % bytesPerId == 0, "payData length is invalid");
-
-        p.totalNumberOfPayees = SafeMath.add32(SafeMath.div32(len - 2, bytesPerId), newCount);
-        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees");
-
-        uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalNumberOfPayees), fee);
-        require (total <= from.balance, "not enough funds");
-
-        from.balance = SafeMath.sub64(from.balance, total);
-        accounts[fromId] = from;
-
+        p.metadata = metadata;
         p.smallestAccountId = uint32(accounts.length);
         p.greatestAccountId = SafeMath.add32(p.smallestAccountId, newCount);
+        p.lockTimeoutBlockNumber = SafeMath.add64(block.number, params.unlockBlocks);
+        p.paymentDataHash = keccak256(abi.encodePacked(payData));
+        p.totalNumberOfPayees = SafeMath.add32(getPayDataCount(payData), newCount);
+
+        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees");
+
+        // calculate total cost of payment
+        uint64 totalCost = SafeMath.mul64(amount, p.totalNumberOfPayees);
+        totalCost = SafeMath.add64(totalCost, fee);
+
+        // Check that fromId has enough balance and substract totalCost
+        balanceSub(fromId, totalCost);
+        
+        // If this operation includes new accounts, do a bulkRegister
         if (newCount > 0) {
             bulkRegister(newCount, rootHash);
         }
 
-        p.metadata = metadata;
-        p.paymentDataHash = keccak256(abi.encodePacked(payData));
-
+        // Save the new Payment
         payments.push(p);
 
         emit PaymentRegistered(payments.length-1, p.fromAccountId, p.totalNumberOfPayees, p.amount);
