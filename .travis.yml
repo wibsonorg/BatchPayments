@@ -1,0 +1,26 @@
+dist: xenial
+language: node_js
+
+node_js:
+  - '8'
+
+env: 
+  - WORKING_DIR=wibson-batpay
+
+cache:
+  directories:
+    - "$WORKING_DIR/node_modules"
+
+before_install: npm i -g npm@6.1.0
+
+install:
+  - cd $WORKING_DIR
+  - npm install
+
+before_script:
+  - npm run lint
+#  - npm audit
+  - npm run test:coverage
+  - bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info
+
+script: npm run test
