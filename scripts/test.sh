@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+# Based on https://github.com/OpenZeppelin/openzeppelin-solidity/blob/35d8e860ad577d43d23d5c50a9fee04ac9c16a95/scripts/test.sh
 # Exit script as soon as a command fails.
 set -o errexit
 
