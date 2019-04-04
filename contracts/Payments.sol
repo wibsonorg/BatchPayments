@@ -15,7 +15,7 @@ contract Payments is Accounts {
         uint amount
     );
     event PaymentUnlocked(uint indexed payIndex, bytes key);
-    
+
     /**
      * Event for collection logging. Off-chain monitoring services may listen
      * to this event to trigger challenges.
@@ -33,7 +33,7 @@ contract Payments is Accounts {
     event Challenge3(uint indexed delegate, uint indexed slot, uint index);
     event Challenge4(uint indexed delegate, uint indexed slot);
     event ChallengeSuccess(uint indexed delegate, uint indexed slot);
-    event ChallengeFailed(uint indexed delegate, uint indexed slot);  
+    event ChallengeFailed(uint indexed delegate, uint indexed slot);
 
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
@@ -64,7 +64,7 @@ contract Payments is Accounts {
         bytes32 lockingKeyHash,
         bytes32 metadata
     )
-        external 
+        external
     {
         Payment memory p;
         p.fromAccountId = fromId;
@@ -75,16 +75,18 @@ contract Payments is Accounts {
 
         require(isValidId(fromId), "invalid fromId");
         uint len = payData.length;
-        require(len > 1, "payData length is invalid");
+        require(len > 1, "payData length should be greater than 1");
+        // bytesPerId is the amount of bytes that represent a single user in the payData bytes variable
         uint bytesPerId = uint(payData[1]);
         Account memory from = accounts[fromId];
 
-        require(bytesPerId > 0, "bytes per Id should be positive");
+        require(bytesPerId > 0, "second byte of payData should be positive");
         require(from.owner == msg.sender, "only owner of id can registerPayment");
-        require((len-2) % bytesPerId == 0, "payData length is invalid");
+        require((len-2) % bytesPerId == 0,
+        "payData length is invalid, all payees must have same amount of bytes (payData[1])");
 
         p.totalNumberOfPayees = SafeMath.add32(SafeMath.div32(len - 2, bytesPerId), newCount);
-        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees");
+        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees, should be less than config maxTransfer");
 
         uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalNumberOfPayees), fee);
         require (total <= from.balance, "not enough funds");
@@ -112,9 +114,9 @@ contract Payments is Accounts {
     /// @param unlockerAccountId id of the party providing the unlocking service.
     ///        Fees wil be payed to this id
     /// @param key Cryptographic key used to encrypt traded data
-   
+
     function unlock(uint32 payIndex, uint32 unlockerAccountId, bytes memory key) public returns(bool) {
-        require(payIndex < payments.length, "invalid payIndex");
+        require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(isValidId(unlockerAccountId), "Invalid unlockerAccountId");
         require(block.number < payments[payIndex].lockTimeoutBlockNumber, "Hash lock expired");
         bytes32 h = keccak256(abi.encodePacked(unlockerAccountId, key));
@@ -122,7 +124,7 @@ contract Payments is Accounts {
 
         payments[payIndex].lockingKeyHash = bytes32(0);
         balanceAdd(unlockerAccountId, payments[payIndex].fee);
-        
+
         emit PaymentUnlocked(payIndex, key);
         return true;
     }
@@ -133,7 +135,7 @@ contract Payments is Accounts {
     /// @return true if the operation succeded.
 
     function refundLockedPayment(uint payIndex) public returns (bool) {
-        require(payIndex < payments.length, "invalid payment Id");
+        require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
         Payment memory p = payments[payIndex];
@@ -229,13 +231,13 @@ contract Payments is Accounts {
         require(tacc.owner != 0, "account registration has to be completed");
 
         // Check payIndex is valid
-        require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex");
-        require(payIndex > tacc.lastCollectedPaymentId, "payIndex is not a valid value");
+        require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex, payments is not that long yet");
+        require(payIndex > tacc.lastCollectedPaymentId, "account already collected payments up to payIndex");
         require(payments[payIndex - 1].lockTimeoutBlockNumber < block.number,
             "cannot collect payments that can be unlocked");
 
         // Check if fee is valid
-        require (fee <= declaredAmount, "fee is too big");
+        require (fee <= declaredAmount, "fee is too big, should be smaller than declaredAmount");
 
         CollectSlot storage sl = collects[delegate][slotId];
 
@@ -243,7 +245,7 @@ contract Payments is Accounts {
 
         if (delegate != toAccountId) {
             // If "toAccountId" != delegate, check who signed this transaction
-            bytes32 hash = 
+            bytes32 hash =
                 keccak256(
                     abi.encodePacked(
                         address(this),
@@ -255,13 +257,13 @@ contract Payments is Accounts {
                         fee,
                         destination
                     ));
-            
+
             require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
         }
 
         sl.minPayIndex = tacc.lastCollectedPaymentId;
         sl.maxPayIndex = payIndex;
-        
+
         uint64 needed = params.collectStake;
 
         // check if this is an instant collect
@@ -299,7 +301,7 @@ contract Payments is Accounts {
             accounts[toAccountId].balance = 0;
             require(token.transfer(destination, tacc.balance), "transfer failed");
         }
-        
+
         emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
     }
 
@@ -316,11 +318,11 @@ contract Payments is Accounts {
     /// @param challenger id of the user account challenging the delegate.
 
     function challenge_1(
-        uint32 delegate, 
-        uint32 slot, 
+        uint32 delegate,
+        uint32 slot,
         uint32 challenger
     )
-        public 
+        public
         validId(delegate)
         onlyAccountOwner(challenger)
     {
@@ -335,11 +337,11 @@ contract Payments is Accounts {
      * @param data binary list of payment indexes associated with this collect operation.
      */
     function challenge_2(
-        uint32 delegate, 
-        uint32 slot, 
+        uint32 delegate,
+        uint32 slot,
         bytes memory data
     )
-        public  
+        public
         onlyAccountOwner(delegate)
     {
         Challenge.challenge_2(collects[delegate][slot], params, data);
@@ -354,11 +356,11 @@ contract Payments is Accounts {
      */
     function challenge_3(
         uint32 delegate,
-        uint32 slot, 
-        bytes memory data, 
+        uint32 slot,
+        bytes memory data,
         uint32 index
     )
-        validId(delegate) 
+        validId(delegate)
         public
     {
         require(isAccountOwner(collects[delegate][slot].challenger), "only challenger can call challenge_2");
@@ -377,8 +379,8 @@ contract Payments is Accounts {
         uint32 slot,
         bytes memory payData
     )
-        public 
-        onlyAccountOwner(delegate) 
+        public
+        onlyAccountOwner(delegate)
     {
         Challenge.challenge_4(
             collects[delegate][slot],
