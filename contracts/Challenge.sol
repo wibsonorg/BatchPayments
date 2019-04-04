@@ -17,13 +17,11 @@ library Challenge {
 
     /// @return true if the current block number is greater or equal than the allowed
     ///         block for this challenge.
-
     function challengeHasExpired(Data.CollectSlot storage collectSlot) public view returns (bool) {
         return collectSlot.block <= block.number;
     }
 
     /// @return true if the Slot status is valid.
-
     function isSlotStatusValid(Data.CollectSlot storage collectSlot, uint8 validStatus) public view returns (bool) {
         return collectSlot.status == validStatus;
     }
@@ -32,7 +30,6 @@ library Challenge {
     ///      delta constant specified by the protocol policy.
     /// @param delta number of blocks into the future to calculate.
     /// @return future block number.
-
     function getFutureBlock(uint delta) public view returns(uint64) {
         return SafeMath.add64(block.number, delta);
     }
@@ -42,7 +39,6 @@ library Challenge {
     /// @param data binary array, with 12 bytes per item. 8-bytes amount,
     ///        4-bytes payment index.
     /// @return the sum of the amounts referenced on the array.
-
     function getDataSum(bytes memory data) public pure returns (uint sum) {
         require(data.length > 0, "no data provided");
         require(data.length % 12 == 0, "wrong data format, data length should be multiple of 12");
@@ -73,7 +69,6 @@ library Challenge {
     ///        4-bytes payment index.
     /// @param index Array item requested
     /// @return amount and payIndex requested
-
     function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
         require(data.length > 0, "no data provided");
         require(data.length % 12 == 0, "wrong data format, data length should be multiple of 12");
@@ -104,7 +99,6 @@ library Challenge {
     /// @param id ID to look for in `payData`
     /// @param amount amount per occurrence of `id` in `payData`
     /// @return the amount sum for all occurrences of `id` in `payData`
-
     function getPayDataSum(bytes memory payData, uint id, uint amount) public pure returns (uint sum) {
         require(payData.length > 0, "no payData provided");
 
@@ -117,7 +111,7 @@ library Challenge {
 
         sum = 0;
 
-        for(uint i = 2; i < payData.length; i += bytesPerId) {
+        for (uint i = 2; i < payData.length; i += bytesPerId) {
             // Get next id delta from paydata
             // currentId += payData[2+i*bytesPerId]
 
@@ -126,7 +120,7 @@ library Challenge {
                 currentId := add(
                     currentId,
                     mod(
-                        mload(add(payData,add(i, bytesPerId))),
+                        mload(add(payData, add(i, bytesPerId))),
                         modulus))
 
                 if eq(currentId, id) { sum := add(sum, amount) }
@@ -139,7 +133,6 @@ library Challenge {
     /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
     /// @param challenger id of the challenger user
-
     function challenge_1(
         Data.CollectSlot storage collectSlot,
         Data.Config storage config,
@@ -162,7 +155,6 @@ library Challenge {
     /// @param collectSlot Collect slot
     /// @param config Various parameters
     /// @param data Binary array listing the payments in which the user was referenced.
-
     function challenge_2(
         Data.CollectSlot storage collectSlot,
         Data.Config storage config,
@@ -171,7 +163,7 @@ library Challenge {
         public
         onlyValidCollectSlot(collectSlot, 2)
     {
-        require (getDataSum(data) == collectSlot.amount, "data doesn't represent collected amount");
+        require(getDataSum(data) == collectSlot.amount, "data doesn't represent collected amount");
 
         collectSlot.data = keccak256(data);
         collectSlot.status = 3;
@@ -183,7 +175,6 @@ library Challenge {
     /// @param config Various parameters
     /// @param data Binary array listing the payments in which the user was referenced.
     /// @param disputedPaymentIndex index selecting the disputed payment
-
     function challenge_3(
         Data.CollectSlot storage collectSlot,
         Data.Config storage config,
@@ -205,7 +196,6 @@ library Challenge {
     /// @param payments a reference to the BatPay payments array
     /// @param payData binary data describing the list of account receiving
     ///        tokens on the selected transfer
-
     function challenge_4(
         Data.CollectSlot storage collectSlot,
         Data.Payment[] storage payments,
@@ -237,7 +227,6 @@ library Challenge {
     /// @param collectSlot Collect slot
     /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
-
     function challenge_success(
         Data.CollectSlot storage collectSlot,
         Data.Config storage config,
@@ -260,7 +249,6 @@ library Challenge {
     /// @param collectSlot Collect slot
     /// @param config Various parameters
     /// @param accounts a reference to the main accounts array
-
     function challenge_failed(
         Data.CollectSlot storage collectSlot,
         Data.Config storage config,
@@ -287,7 +275,6 @@ library Challenge {
     /// @param hash Hash of the signed message
     /// @param _sig binary representation of the r, s & v parameters.
     /// @return address of the signer if data provided is valid, zero oterwise.
-
     function recoverHelper(bytes32 hash, bytes _sig) public pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
