@@ -20,7 +20,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@0x/sol-coverage": "^3.0.2",
     "ethereumjs-abi": "^0.6.5",
     "solium": "^1.2.3",
     "truffle": "^4.1.15",
@@ -33,6 +32,5 @@
     "solhint": "^2.0.0",
     "standard": "^12.0.1",
     "solidity-coverage": "github:rotcivegaf/solidity-coverage#5875f5b7bc74d447f3312c9c0e9fc7814b482477",
-    "truffle": "4.1.11"
   }
 }
