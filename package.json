@@ -13,13 +13,14 @@
     "lint:js": "standard || :",
     "lint:js:fix": "standard --fix || :",
     "lint:sol": "solhint contracts/**/*.sol || :",
-    "test": "truffle test",
+    "test": "scripts/test.sh",
     "test:coverage": "SOLIDITY_COVERAGE=true scripts/test.sh"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@0x/sol-coverage": "^3.0.2",
     "ethereumjs-abi": "^0.6.5",
     "solium": "^1.2.3",
     "truffle": "^4.1.15",
