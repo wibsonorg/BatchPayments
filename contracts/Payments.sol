@@ -15,7 +15,7 @@ contract Payments is Accounts {
         uint amount
     );
     event PaymentUnlocked(uint indexed payIndex, bytes key);
-    
+    event PaymentRefunded(uint32 beneficiaryAccountId, uint64 amountRefunded);
     /**
      * Event for collection logging. Off-chain monitoring services may listen
      * to this event to trigger challenges.
@@ -136,21 +136,23 @@ contract Payments is Accounts {
         require(payIndex < payments.length, "invalid payment Id");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
-        Payment memory p = payments[payIndex];
-
-        require(p.totalNumberOfPayees > 0, "payment already refunded");
+        Payment memory payment = payments[payIndex];
+        require(payment.totalNumberOfPayees > 0, "payment already refunded");
 
         uint64 total = SafeMath.add64(
-            SafeMath.mul64(p.totalNumberOfPayees, p.amount),
-            p.fee);
+            SafeMath.mul64(payment.totalNumberOfPayees, payment.amount),
+            payment.fee
+        );
 
-        p.totalNumberOfPayees = 0;
-        p.fee = 0;
-        p.amount = 0;
-        payments[payIndex] = p;
+        payment.totalNumberOfPayees = 0;
+        payment.fee = 0;
+        payment.amount = 0;
+        payments[payIndex] = payment;
 
         // Complete refund
-        balanceAdd(p.fromAccountId, total);
+        balanceAdd(payment.fromAccountId, total);
+        emit PaymentRefunded(payment.fromAccountId, total);
+
         return true;
     }
 
