@@ -45,7 +45,7 @@ library Challenge {
 
     function getDataSum(bytes memory data) public pure returns (uint sum) {
         require(data.length > 0, "no data provided");
-        require(data.length % 12 == 0, "wrong data format");
+        require(data.length % 12 == 0, "wrong data format, data length should be multiple of 12");
 
         uint n = SafeMath.div(data.length, 12);
         uint modulus = 2**64;
@@ -76,13 +76,13 @@ library Challenge {
 
     function getDataAtIndex(bytes memory data, uint index) public pure returns (uint64 amount, uint32 payIndex) {
         require(data.length > 0, "no data provided");
-        require(data.length % 12 == 0, "wrong data format");
+        require(data.length % 12 == 0, "wrong data format, data length should be multiple of 12");
 
         uint mod1 = 2**64;
         uint mod2 = 2**32;
         uint i = SafeMath.mul(index, 12);
 
-        require(i <= SafeMath.sub(data.length, 12), "invalid index");
+        require(i <= SafeMath.sub(data.length, 12), "index * 12 must be less or equal than (data.length - 12)");
 
         // solium-disable-next-line security/no-inline-assembly
         assembly {
@@ -109,7 +109,8 @@ library Challenge {
         require(payData.length > 0, "no payData provided");
 
         uint bytesPerId = uint(payData[1]);
-        require((payData.length - 2) % bytesPerId == 0, "wrong payData format");
+        require((payData.length - 2) % bytesPerId == 0,
+        "payData length is invalid, all payees must have same amount of bytes (payData[1])");
 
         uint modulus = 1 << SafeMath.mul(bytesPerId, 8);
         uint currentId = 0;
@@ -140,16 +141,16 @@ library Challenge {
     /// @param challenger id of the challenger user
 
     function challenge_1(
-        Data.CollectSlot storage collectSlot, 
-        Data.Config storage config, 
-        Data.Account[] storage accounts, 
+        Data.CollectSlot storage collectSlot,
+        Data.Config storage config,
+        Data.Account[] storage accounts,
         uint32 challenger
     )
         public
         onlyValidCollectSlot(collectSlot, 1)
     {
         require(accounts[challenger].balance >= config.challengeStake, "not enough balance");
- 
+
         collectSlot.status = 2;
         collectSlot.challenger = challenger;
         collectSlot.block = getFutureBlock(config.challengeStepBlocks);
@@ -163,8 +164,8 @@ library Challenge {
     /// @param data Binary array listing the payments in which the user was referenced.
 
     function challenge_2(
-        Data.CollectSlot storage collectSlot, 
-        Data.Config storage config, 
+        Data.CollectSlot storage collectSlot,
+        Data.Config storage config,
         bytes memory data
     )
         public
@@ -184,15 +185,16 @@ library Challenge {
     /// @param disputedPaymentIndex index selecting the disputed payment
 
     function challenge_3(
-        Data.CollectSlot storage collectSlot, 
-        Data.Config storage config, 
-        bytes memory data, 
+        Data.CollectSlot storage collectSlot,
+        Data.Config storage config,
+        bytes memory data,
         uint32 disputedPaymentIndex
     )
         public
         onlyValidCollectSlot(collectSlot, 3)
-    {  
-        require(collectSlot.data == keccak256(data), "data mismatch");
+    {
+        require(collectSlot.data == keccak256(data),
+        "data mismatch, collected data hash doesn't match provided data hash");
         (collectSlot.challengeAmount, collectSlot.index) = getDataAtIndex(data, disputedPaymentIndex);
         collectSlot.status = 4;
         collectSlot.block = getFutureBlock(config.challengeStepBlocks);
@@ -206,7 +208,7 @@ library Challenge {
 
     function challenge_4(
         Data.CollectSlot storage collectSlot,
-        Data.Payment[] storage payments, 
+        Data.Payment[] storage payments,
         bytes memory payData
     )
         public
@@ -215,7 +217,8 @@ library Challenge {
         require(collectSlot.index >= collectSlot.minPayIndex && collectSlot.index < collectSlot.maxPayIndex,
             "payment referenced is out of range");
         Data.Payment memory p = payments[collectSlot.index];
-        require(keccak256(payData) == p.paymentDataHash, "payData is incorrect");
+        require(keccak256(payData) == p.paymentDataHash,
+        "payData mismatch, payment's data hash doesn't match provided payData hash");
         require(p.lockingKeyHash == 0, "payment is locked");
 
         uint collected = getPayDataSum(payData, collectSlot.to, p.amount);
@@ -225,7 +228,8 @@ library Challenge {
             collected = SafeMath.add(collected, p.amount);
         }
 
-        require(collected == collectSlot.challengeAmount, "amount mismatch");
+        require(collected == collectSlot.challengeAmount,
+        "amount mismatch, provided payData sum doesn't match collected challenge amount");
 
         collectSlot.status = 5;
     }
@@ -238,7 +242,7 @@ library Challenge {
         Data.CollectSlot storage collectSlot,
         Data.Config storage config,
         Data.Account[] storage accounts
-    ) 
+    )
         public
     {
         require((collectSlot.status == 2 || collectSlot.status == 4) && block.number >= collectSlot.block,
