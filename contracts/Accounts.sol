@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.25;
 
 import "./IERC20.sol";
 import "./SafeMath.sol";
@@ -111,10 +111,11 @@ contract Accounts is Data {
         return ret;
     }
 
-    /// @dev withdraw tokens from the batchpayment contract into the original address
-    /// @param amount Amount of tokens to withdraw
-    /// @param accountId Id of the user requesting the withdraw.
-
+    /**
+     * @dev withdraw tokens from the BatchPayment contract into the original address.
+     * @param amount Amount of tokens to withdraw.
+     * @param accountId Id of the user requesting the withdraw. 
+     */
     function withdraw(uint64 amount, uint256 accountId)
         public
         onlyAccountOwner(accountId)
@@ -171,7 +172,9 @@ contract Accounts is Data {
     internal
     validId(accountId)
     {
-        accounts[accountId].balance = SafeMath.sub64(accounts[accountId].balance, amount);
+        uint64 balance = accounts[accountId].balance;
+        require (balance >= amount, "not enough funds");
+        accounts[accountId].balance = SafeMath.sub64(balance, amount);
     }
 
     /// @dev returns the balance associated with the account in tokens

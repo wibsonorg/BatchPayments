@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.25;
 
 /// @title math operations that returns specific size reults (32, 64 and 256 bits)
 

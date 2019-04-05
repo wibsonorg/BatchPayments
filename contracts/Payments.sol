@@ -1,12 +1,15 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.25;
+
 
 import "./Accounts.sol";
 import "./SafeMath.sol";
 import "./Challenge.sol";
 
-/// @title Payments and Challenge game - Performs the operations associated with
-///        transfer and the different steps of the collect challenge game
 
+/**
+ * @title Payments and Challenge game - Performs the operations associated with
+ *        transfer and the different steps of the collect challenge game.
+ */
 contract Payments is Accounts {
     event PaymentRegistered(
         uint indexed payIndex,
@@ -37,8 +40,36 @@ contract Payments is Accounts {
     event ChallengeSuccess(uint indexed delegate, uint indexed slot);
     event ChallengeFailed(uint indexed delegate, uint indexed slot);
 
+    uint8 public constant payDataHeaderMarker = 0xff; // marker in payData header
+
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
+
+
+    /// @dev calculates the number of accounts included in payData
+    /// @param payData efficient binary representation of a list of accountIds
+    /// @return number of accounts present
+
+    function getPayDataCount(bytes payData) internal pure returns (uint) {
+        // payData includes a 2 byte header and a list of ids
+        // [0xff][bytesPerId]
+
+        uint len = payData.length;
+        require(len >= 2, "payData length should be >= 2");
+        require(uint8(payData[0]) == payDataHeaderMarker, "payData header missing");
+        uint bytesPerId = uint(payData[1]);
+        require(bytesPerId > 0, "bytes per Id should be positive");
+
+        // substract header bytes
+        len -= 2;
+
+        // remaining bytes should be a multiple of bytesPerId
+        require(len % bytesPerId == 0, "payData length is invalid");
+
+        // calculate number of records
+        return SafeMath.div(len, bytesPerId);
+    }
+
 
     /// @dev Register token payment to multiple recipients
     /// @param fromId Account id for the originator of the transaction
@@ -68,54 +99,48 @@ contract Payments is Accounts {
     )
         external
     {
+        require(isAccountOwner(fromId), "invalid fromId");
+
         Payment memory p;
+
+        // Prepare a Payment struct
         p.fromAccountId = fromId;
         p.amount = amount;
         p.fee = fee;
         p.lockingKeyHash = lockingKeyHash;
-        p.lockTimeoutBlockNumber = SafeMath.add64(block.number, params.unlockBlocks);
-
-        require(isValidId(fromId), "invalid fromId");
-        uint len = payData.length;
-        require(len > 1, "payData length should be greater than 1");
-        // bytesPerId is the amount of bytes that represent a single user in the payData bytes variable
-        uint bytesPerId = uint(payData[1]);
-        Account memory from = accounts[fromId];
-
-        require(bytesPerId > 0, "second byte of payData should be positive");
-        require(from.owner == msg.sender, "only owner of id can registerPayment");
-        require((len-2) % bytesPerId == 0,
-        "payData length is invalid, all payees must have same amount of bytes (payData[1])");
-
-        p.totalNumberOfPayees = SafeMath.add32(SafeMath.div32(len - 2, bytesPerId), newCount);
-        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees, should be less than config maxTransfer");
-
-        uint64 total = SafeMath.add64(SafeMath.mul64(amount, p.totalNumberOfPayees), fee);
-        require(total <= from.balance, "not enough funds");
-
-        from.balance = SafeMath.sub64(from.balance, total);
-        accounts[fromId] = from;
-
+        p.metadata = metadata;
         p.smallestAccountId = uint32(accounts.length);
         p.greatestAccountId = SafeMath.add32(p.smallestAccountId, newCount);
+        p.lockTimeoutBlockNumber = SafeMath.add64(block.number, params.unlockBlocks);
+        p.paymentDataHash = keccak256(abi.encodePacked(payData));
+        p.totalNumberOfPayees = SafeMath.add32(getPayDataCount(payData), newCount);
+
+        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees, should be less than config maxTransfer");
+
+        // calculate total cost of payment
+        uint64 totalCost = SafeMath.mul64(amount, p.totalNumberOfPayees);
+        totalCost = SafeMath.add64(totalCost, fee);
+
+        // Check that fromId has enough balance and substract totalCost
+        balanceSub(fromId, totalCost);
+
+        // If this operation includes new accounts, do a bulkRegister
         if (newCount > 0) {
             bulkRegister(newCount, rootHash);
         }
 
-        p.metadata = metadata;
-        p.paymentDataHash = keccak256(abi.encodePacked(payData));
-
+        // Save the new Payment
         payments.push(p);
 
         emit PaymentRegistered(payments.length-1, p.fromAccountId, p.totalNumberOfPayees, p.amount);
     }
 
-    /// @dev Provide the required key, releasing the payment and enabling the buyer
-    ///      decryption the digital content.
-    /// @param payIndex payment Index associated with the registerPayment operation.
-    /// @param unlockerAccountId id of the party providing the unlocking service.
-    ///        Fees wil be payed to this id
-    /// @param key Cryptographic key used to encrypt traded data
+    /**
+     * @dev provide the required key, releasing the payment and enabling the buyer decryption the digital content.
+     * @param payIndex payment Index associated with the registerPayment operation.
+     * @param unlockerAccountId id of the party providing the unlocking service. Fees wil be payed to this id.
+     * @param key Cryptographic key used to encrypt traded data.
+     */
     function unlock(uint32 payIndex, uint32 unlockerAccountId, bytes memory key) public returns(bool) {
         require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(isValidId(unlockerAccountId), "Invalid unlockerAccountId");
@@ -130,10 +155,12 @@ contract Payments is Accounts {
         return true;
     }
 
-    /// @dev Enables the buyer to recover funds associated with a `registerPayment()`
-    ///      operation for which decryption keys were not provided.
-    /// @param payIndex Index of the payment transaction associated with this request.
-    /// @return true if the operation succeded.
+    /**
+     * @dev Enables the buyer to recover funds associated with a `registerPayment()`
+     *      operation for which decryption keys were not provided.
+     * @param payIndex Index of the payment transaction associated with this request.
+     * @return true if the operation succeded.
+     */
     function refundLockedPayment(uint payIndex) public returns (bool) {
         require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
@@ -241,16 +268,22 @@ contract Payments is Accounts {
         emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
     }
 
-    /// @dev gets the number of payments issued
-    /// @return returns the size of the payments array.
+    /**
+     * @dev gets the number of payments issued
+     * @return returns the size of the payments array.
+     */
     function getPaymentsLength() public view returns (uint) {
         return payments.length;
     }
 
-    /// @dev initiate a challenge game
-    /// @param delegate id of the delegate that performed the collect operation in the name of the end-user.
-    /// @param slot slot used for the challenge game. Every user has a sperate set of slots
-    /// @param challenger id of the user account challenging the delegate.
+    /**
+     * @dev initiate a challenge game
+     * @param delegate id of the delegate that performed the collect operation
+     *        in the name of the end-user.
+     * @param slot slot used for the challenge game. Every user has a sperate
+     *        set of slots
+     * @param challenger id of the user account challenging the delegate.
+     */
     function challenge_1(
         uint32 delegate,
         uint32 slot,
@@ -304,10 +337,12 @@ contract Payments is Accounts {
         emit Challenge3(delegate, slot, index);
     }
 
-    /// @dev the delegate provides proof that the destination account was included on
-    ///      that payment, winning the game
-    /// @param delegate id of the delegate performing the collect operation
-    /// @param slot slot used for the operation
+    /**
+     * @dev the delegate provides proof that the destination account was
+     *      included on that payment, winning the game
+     * @param delegate id of the delegate performing the collect operation
+     * @param slot slot used for the operation
+     */
     function challenge_4(
         uint32 delegate,
         uint32 slot,
@@ -321,13 +356,14 @@ contract Payments is Accounts {
             payments,
             payData
             );
-
         emit Challenge4(delegate, slot);
     }
 
-    /// @dev the challenge was completed successfully. The delegate stake is slashed.
-    /// @param delegate id of the delegate performing the collect operation
-    /// @param slot slot used for the operation
+    /**
+     * @dev the challenge was completed successfully. The delegate stake is slashed.
+     * @param delegate id of the delegate performing the collect operation
+     * @param slot slot used for the operation
+     */
     function challenge_success(
         uint32 delegate,
         uint32 slot
@@ -339,9 +375,11 @@ contract Payments is Accounts {
         emit ChallengeSuccess(delegate, slot);
     }
 
-    /// @dev The delegate won the challenge game. He gets the challenge stake.
-    /// @param delegate id of the delegate performing the collect operation
-    /// @param slot slot used for the operation
+    /**
+     * @dev The delegate won the challenge game. He gets the challenge stake.
+     * @param delegate id of the delegate performing the collect operation
+     * @param slot slot used for the operation
+     */
     function challenge_failed(
         uint32 delegate,
         uint32 slot
