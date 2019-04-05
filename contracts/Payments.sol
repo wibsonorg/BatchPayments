@@ -377,13 +377,14 @@ contract Payments is Accounts {
         require(len >= 2, "payData length should be >= 2");
         require(uint8(payData[0]) == PAY_DATA_HEADER_MARKER, "payData header missing");
         uint bytesPerId = uint(payData[1]);
-        require(bytesPerId > 0, "bytes per Id should be positive");
+        require(bytesPerId > 0, "second byte of payData should be positive");
 
         // substract header bytes
         len -= 2;
 
         // remaining bytes should be a multiple of bytesPerId
-        require(len % bytesPerId == 0, "payData length is invalid");
+        require(len % bytesPerId == 0,
+        "payData length is invalid, all payees must have same amount of bytes (payData[1])");
 
         // calculate number of records
         return SafeMath.div(len, bytesPerId);
