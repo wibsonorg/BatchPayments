@@ -33,7 +33,7 @@ library Merkle {
      * @return the hash of the Merkle proof. Should match the Merkle root
      *         if the proof is valid
      */
-    function getProofRootHash(bytes32[] memory proof, uint256 key, uint256 leaf) public pure returns(bytes32) {
+    function getProofRootHash(bytes32[] memory proof, uint256 key, bytes32 leaf) public pure returns(bytes32) {
         bytes32 hash = keccak256(abi.encodePacked(leaf));
         uint256 k = key;
         for(uint i = 0; i<proof.length; i++) {
