@@ -35,7 +35,7 @@ contract Payments is Accounts {
     event Challenge3(uint indexed delegate, uint indexed slot, uint index);
     event Challenge4(uint indexed delegate, uint indexed slot);
     event ChallengeSuccess(uint indexed delegate, uint indexed slot);
-    event ChallengeFailed(uint indexed delegate, uint indexed slot);  
+    event ChallengeFailed(uint indexed delegate, uint indexed slot);
 
     uint8 public constant payDataHeaderMarker = 0xff; // marker in payData header
 
@@ -68,22 +68,25 @@ contract Payments is Accounts {
     }
 
 
-    /// @dev Register token payment to multiple recipients
-    /// @param fromId Account id for the originator of the transaction
-    /// @param amount Amount of tokens to pay each destination.
-    /// @param fee Fee in tokens to be payed to the party providing the unlocking service
-    /// @param payData Efficient representation of the destination account list
-    /// @param newCount Number of new destination accounts that will be reserved during the registerPayment transaction
-    /// @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
-    /// @param lockingKeyHash This hash will later be used by the `unlock`
-    ///         function to unlock the payment we are registering. The
-    ///         `lockingKeyHash` must be equal to the keccak256 of the packed
-    ///         encoding of the unlockerAccountId and the key used by the
-    ///         unlocker to encrypt the traded data:
-    ///             `keccak256(abi.encodePacked(unlockerAccountId, key))`
-    /// @param lockingKeyHash hash resulting of calculating the keccak256 of
-    ///        of the key locking this payment to help in atomic data swaps.
-    /// @param metadata Application specific data to be stored associated with the payment
+    /**
+     * @dev Register token payment to multiple recipients
+     * @param fromId Account id for the originator of the transaction
+     * @param amount Amount of tokens to pay each destination.
+     * @param fee Fee in tokens to be payed to the party providing the unlocking service
+     * @param payData Efficient representation of the destination account list
+     * @param newCount Number of new destination accounts that will be reserved during the registerPayment transaction
+     * @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
+     * @param lockingKeyHash This hash will later be used by the `unlock`
+     *         function to unlock the payment we are registering. The
+     *         `lockingKeyHash` must be equal to the keccak256 of the packed
+     *         encoding of the unlockerAccountId and the key used by the
+     *         unlocker to encrypt the traded data:
+     *             `keccak256(abi.encodePacked(unlockerAccountId, key))`
+     *         DO NOT use previously used locking keys, since an attacker could realize that by comparing key hashes
+     * @param lockingKeyHash hash resulting of calculating the keccak256 of
+     *        of the key locking this payment to help in atomic data swaps.
+     * @param metadata Application specific data to be stored associated with the payment
+     */
     function registerPayment(
         uint32 fromId,
         uint64 amount,
@@ -94,7 +97,7 @@ contract Payments is Accounts {
         bytes32 lockingKeyHash,
         bytes32 metadata
     )
-        external 
+        external
     {
         require(isAccountOwner(fromId), "invalid fromId");
 
@@ -120,7 +123,7 @@ contract Payments is Accounts {
 
         // Check that fromId has enough balance and substract totalCost
         balanceSub(fromId, totalCost);
-        
+
         // If this operation includes new accounts, do a bulkRegister
         if (newCount > 0) {
             bulkRegister(newCount, rootHash);
@@ -147,7 +150,7 @@ contract Payments is Accounts {
 
         payments[payIndex].lockingKeyHash = bytes32(0);
         balanceAdd(unlockerAccountId, payments[payIndex].fee);
-        
+
         emit PaymentUnlocked(payIndex, key);
         return true;
     }
@@ -269,7 +272,7 @@ contract Payments is Accounts {
 
         if (delegate != toAccountId) {
             // If "toAccountId" != delegate, check who signed this transaction
-            bytes32 hash = 
+            bytes32 hash =
                 keccak256(
                     abi.encodePacked(
                         address(this),
@@ -281,13 +284,13 @@ contract Payments is Accounts {
                         fee,
                         destination
                     ));
-            
+
             require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
         }
 
         sl.minPayIndex = tacc.lastCollectedPaymentId;
         sl.maxPayIndex = payIndex;
-        
+
         uint64 needed = params.collectStake;
 
         // check if this is an instant collect
@@ -325,7 +328,7 @@ contract Payments is Accounts {
             accounts[toAccountId].balance = 0;
             require(token.transfer(destination, tacc.balance), "transfer failed");
         }
-        
+
         emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
     }
 
@@ -343,14 +346,14 @@ contract Payments is Accounts {
      *        in the name of the end-user.
      * @param slot slot used for the challenge game. Every user has a sperate
      *        set of slots
-     * @param challenger id of the user account challenging the delegate.    
+     * @param challenger id of the user account challenging the delegate.
      */
     function challenge_1(
-        uint32 delegate, 
-        uint32 slot, 
+        uint32 delegate,
+        uint32 slot,
         uint32 challenger
     )
-        public 
+        public
         validId(delegate)
         onlyAccountOwner(challenger)
     {
@@ -365,11 +368,11 @@ contract Payments is Accounts {
      * @param data binary list of payment indexes associated with this collect operation.
      */
     function challenge_2(
-        uint32 delegate, 
-        uint32 slot, 
+        uint32 delegate,
+        uint32 slot,
         bytes memory data
     )
-        public  
+        public
         onlyAccountOwner(delegate)
     {
         Challenge.challenge_2(collects[delegate][slot], params, data);
@@ -384,11 +387,11 @@ contract Payments is Accounts {
      */
     function challenge_3(
         uint32 delegate,
-        uint32 slot, 
-        bytes memory data, 
+        uint32 slot,
+        bytes memory data,
         uint32 index
     )
-        validId(delegate) 
+        validId(delegate)
         public
     {
         require(isAccountOwner(collects[delegate][slot].challenger), "only challenger can call challenge_2");
@@ -408,8 +411,8 @@ contract Payments is Accounts {
         uint32 slot,
         bytes memory payData
     )
-        public 
-        onlyAccountOwner(delegate) 
+        public
+        onlyAccountOwner(delegate)
     {
         Challenge.challenge_4(
             collects[delegate][slot],
