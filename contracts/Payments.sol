@@ -1,12 +1,15 @@
 pragma solidity ^0.4.25;
 
+
 import "./Accounts.sol";
 import "./SafeMath.sol";
 import "./Challenge.sol";
 
-/// @title Payments and Challenge game - Performs the operations associated with
-///        transfer and the different steps of the collect challenge game
 
+/**
+ * @title Payments and Challenge game - Performs the operations associated with
+ *        transfer and the different steps of the collect challenge game.
+ */
 contract Payments is Accounts {
     event PaymentRegistered(
         uint indexed payIndex,
@@ -15,7 +18,6 @@ contract Payments is Accounts {
         uint amount
     );
     event PaymentUnlocked(uint indexed payIndex, bytes key);
-    
     /**
      * Event for collection logging. Off-chain monitoring services may listen
      * to this event to trigger challenges.
@@ -130,13 +132,12 @@ contract Payments is Accounts {
         emit PaymentRegistered(payments.length-1, p.fromAccountId, p.totalNumberOfPayees, p.amount);
     }
 
-    /// @dev Provide the required key, releasing the payment and enabling the buyer
-    ///      decryption the digital content.
-    /// @param payIndex payment Index associated with the registerPayment operation.
-    /// @param unlockerAccountId id of the party providing the unlocking service.
-    ///        Fees wil be payed to this id
-    /// @param key Cryptographic key used to encrypt traded data
-   
+    /**
+     * @dev provide the required key, releasing the payment and enabling the buyer decryption the digital content.
+     * @param payIndex payment Index associated with the registerPayment operation.
+     * @param unlockerAccountId id of the party providing the unlocking service. Fees wil be payed to this id.
+     * @param key Cryptographic key used to encrypt traded data.
+     */
     function unlock(uint32 payIndex, uint32 unlockerAccountId, bytes memory key) public returns(bool) {
         require(payIndex < payments.length, "invalid payIndex");
         require(isValidId(unlockerAccountId), "Invalid unlockerAccountId");
@@ -151,11 +152,12 @@ contract Payments is Accounts {
         return true;
     }
 
-    /// @dev Enables the buyer to recover funds associated with a `registerPayment()`
-    ///      operation for which decryption keys were not provided.
-    /// @param payIndex Index of the payment transaction associated with this request.
-    /// @return true if the operation succeded.
-
+    /**
+     * @dev Enables the buyer to recover funds associated with a `registerPayment()`
+     *      operation for which decryption keys were not provided.
+     * @param payIndex Index of the payment transaction associated with this request.
+     * @return true if the operation succeded.
+     */
     function refundLockedPayment(uint payIndex) public returns (bool) {
         require(payIndex < payments.length, "invalid payment Id");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
@@ -327,18 +329,22 @@ contract Payments is Accounts {
         emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
     }
 
-    /// @dev gets the number of payments issued
-    /// @return returns the size of the payments array.
-
+    /**
+     * @dev gets the number of payments issued
+     * @return returns the size of the payments array.
+     */
     function getPaymentsLength() public view returns (uint) {
         return payments.length;
     }
 
-    /// @dev initiate a challenge game
-    /// @param delegate id of the delegate that performed the collect operation in the name of the end-user.
-    /// @param slot slot used for the challenge game. Every user has a sperate set of slots
-    /// @param challenger id of the user account challenging the delegate.
-
+    /**
+     * @dev initiate a challenge game
+     * @param delegate id of the delegate that performed the collect operation
+     *        in the name of the end-user.
+     * @param slot slot used for the challenge game. Every user has a sperate
+     *        set of slots
+     * @param challenger id of the user account challenging the delegate.    
+     */
     function challenge_1(
         uint32 delegate, 
         uint32 slot, 
@@ -391,11 +397,12 @@ contract Payments is Accounts {
         emit Challenge3(delegate, slot, index);
     }
 
-    /// @dev the delegate provides proof that the destination account was included on
-    ///      that payment, winning the game
-    /// @param delegate id of the delegate performing the collect operation
-    /// @param slot slot used for the operation
-
+    /**
+     * @dev the delegate provides proof that the destination account was
+     *      included on that payment, winning the game
+     * @param delegate id of the delegate performing the collect operation
+     * @param slot slot used for the operation
+     */
     function challenge_4(
         uint32 delegate,
         uint32 slot,
@@ -409,14 +416,14 @@ contract Payments is Accounts {
             payments,
             payData
             );
-
         emit Challenge4(delegate, slot);
     }
 
-    /// @dev the challenge was completed successfully. The delegate stake is slashed.
-    /// @param delegate id of the delegate performing the collect operation
-    /// @param slot slot used for the operation
-
+    /**
+     * @dev the challenge was completed successfully. The delegate stake is slashed.
+     * @param delegate id of the delegate performing the collect operation
+     * @param slot slot used for the operation
+     */
     function challenge_success(
         uint32 delegate,
         uint32 slot
@@ -428,10 +435,11 @@ contract Payments is Accounts {
         emit ChallengeSuccess(delegate, slot);
     }
 
-    /// @dev The delegate won the challenge game. He gets the challenge stake.
-    /// @param delegate id of the delegate performing the collect operation
-    /// @param slot slot used for the operation
-
+    /**
+     * @dev The delegate won the challenge game. He gets the challenge stake.
+     * @param delegate id of the delegate performing the collect operation
+     * @param slot slot used for the operation
+     */
     function challenge_failed(
         uint32 delegate,
         uint32 slot
