@@ -125,7 +125,7 @@ contract TestHelper {
 
     /// @dev wrapper. see `Merkle` contract
 
-    function getProofRootHash(bytes32[] memory proof, uint256 key, uint256 value) public pure returns (bytes32) {
+    function getProofRootHash(bytes32[] memory proof, uint256 key, bytes32 value) public pure returns (bytes32) {
         return Merkle.getProofRootHash(proof, key, value);
     }
 

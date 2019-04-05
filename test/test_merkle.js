@@ -1,6 +1,5 @@
-var lib = require('../lib')(web3, artifacts)
-const merkle = lib.merkle
-var { sha3_1 } = merkle
+const { merkle, bat: { toLeftPaddedBytes32 } } = require('../lib')(web3, artifacts)
+const { sha3_1 } = merkle;
 
 var BigNumber = web3.BigNumber
 
@@ -110,8 +109,11 @@ describe('merkle lib', () => {
           if (proof[j].d == 'l') key = key + 1
         }
 
-        let x = await testhelper.getProofRootHash.call(pp, key, v[i])
+        let x = await testhelper.getProofRootHash.call(pp, key, toLeftPaddedBytes32(v[i]))
         assert.equal(tree.roothash, x)
+
+        x = await testhelper.getProofRootHash.call(pp, key, v[i])
+        assert.notEqual(tree.roothash, x, "should fail when not encoded correctly")
       }
     })
   })
