@@ -17,7 +17,9 @@ contract Payments is Accounts {
         uint totalNumberOfPayees,
         uint amount
     );
+
     event PaymentUnlocked(uint indexed payIndex, bytes key);
+
     /**
      * Event for collection logging. Off-chain monitoring services may listen
      * to this event to trigger challenges.
@@ -30,6 +32,7 @@ contract Payments is Accounts {
         uint toPayIndex,
         uint amount
     );
+
     event Challenge1(uint indexed delegate, uint indexed slot, uint challenger);
     event Challenge2(uint indexed delegate, uint indexed slot);
     event Challenge3(uint indexed delegate, uint indexed slot, uint index);
@@ -37,7 +40,7 @@ contract Payments is Accounts {
     event ChallengeSuccess(uint indexed delegate, uint indexed slot);
     event ChallengeFailed(uint indexed delegate, uint indexed slot);
 
-    uint8 public constant payDataHeaderMarker = 0xff; // marker in payData header
+    uint8 public constant PAY_DATA_HEADER_MARKER = 0xff; // marker in payData header
 
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
@@ -113,7 +116,7 @@ contract Payments is Accounts {
         p.paymentDataHash = keccak256(abi.encodePacked(payData));
         p.totalNumberOfPayees = SafeMath.add32(getPayDataCount(payData), newCount);
 
-        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees");
+        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees, should be less than config maxTransfer");
 
         // calculate total cost of payment
         uint64 totalCost = SafeMath.mul64(amount, p.totalNumberOfPayees);
@@ -140,7 +143,7 @@ contract Payments is Accounts {
      * @param key Cryptographic key used to encrypt traded data.
      */
     function unlock(uint32 payIndex, uint32 unlockerAccountId, bytes memory key) public returns(bool) {
-        require(payIndex < payments.length, "invalid payIndex");
+        require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(isValidId(unlockerAccountId), "Invalid unlockerAccountId");
         require(block.number < payments[payIndex].lockTimeoutBlockNumber, "Hash lock expired");
         bytes32 h = keccak256(abi.encodePacked(unlockerAccountId, key));
@@ -160,7 +163,7 @@ contract Payments is Accounts {
      * @return true if the operation succeded.
      */
     function refundLockedPayment(uint payIndex) public returns (bool) {
-        require(payIndex < payments.length, "invalid payment Id");
+        require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
         Payment memory p = payments[payIndex];
@@ -182,39 +185,6 @@ contract Payments is Accounts {
     }
 
     /// @dev release a slot used for the collect channel game, if the challenge game has ended.
-    ///      This function is private. There is a public version
-    /// @param delegate id of the account requesting the release operation
-    /// @param slot id of the slot requested for the duration of the challenge game
-
-    function _freeSlot(uint32 delegate, uint32 slot) private {
-        CollectSlot memory s = collects[delegate][slot];
-
-        if (s.status == 0) return;
-
-        require (s.status == 1 && block.number >= s.block, "slot not available");
-
-        // Refund Stake
-        balanceAdd(delegate, SafeMath.add64(s.delegateAmount, params.collectStake));
-
-        uint64 balance = SafeMath.add64(
-            accounts[s.to].balance,
-            SafeMath.sub64(s.amount, s.delegateAmount));
-
-        uint amount = 0;
-
-        if (s.addr != address(0)) {
-            amount = balance;
-            balance = 0;
-        }
-        accounts[s.to].balance = balance;
-
-        collects[delegate][slot].status = 0;
-
-        if (amount != 0)
-            require(token.transfer(s.addr, amount), "transfer failed");
-    }
-
-    /// @dev release a slot used for the collect channel game, if the challenge game has ended.
     /// @param delegate id of the account requesting the release operation
     /// @param slot id of the slot requested for the duration of the challenge game
     function freeSlot(uint32 delegate, uint32 slot) public {
@@ -231,7 +201,6 @@ contract Payments is Accounts {
     /// @param fee fee in tokens to be paid for the end user help.
     /// @param destination Address to withdraw the full account balance.
     /// @param signature An R,S,V ECDS signature provided by a user.
-
     function collect(
         uint32 delegate,
         uint32 slotId,
@@ -242,91 +211,61 @@ contract Payments is Accounts {
         address destination,
         bytes memory signature
     )
-        public
-    {
+    public{
         require(isAccountOwner(delegate), "invalid delegate");
         _freeSlot(delegate, slotId);
-
         Account memory acc = accounts[delegate];
-
         // Check toAccountId is valid
         require(isValidId(toAccountId), "toAccountId must be a valid account id");
-
         Account memory tacc = accounts[toAccountId];
         require(tacc.owner != 0, "account registration has to be completed");
-
         // Check payIndex is valid
-        require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex");
-        require(payIndex > tacc.lastCollectedPaymentId, "payIndex is not a valid value");
+        require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex, payments is not that long yet");
+        require(payIndex > tacc.lastCollectedPaymentId, "account already collected payments up to payIndex");
         require(payments[payIndex - 1].lockTimeoutBlockNumber < block.number,
             "cannot collect payments that can be unlocked");
-
         // Check if fee is valid
-        require (fee <= declaredAmount, "fee is too big");
-
+        require(fee <= declaredAmount, "fee is too big, should be smaller than declaredAmount");
         CollectSlot storage sl = collects[delegate][slotId];
-
         sl.delegate = delegate;
-
         if (delegate != toAccountId) {
             // If "toAccountId" != delegate, check who signed this transaction
             bytes32 hash =
-                keccak256(
-                    abi.encodePacked(
-                        address(this),
-                        delegate,
-                        toAccountId,
-                        tacc.lastCollectedPaymentId,
-                        payIndex,
-                        declaredAmount,
-                        fee,
-                        destination
-                    ));
-
+            keccak256(
+            abi.encodePacked(
+                address(this), delegate, toAccountId, tacc.lastCollectedPaymentId,
+                payIndex, declaredAmount, fee, destination
+            ));
             require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
         }
-
         sl.minPayIndex = tacc.lastCollectedPaymentId;
         sl.maxPayIndex = payIndex;
-
         uint64 needed = params.collectStake;
-
         // check if this is an instant collect
         if (slotId >= instantSlot) {
             sl.delegateAmount = declaredAmount;
-            tacc.balance = SafeMath.add64(
-                tacc.balance,
-                SafeMath.sub64(declaredAmount, fee));
-
+            tacc.balance = SafeMath.add64(tacc.balance, SafeMath.sub64(declaredAmount, fee));
             sl.addr = address(0);
-            needed = SafeMath.add64(
-                needed,
-                SafeMath.sub64(declaredAmount, fee));
+            needed = SafeMath.add64(needed, SafeMath.sub64(declaredAmount, fee));
         } else
         {   // not instant-collect
             sl.addr = destination;
             sl.delegateAmount = fee;
         }
-
         // Check amount & balance
-        require (acc.balance >= needed, "not enough funds");
-
+        require(acc.balance >= needed, "not enough funds");
         balanceSub(delegate, needed);
-
         sl.amount = declaredAmount;
         sl.to = toAccountId;
         sl.block = SafeMath.add64(block.number, params.challengeBlocks);
         sl.status = 1;
-
         tacc.lastCollectedPaymentId = uint32(payIndex);
         accounts[toAccountId] = tacc;
-
         // check if the user is withdrawing its balance
         if (destination != address(0) && slotId >= instantSlot) {
             accounts[toAccountId].balance = 0;
             require(token.transfer(destination, tacc.balance), "transfer failed");
         }
-
         emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
     }
 
@@ -376,6 +315,7 @@ contract Payments is Accounts {
         Challenge.challenge_2(collects[delegate][slot], params, data);
         emit Challenge2(delegate, slot);
     }
+
     /**
      * @dev the Challenger chooses a single index into the delegate provided data list
      * @param delegate id of the delegate performing the collect operation
@@ -389,8 +329,8 @@ contract Payments is Accounts {
         bytes memory data,
         uint32 index
     )
-        validId(delegate)
         public
+        validId(delegate)
     {
         require(isAccountOwner(collects[delegate][slot].challenger), "only challenger can call challenge_2");
 
@@ -450,5 +390,37 @@ contract Payments is Accounts {
     {
         Challenge.challenge_failed(collects[delegate][slot], params, accounts);
         emit ChallengeFailed(delegate, slot);
+    }
+
+    /// @dev release a slot used for the collect channel game, if the challenge game has ended.
+    ///      This function is private. There is a public version
+    /// @param delegate id of the account requesting the release operation
+    /// @param slot id of the slot requested for the duration of the challenge game
+    function _freeSlot(uint32 delegate, uint32 slot) private {
+        CollectSlot memory s = collects[delegate][slot];
+
+        if (s.status == 0) return;
+
+        require(s.status == 1 && block.number >= s.block, "slot not available");
+
+        // Refund Stake
+        balanceAdd(delegate, SafeMath.add64(s.delegateAmount, params.collectStake));
+
+        uint64 balance = SafeMath.add64(
+            accounts[s.to].balance,
+            SafeMath.sub64(s.amount, s.delegateAmount));
+
+        uint amount = 0;
+
+        if (s.addr != address(0)) {
+            amount = balance;
+            balance = 0;
+        }
+        accounts[s.to].balance = balance;
+
+        collects[delegate][slot].status = 0;
+
+        if (amount != 0)
+            require(token.transfer(s.addr, amount), "transfer failed");
     }
 }

@@ -179,7 +179,7 @@ contract('challenge', () => {
     let payList = b.getPayList(payIndex)
     await assertRequire(
       challenge(id, slot, challenger, data, index, payList),
-      'invalid index')
+      'index * 12 must be less or equal than (data.length - 12)')
   })
   it('should reject an invalid payData', async () => {
     let index = 0
@@ -188,7 +188,7 @@ contract('challenge', () => {
     payList.pop()
     await assertRequire(
       challenge(id, slot, challenger, data, index, payList),
-      'payData is incorrect')
+      'payData mismatch, payment\'s data hash doesn\'t match provided payData hash')
   })
   it('should reject an invalid amount', async () => {
     let index = 0

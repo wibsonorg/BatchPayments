@@ -134,7 +134,7 @@ contract('Payments', (addr) => {
       const bytesPerId = 0
       pay_data = new web3.BigNumber('0xff' + utils.hex(bytesPerId))
 
-      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'revert bytes per Id should be positive')
+      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'second byte of payData should be positive')
 
       // check original balance didn't change
       let b1 = (await bp.balanceOf.call(from_id)).toNumber()
@@ -146,7 +146,7 @@ contract('Payments', (addr) => {
       const data = '0000005'
       pay_data = new web3.BigNumber('0xff' + utils.hex(bytesPerId) + data)
 
-      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'payData length is invalid')
+      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'payData length is invalid, all payees must have same amount of bytes (payData[1])')
 
       // check original balance didn't change
       let b1 = (await bp.balanceOf.call(from_id)).toNumber()
