@@ -45,22 +45,23 @@ contract Payments is Accounts {
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
 
-    /// @dev Register token payment to multiple recipients
-    /// @param fromId Account id for the originator of the transaction
-    /// @param amount Amount of tokens to pay each destination.
-    /// @param fee Fee in tokens to be payed to the party providing the unlocking service
-    /// @param payData Efficient representation of the destination account list
-    /// @param newCount Number of new destination accounts that will be reserved during the registerPayment transaction
-    /// @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
-    /// @param lockingKeyHash This hash will later be used by the `unlock`
-    ///         function to unlock the payment we are registering. The
-    ///         `lockingKeyHash` must be equal to the keccak256 of the packed
-    ///         encoding of the unlockerAccountId and the key used by the
-    ///         unlocker to encrypt the traded data:
-    ///             `keccak256(abi.encodePacked(unlockerAccountId, key))`
-    /// @param lockingKeyHash hash resulting of calculating the keccak256 of
-    ///        of the key locking this payment to help in atomic data swaps.
-    /// @param metadata Application specific data to be stored associated with the payment
+    /**
+     * @dev Register token payment to multiple recipients
+     * @param fromId Account id for the originator of the transaction
+     * @param amount Amount of tokens to pay each destination.
+     * @param fee Fee in tokens to be payed to the party providing the unlocking service
+     * @param payData Efficient representation of the destination account list
+     * @param newCount Number of new destination accounts that will be reserved during the registerPayment transaction
+     * @param rootHash Hash of the root hash of the Merkle tree listing the addresses reserved.
+     * @param lockingKeyHash hash resulting of calculating the keccak256 of
+     *        of the key locking this payment to help in atomic data swaps.
+     *        This hash will later be used by the `unlock` function to unlock the payment we are registering.
+     *         The `lockingKeyHash` must be equal to the keccak256 of the packed
+     *         encoding of the unlockerAccountId and the key used by the unlocker to encrypt the traded data:
+     *             `keccak256(abi.encodePacked(unlockerAccountId, key))`
+     *         DO NOT use previously used locking keys, since an attacker could realize that by comparing key hashes
+     * @param metadata Application specific data to be stored associated with the payment
+     */
     function registerPayment(
         uint32 fromId,
         uint64 amount,
