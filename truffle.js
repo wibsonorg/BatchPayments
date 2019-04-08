@@ -1,16 +1,41 @@
-/*
- * NB: since truffle-hdwallet-provider 0.0.5 you must wrap HDWallet providers in a
- * function when declaring them. Failure to do so will cause commands to hang. ex:
- * ```
- * mainnet: {
- *     provider: function() {
- *       return new HDWalletProvider(mnemonic, 'https://mainnet.infura.io/<infura-key>')
- *     },
- *     network_id: '1',
- *     gas: 4500000,
- *     gasPrice: 10000000000,
- *   },
- */
+const solcVersion = '0.4.25'
+
+// To prevent truffle from complaining 'provider' isn't defined when compiling
+const ProviderEngine = require('web3-provider-engine')
+const provider = new ProviderEngine()
+
+const { GanacheSubprovider } = require('@0x/subproviders')
+
+const { CoverageSubprovider } = require('@0x/sol-coverage')
+const { TruffleArtifactAdapter } = require('@0x/sol-trace')
+
+const projectRoot = ''
+const defaultFromAddress = '0x5409ed021d9299bf6814279a6a1411a7e866a631'
+const isVerbose = true
+const artifactAdapter = new TruffleArtifactAdapter(projectRoot, solcVersion)
+
+global.coverageSubprovider = new CoverageSubprovider(
+  artifactAdapter,
+  defaultFromAddress,
+  isVerbose
+)
+
+provider.addProvider(global.coverageSubprovider)
+
+const ganacheSubprovider = new GanacheSubprovider({
+  'default_balance_ether': '1000000000000000000000000',
+  'total_accounts': 10,
+  'port': 8545,
+})
+
+provider.addProvider(ganacheSubprovider)
+
+provider.start(err => {
+  if (err !== undefined) {
+    console.log(err)
+    process.exit(1)
+  }
+})
 
 module.exports = {
   networks: {
@@ -20,11 +45,8 @@ module.exports = {
       network_id: '*' // Match any network id
     },
     coverage: {
-      host: '127.0.0.1',
-      port: 8555,
-      network_id: '*',
-      gas: 0xfffffffffff,
-      gasPrice: 0x01
+      provider,
+      network_id: '*'
     }
   },
   solc: {
