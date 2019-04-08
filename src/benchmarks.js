@@ -119,12 +119,12 @@ async function withdraw (amount) {
 async function collect () {
   let t = await b.collect(id, 0, id2, 0, 1, 100, 2, 0)
   let t2 = await b.collect(id, 1, id2, 1, 2, 100, 2, 0)
-  addStat('collect-empty-nowd', t2.gasUsed)
+  addStat('collect-empty-nowd', t2.receipt.gasUsed)
   let t3 = await b.collect(id, 2, id2, 2, 3, 100, 2, acc[0])
-  addStat('collect-empty-withdraw', t3.gasUsed)
+  addStat('collect-empty-withdraw', t3.receipt.gasUsed)
 
   let t7 = await b.collect(id, b.instantSlot, id2, 3, 4, 100, 2, acc[0])
-  addStat('collect-empty-instant-withdraw', t7.gasUsed)
+  addStat('collect-empty-instant-withdraw', t7.receipt.gasUsed)
 
   await utils.skipBlocks(b.challengeBlocks)
   let t4 = await b.freeSlot(id, 0)
@@ -134,7 +134,7 @@ async function collect () {
   addStat('freeSlot-withdraw', t5.gasUsed)
 
   let t6 = await b.collect(id, 1, id2, 4, 5, 100, 2, acc[0])
-  addStat('collect-reuse-nowd', t6.gasUsed)
+  addStat('collect-reuse-nowd', t6.receipt.gasUsed)
 }
 
 async function challenge () {
