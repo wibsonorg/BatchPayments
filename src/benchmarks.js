@@ -1,11 +1,7 @@
 var lib = require('../lib')(web3, artifacts)
 var bat = lib.bat
 var utils = lib.utils
-
-var StandardToken = artifacts.require('StandardToken')
-var BatPay = artifacts.require('BatPay')
-
-var bp, st, id
+var bp, st
 var b
 
 const passcode = 'x1234'
@@ -44,7 +40,7 @@ async function init () {
 }
 
 async function register () {
-  let [i0, t] = await b.register(acc[0])
+  let [i0] = await b.register(acc[0])
 
   let [i1, t2] = await b.register(acc[0])
   addStat('register', t2.gasUsed)
@@ -54,9 +50,9 @@ async function register () {
 }
 
 async function deposit (amount) {
-  let [id2, t1, t2] = await b.deposit(amount, -1, acc[0]);
+  await b.deposit(amount, -1, acc[0])
 
-  [id2, t1, t2] = await b.deposit(amount, -1, acc[0])
+  let [, t1, t2] = await b.deposit(amount, -1, acc[0])
 
   addStat('deposit', t1.gasUsed + t2.gasUsed)
   addStat('deposit.token.approve', t1.gasUsed)
@@ -64,7 +60,7 @@ async function deposit (amount) {
 }
 
 async function depositE (amount) {
-  let [id2, t1, t2] = await b.deposit(amount, id)
+  let [, t1, t2] = await b.deposit(amount, id)
 
   addStat('deposit-existing', t1.gasUsed + t2.gasUsed)
 }
@@ -78,14 +74,14 @@ async function bulkReg (count) {
   let bulk = await b.bulkRegister(list)
   addStat('bulkRegister-' + count, bulk.recp.gasUsed)
 
-  let [id, addr, t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.smallestAccountId)
+  let [, t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.smallestAccountId)
   addStat('claimBulkRegistrationId', t.gasUsed)
 }
 
 async function registerPayment (amount, fee, count, lockingKeyHash, name) {
   let list = utils.randomIds(count, max)
 
-  let [pid, t] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
+  let [, t] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
   addStat(name, t.gasUsed)
 }
 
@@ -93,7 +89,7 @@ async function unlock () {
   let list = []
   for (let i = 0; i < 100; i++) list.push(i)
   let lockingKeyHash = utils.hashLock(id2, passcode)
-  let [pid, t] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
+  let [pid] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
 
   let t2 = await b.unlock(pid, id2, passcode)
   addStat('unlock', t2.gasUsed)
@@ -103,7 +99,7 @@ async function refundLockedPayment () {
   let list = []
   for (let i = 0; i < 100; i++) list.push(i)
   let lockingKeyHash = utils.hashLock(id2, passcode)
-  let [pid, t] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
+  let [pid] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
 
   await utils.skipBlocks(b.unlockBlocks)
 
@@ -117,7 +113,7 @@ async function withdraw (amount) {
 }
 
 async function collect () {
-  let t = await b.collect(id, 0, id2, 0, 1, 100, 2, 0)
+  await b.collect(id, 0, id2, 0, 1, 100, 2, 0)
   let t2 = await b.collect(id, 1, id2, 1, 2, 100, 2, 0)
   addStat('collect-empty-nowd', t2.receipt.gasUsed)
   let t3 = await b.collect(id, 2, id2, 2, 3, 100, 2, acc[0])
