@@ -92,18 +92,17 @@ async function challenge (delegate, slot, challenger, list, index, payList, stop
   }
 }
 
-before(async function () {
+// before(async function () {
 
-})
+// })
 
-contract('challenge', () => {
+contract('challenge', (accounts) => {
   before(async function () {
-    this.timeout(10000)
     await utils.skipBlocks(1)
     let ins = await utils.getInstances()
 
     b = new bat.BP(ins.bp, ins.token)
-    acc = web3.eth.accounts
+    acc = accounts
 
     await b.init()
     let [mainId, receipt] = await b.deposit(100000, -1, acc[0])

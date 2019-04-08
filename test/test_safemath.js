@@ -16,7 +16,8 @@ async function assertFailure (promise) {
   assert(false, 'operation was expected to fail but succeeded')
 };
 
-describe('SafeMath', () => {
+describe('SafeMath', function () {
+  this.timeout(10000)
   var testhelper
 
   before(async () => {
