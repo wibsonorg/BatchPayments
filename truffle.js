@@ -32,5 +32,12 @@ module.exports = {
       enabled: true,
       runs: 200
     }
+  },
+  mocha: {
+    // Comment next line to turn gas report off.
+    // reporter: 'eth-gas-reporter',
+    reporterOptions: {
+      currency: 'USD'
+    }
   }
 }
