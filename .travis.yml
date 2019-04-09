@@ -1,25 +1,20 @@
 dist: xenial
 language: node_js
+sudo: false
 
 node_js:
   - '8'
 
-env: 
-  - WORKING_DIR=.
-
 cache:
   directories:
-    - "$WORKING_DIR/node_modules"
+    - node_modules
 
-before_install: npm i -g npm@6.1.0
-
-install:
-  - cd $WORKING_DIR
-  - npm install
-
-before_script:
-  - npm run lint
-  - npm run test:coverage
-#  - bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info
-
-script: npm run test
+jobs:
+  include:
+    - stage: test
+      name: "Lint"
+      script: npm run lint
+      name: "Unit tests"
+      script: npm run test
+      name: "Unit tests with coverage report"
+      script: npm run test:coverage
