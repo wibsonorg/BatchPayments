@@ -12,7 +12,7 @@ cache:
 jobs:
   include:
     - stage: test
-    - script: npm run lint
+      script: npm run lint
       name: "Lint"
     - script: npm run test
       name: "Unit tests"
