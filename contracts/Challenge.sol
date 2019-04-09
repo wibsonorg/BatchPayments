@@ -108,6 +108,28 @@ library Challenge {
     }
 
     /**
+     * @dev obtains the number of bytes per id in `payData`
+     * @param payData efficient binary representation of a list of accountIds
+     * @return bytes per id in `payData`
+     */
+    function getBytesPerId(bytes payData) internal pure returns (uint) {
+        // payData includes a 2 byte header and a list of ids
+        // [0xff][bytesPerId]
+
+        uint len = payData.length;
+        require(len >= 2, "payData length should be >= 2");
+        require(uint8(payData[0]) == PAY_DATA_HEADER_MARKER, "payData header missing");
+        uint bytesPerId = uint(payData[1]);
+        require(bytesPerId > 0, "second byte of payData should be positive");
+
+        // remaining bytes should be a multiple of bytesPerId
+        require((len - 2) % bytesPerId == 0,
+        "payData length is invalid, all payees must have same amount of bytes (payData[1])");
+
+        return bytesPerId;
+    }
+
+    /**
      * @dev Process payData, inspecting the list of ids, accumulating the amount for
      *    each entry of `id`.
      *   `payData` includes 2 header bytes, followed by n bytesPerId-bytes entries.
@@ -118,12 +140,7 @@ library Challenge {
      * @return the amount sum for all occurrences of `id` in `payData`
      */
     function getPayDataSum(bytes memory payData, uint id, uint amount) public pure returns (uint sum) {
-        require(payData.length > 0, "no payData provided");
-
-        uint bytesPerId = uint(payData[1]);
-        require((payData.length - 2) % bytesPerId == 0,
-        "payData length is invalid, all payees must have same amount of bytes (payData[1])");
-
+        uint bytesPerId = getBytesPerId(payData);
         uint modulus = 1 << SafeMath.mul(bytesPerId, 8);
         uint currentId = 0;
 
@@ -153,24 +170,10 @@ library Challenge {
      * @return number of accounts present
      */
     function getPayDataCount(bytes payData) public pure returns (uint) {
-        // payData includes a 2 byte header and a list of ids
-        // [0xff][bytesPerId]
-
-        uint len = payData.length;
-        require(len >= 2, "payData length should be >= 2");
-        require(uint8(payData[0]) == PAY_DATA_HEADER_MARKER, "payData header missing");
-        uint bytesPerId = uint(payData[1]);
-        require(bytesPerId > 0, "second byte of payData should be positive");
-
-        // substract header bytes
-        len -= 2;
-
-        // remaining bytes should be a multiple of bytesPerId
-        require(len % bytesPerId == 0,
-        "payData length is invalid, all payees must have same amount of bytes (payData[1])");
+        uint bytesPerId = getBytesPerId(payData);
 
         // calculate number of records
-        return SafeMath.div(len, bytesPerId);
+        return SafeMath.div(payData.length - 2, bytesPerId);
     }
 
     /**
