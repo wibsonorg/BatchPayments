@@ -9,7 +9,7 @@
     "test": "test"
   },
   "scripts": {
-    "lint": "npm run lint:sol",
+    "lint": "npm run lint:sol && npm run lint:js",
     "lint:js": "standard || :",
     "lint:js:fix": "standard --fix || :",
     "lint:sol": "solhint contracts/**/*.sol || :",
