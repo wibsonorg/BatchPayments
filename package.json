@@ -14,7 +14,7 @@
     "lint:js:fix": "standard --fix || :",
     "lint:sol": "solhint contracts/**/*.sol || :",
     "test": "scripts/test.sh",
-    "test:coverage": "SOLIDITY_COVERAGE=true scripts/test.sh"
+    "test:coverage": "truffle test --network coverage"
   },
   "keywords": [],
   "author": "",
