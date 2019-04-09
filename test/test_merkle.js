@@ -95,8 +95,8 @@ describe('merkle lib', () => {
       }
     })
 
-    it('should match solidity\'s eval proofs', async function () {
-      this.timeout(10000)
+    it.only('should match solidity\'s eval proofs', async function () {
+      this.timeout(60 * 1000)
       let v = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
       let tree = merkle.merkle(v)
       
