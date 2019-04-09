@@ -17,7 +17,6 @@ async function assertFailure (promise) {
 };
 
 describe('SafeMath', function () {
-  this.timeout(10000)
   var testhelper
 
   before(async () => {
