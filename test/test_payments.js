@@ -113,6 +113,7 @@ contract('Payments', (addr) => {
 
       await utils.skipBlocks(unlockBlocks)
       let v2 = await bp.refundLockedPayment(payId)
+      eventEmitted(v2, 'PaymentRefunded')
 
       // check original balance didn't change
       let b1 = (await bp.balanceOf.call(from_id)).toNumber()
