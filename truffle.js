@@ -54,5 +54,8 @@ module.exports = {
       enabled: true,
       runs: 1
     }
+  },
+  mocha: {
+    timeout: 60000 // Huge timeout for running coverage on Travis CI.
   }
 }
