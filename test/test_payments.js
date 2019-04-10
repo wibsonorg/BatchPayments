@@ -379,7 +379,7 @@ contract('Payments', (addr) => {
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(acc[1])).toNumber()
 
-      assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, maxPayIndex + 1, amount, amount / 3, acc[1]), 'payIndex is not a valid value')
+      await assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, maxPayIndex + 1, amount, amount / 3, acc[1]), 'payIndex is not a valid value')
     })
     it('should reject if invalid payIndex', async () => {
       let mid = userid[6]
@@ -392,7 +392,7 @@ contract('Payments', (addr) => {
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(acc[1])).toNumber()
 
-      assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, (await b.getPaymentsLength()) + 100, amount, amount / 3, acc[1]), 'invalid payIndex')
+      await assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, (await b.getPaymentsLength()) + 100, amount, amount / 3, acc[1]), 'invalid payIndex')
     })
 
     it('should reject if invalid to-id', async () => {
@@ -406,7 +406,7 @@ contract('Payments', (addr) => {
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(acc[1])).toNumber()
 
-      assertRequire(b.collect(id, slot, 1000000, 0, 1, amount, amount / 3, acc[1]), 'to must be a valid account id')
+      await assertRequire(b.collect(id, slot, 1000000, 0, 1, amount, amount / 3, acc[1]), 'to must be a valid account id')
     })
     it('should reject invalid signature/wrong fromPayIndex', async () => {
       let mid = userid[7]
@@ -419,7 +419,7 @@ contract('Payments', (addr) => {
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(acc[1])).toNumber()
 
-      assertRequire(b.collect(id, slot, 1000000, lastCollectedPaymentId + 1, maxPayIndex, amount, amount / 3, 0), 'Bad user signature')
+      await assertRequire(b.collect(id, slot, 1000000, lastCollectedPaymentId + 1, maxPayIndex, amount, amount / 3, 0), 'Bad user signature')
     })
   })
 })
