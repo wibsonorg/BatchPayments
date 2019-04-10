@@ -385,7 +385,7 @@ contract('Payments', (addr) => {
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(acc[1])).toNumber()
 
-      assertRequire(
+      await assertRequire(
         b.collect(
           id,
           slot,
@@ -410,7 +410,7 @@ contract('Payments', (addr) => {
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(acc[1])).toNumber()
 
-      assertRequire(
+      await assertRequire(
         b.collect(
           id,
           slot,
@@ -435,7 +435,7 @@ contract('Payments', (addr) => {
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(acc[1])).toNumber()
 
-      assertRequire(b.collect(id, slot, 1000000, 0, 1, amount, amount / 3, acc[1]), 'to must be a valid account id')
+      await assertRequire(b.collect(id, slot, 1000000, 0, 1, amount, amount / 3, acc[1]), 'to must be a valid account id')
     })
 
     it.skip('should reject invalid signature/wrong fromPayIndex', async () => {
@@ -448,9 +448,8 @@ contract('Payments', (addr) => {
       let b0 = (await b.balanceOf(mid)).toNumber()
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(acc[1])).toNumber()
-      console.log(id, slot, 1000000, lastCollectedPaymentId.toNumber() + 1, maxPayIndex, amount, amount / 3, 0)
-      b.collect(id, slot, 1000000, lastCollectedPaymentId.toNumber() + 1, maxPayIndex, amount, amount / 3, 0)
-      // assertRequire(b.collect(id, slot, 1000000, lastCollectedPaymentId.toNumber() + 1, maxPayIndex, amount, amount / 3, 0), 'Bad user signature')
+
+      await assertRequire(b.collect(id, slot, 1000000, lastCollectedPaymentId + 1, maxPayIndex, amount, amount / 3, 0), 'Bad user signature')
     })
   })
 })
