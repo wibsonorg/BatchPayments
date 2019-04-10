@@ -374,32 +374,44 @@ contract('Payments', (addr) => {
       assert.equal(b1, 0)
     })
 
-    it.skip('should reject if wrong payIndex', async () => {
-      let mid = userid[6]
-      let slot = b.instantSlot + 2
-      let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
-      let [addr, balance, lastCollectedPaymentId] = await b.getAccount(mid)
+    it('should reject if payIndex is less or equal to last collected payment ID', async () => {
+      let collectorAccountId = userid[6]
+      let slot = b.instantSlot
+      let amount = await b.getCollectAmount(collectorAccountId, 0, maxPayIndex + 1)
+      let [, , lastCollectedPaymentId] = await b.getAccount(collectorAccountId)
 
-      let fee = Math.floor(amount / 3)
-      let b0 = (await b.balanceOf(mid)).toNumber()
-      let c0 = (await b.balanceOf(id)).toNumber()
-      let d0 = (await b.tokenBalance(acc[1])).toNumber()
+      // 1. Collect once
+      await b.collect(
+        id,
+        slot,
+        collectorAccountId,
+        lastCollectedPaymentId.toNumber(),
+        maxPayIndex + 1,
+        amount / 2,
+        0,
+        acc[1]
+      )
 
+      // 2. Get a free slot
+      slot = b.instantSlot + 1
+
+      // 3. Try to collect again up to same payment ID and (hopefully) fail.
       await assertRequire(
         b.collect(
           id,
           slot,
-          mid,
+          collectorAccountId,
           lastCollectedPaymentId.toNumber(),
           maxPayIndex + 1,
-          amount,
-          amount / 3,
-          acc[1]),
-        'payIndex is not a valid value'
+          amount / 2,
+          0,
+          acc[1]
+        ),
+        'account already collected payments up to payIndex'
       )
     })
 
-    it.skip('should reject if invalid payIndex', async () => {
+    it('should reject if invalid payIndex', async () => {
       let mid = userid[6]
       let slot = b.instantSlot + 2
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
@@ -424,7 +436,7 @@ contract('Payments', (addr) => {
       )
     })
 
-    it.skip('should reject if invalid to-id', async () => {
+    it('should reject if invalid to-id', async () => {
       let mid = userid[6]
       let slot = b.instantSlot + 2
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
@@ -438,7 +450,7 @@ contract('Payments', (addr) => {
       await assertRequire(b.collect(id, slot, 1000000, 0, 1, amount, amount / 3, acc[1]), 'to must be a valid account id')
     })
 
-    it.skip('should reject invalid signature/wrong fromPayIndex', async () => {
+    it('should reject invalid signature/wrong fromPayIndex', async () => {
       let mid = userid[7]
       let slot = b.instantSlot + 2
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
