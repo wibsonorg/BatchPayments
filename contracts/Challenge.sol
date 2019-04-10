@@ -107,14 +107,16 @@ library Challenge {
         }
     }
 
-    /// @dev Process payData, inspecting the list of ids, accumulating the amount for
-    ///    each entry of `id`.
-    ///   `payData` includes 2 header bytes, followed by n bytesPerId-bytes entries.
-    ///   `payData` format: [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
-    /// @param payData List of payees of a specific Payment, with the above format.
-    /// @param id ID to look for in `payData`
-    /// @param amount amount per occurrence of `id` in `payData`
-    /// @return the amount sum for all occurrences of `id` in `payData`
+    /**
+     * @dev Process payData, inspecting the list of ids, accumulating the amount for
+     *    each entry of `id`.
+     *   `payData` includes 2 header bytes, followed by n bytesPerId-bytes entries.
+     *   `payData` format: [byte 0xff][byte bytesPerId][delta 0][delta 1]..[delta n-1]
+     * @param payData List of payees of a specific Payment, with the above format.
+     * @param id ID to look for in `payData`
+     * @param amount amount per occurrence of `id` in `payData`
+     * @return the amount sum for all occurrences of `id` in `payData`
+     */
     function getPayDataSum(bytes memory payData, uint id, uint amount) public pure returns (uint sum) {
         require(payData.length > 0, "no payData provided");
 
@@ -145,9 +147,11 @@ library Challenge {
         }
     }
 
-    /// @dev calculates the number of accounts included in payData
-    /// @param payData efficient binary representation of a list of accountIds
-    /// @return number of accounts present
+    /**
+     * @dev calculates the number of accounts included in payData
+     * @param payData efficient binary representation of a list of accountIds
+     * @return number of accounts present
+     */
     function getPayDataCount(bytes payData) public pure returns (uint) {
         // payData includes a 2 byte header and a list of ids
         // [0xff][bytesPerId]
