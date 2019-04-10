@@ -9,6 +9,9 @@ coverage
 build
 build_webpack
 
+# Node xmlHttpRequest
+.node-xmlhttprequest*
+
 # misc
 .DS_Store
 .env
