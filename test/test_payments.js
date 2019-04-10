@@ -411,32 +411,28 @@ contract('Payments', (addr) => {
       )
     })
 
-    it('should reject if invalid payIndex', async () => {
-      let mid = userid[6]
+    it('should reject if payIndex is invalid', async () => {
+      let collectorAccountId = userid[6]
       let slot = b.instantSlot + 2
-      let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
-      let [addr, balance, lastCollectedPaymentId] = await b.getAccount(mid)
-
-      let fee = Math.floor(amount / 3)
-      let b0 = (await b.balanceOf(mid)).toNumber()
-      let c0 = (await b.balanceOf(id)).toNumber()
-      let d0 = (await b.tokenBalance(acc[1])).toNumber()
+      let amount = await b.getCollectAmount(collectorAccountId, 0, maxPayIndex + 1)
+      let [, , lastCollectedPaymentId] = await b.getAccount(collectorAccountId)
+      const tooHighPayIndex = (await b.getPaymentsLength()) + 1
 
       await assertRequire(
         b.collect(
           id,
           slot,
-          mid,
+          collectorAccountId,
           lastCollectedPaymentId.toNumber(),
-          (await b.getPaymentsLength()) + 100,
+          tooHighPayIndex,
           amount,
           amount / 3,
           acc[1]),
-        'invalid payIndex'
+        'invalid payIndex, payments is not that long yet'
       )
     })
 
-    it('should reject if invalid to-id', async () => {
+    it.only('should reject if invalid to-id', async () => {
       let mid = userid[6]
       let slot = b.instantSlot + 2
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
