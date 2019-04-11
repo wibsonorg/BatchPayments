@@ -11,13 +11,19 @@ const { TruffleArtifactAdapter } = require('@0x/sol-trace')
 
 const projectRoot = ''
 const defaultFromAddress = '0x5409ed021d9299bf6814279a6a1411a7e866a631'
-const isVerbose = true
+const partialConfig = {
+  ignoreFilesGlobs: [
+    '**/contracts/TestHelper.sol',
+    '**/contracts/MassExitLib.sol'
+  ],
+  isVerbose: true
+}
 const artifactAdapter = new TruffleArtifactAdapter(projectRoot, solcVersion)
 
 global.coverageSubprovider = new CoverageSubprovider(
   artifactAdapter,
   defaultFromAddress,
-  isVerbose
+  partialConfig
 )
 
 provider.addProvider(global.coverageSubprovider)
