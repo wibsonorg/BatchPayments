@@ -158,23 +158,28 @@ contract Payments is Accounts {
         return true;
     }
 
-    /// @dev release a slot used for the collect channel game, if the challenge game has ended.
-    /// @param delegate id of the account requesting the release operation
-    /// @param slot id of the slot requested for the duration of the challenge game
+    /**
+     * @dev release a slot used for the collect channel game, if the challenge 
+     *      game has ended.
+     * @param delegate id of the account requesting the release operation
+     * @param slot id of the slot requested for the duration of the challenge game
+     */
     function freeSlot(uint32 delegate, uint32 slot) public {
         require(isAccountOwner(delegate), "only delegate can call");
         _freeSlot(delegate, slot);
     }
 
-    /// @dev let users claim pending balance associated with prior transactions
-    /// @param delegate id of the delegate account performing the operation on the name of the user.
-    /// @param slotId Individual slot used for the challenge game.
-    /// @param toAccountId Destination of the collect operation.
-    /// @param payIndex payIndex of the first payment index not covered by this application.
-    /// @param declaredAmount amount of tokens owed to this user account
-    /// @param fee fee in tokens to be paid for the end user help.
-    /// @param destination Address to withdraw the full account balance.
-    /// @param signature An R,S,V ECDS signature provided by a user.
+    /** 
+     * @dev let users claim pending balance associated with prior transactions
+     * @param delegate id of the delegate account performing the operation on the name of the user.
+     * @param slotId Individual slot used for the challenge game.
+     * @param toAccountId Destination of the collect operation.
+     * @param payIndex payIndex of the first payment index not covered by this application.
+     * @param declaredAmount amount of tokens owed to this user account
+     * @param fee fee in tokens to be paid for the end user help.
+     * @param destination Address to withdraw the full account balance.
+     * @param signature An R,S,V ECDS signature provided by a user.
+     */
     function collect(
         uint32 delegate,
         uint32 slotId,
@@ -185,7 +190,8 @@ contract Payments is Accounts {
         address destination,
         bytes memory signature
     )
-    public{
+    public
+    {
         require(isAccountOwner(delegate), "invalid delegate");
         _freeSlot(delegate, slotId);
         Account memory acc = accounts[delegate];
@@ -366,35 +372,51 @@ contract Payments is Accounts {
         emit ChallengeFailed(delegate, slot);
     }
 
-    /// @dev release a slot used for the collect channel game, if the challenge game has ended.
-    ///      This function is private. There is a public version
-    /// @param delegate id of the account requesting the release operation
-    /// @param slot id of the slot requested for the duration of the challenge game
+    /**
+     * @dev Releases a slot used by the collect channel game, only when the game is finished.
+     *      This does three things:
+     *        1. Empty the slot
+     *        2. Pay the delegate
+     *        3. Pay the destinationAccount
+     *      Also, if a token.transfer was requested, transfer the outstanding balance to the specified address.
+     *      This function is private. There is a public version
+     * @param delegate id of the account requesting the release operation
+     * @param slot id of the slot requested for the duration of the challenge game
+     */
     function _freeSlot(uint32 delegate, uint32 slot) private {
         CollectSlot memory s = collects[delegate][slot];
 
+        // If this is slot is empty, nothing else to do here.
         if (s.status == 0) return;
 
-        require(s.status == 1 && block.number >= s.block, "slot not available");
+        // Make sure this slot is ready to be freed.
+        // It should be in the waiting state(1) and with challenge time ran-out
+        require(s.status == 1, "slot not available");
+        require(block.number >= s.block, "slot not available");
 
-        // Refund Stake
-        balanceAdd(delegate, SafeMath.add64(s.delegateAmount, params.collectStake));
-
-        uint64 balance = SafeMath.add64(
-            accounts[s.to].balance,
-            SafeMath.sub64(s.amount, s.delegateAmount));
-
-        uint amount = 0;
-
-        if (s.addr != address(0)) {
-            amount = balance;
-            balance = 0;
-        }
-        accounts[s.to].balance = balance;
-
+        // 1. Put the slot in the empty state
         collects[delegate][slot].status = 0;
 
-        if (amount != 0)
-            require(token.transfer(s.addr, amount), "transfer failed");
+        // 2. Pay the delegate
+        // This includes the stake as well as fees and other tokens reserved during collect()
+        // [delegateAmount + stake] => delegate
+        balanceAdd(delegate, SafeMath.add64(s.delegateAmount, params.collectStake));
+
+        // 3. Pay the destination account
+        // [amount - delegateAmount] => to
+        uint64 balance = SafeMath.sub64(s.amount, s.delegateAmount);
+
+        // was a transfer requested?
+        if (s.addr != address(0))
+        {
+            // empty the account balance
+            balance = SafeMath.add64(balance, accounts[s.to].balance);
+            accounts[s.to].balance = 0;
+            if (balance != 0)
+                require(token.transfer(s.addr, balance), "transfer failed");
+        } else
+        {
+            balanceAdd(s.to, balance);
+        }
     }
 }
