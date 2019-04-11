@@ -18,3 +18,7 @@ jobs:
       name: "Unit tests"
     - script: npm run test:coverage
       name: "Unit tests with coverage report"
+
+after_success:
+  - npm run coverage:report
+  - codecov
