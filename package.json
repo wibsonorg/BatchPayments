@@ -14,7 +14,7 @@
     "lint:js:fix": "standard --fix || :",
     "lint:sol": "solhint contracts/**/*.sol || :",
     "test": "scripts/test.sh",
-    "test:coverage": "truffle test --network coverage",
+    "test:coverage": "TEST_COVERAGE=true truffle test --network coverage && npm run coverage:report",
     "coverage:report": "istanbul report html"
   },
   "keywords": [],
