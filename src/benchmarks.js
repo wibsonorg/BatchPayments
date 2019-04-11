@@ -79,7 +79,7 @@ async function bulkReg (count) {
 }
 
 async function registerPayment (amount, fee, count, lockingKeyHash, name) {
-  let list = utils.randomIds(count, max)
+  let list = utils.randomIds(count, max, 'batpay tests seed')
 
   let [, t] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
   addStat(name, t.gasUsed)
