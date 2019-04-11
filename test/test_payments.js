@@ -57,7 +57,7 @@ contract('Payments', (addr) => {
 
     beforeEach(async () => {
       // create a list of 100 random ids
-      list = utils.randomIds(100, 50000)
+      list = utils.randomIds(100, 50000, 'batpay tests seed')
       pay_data = utils.getPayData(list)
       total_amount = amount_each * list.length + fee
 

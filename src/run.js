@@ -59,7 +59,7 @@ async function doStuff () {
     let balance = await bp.balanceOf.call(id)
     console.log('balance=' + balance)
 
-    let list = utils.randomIds(ids, 500000)
+    let list = utils.randomIds(ids, 500000, 'batpay tests seed')
     list[0] = id1
     let data = utils.getPayData(list)
 
