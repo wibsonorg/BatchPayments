@@ -98,20 +98,20 @@ describe('merkle lib', () => {
     it('should match solidity\'s eval proofs', async function () {
       let v = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
       let tree = merkle.merkle(v)
-      
+
       for (let i = 0; i < v.length; i++) {
         let proof = merkle.getProof(tree, i)
         let key = 0
         let pp = proof.map(x => { return x.v })
-        
+
         for (let j = proof.length - 1; j >= 0; j--) {
           key = key * 2
           if (proof[j].d == 'l') key = key + 1
         }
-        
+
         let x = await testhelper.getProofRootHash.call(pp, key, toLeftPaddedBytes32(v[i]))
         assert.equal(tree.roothash, x)
-        
+
         x = await testhelper.getProofRootHash.call(pp, key, v[i])
         assert.notEqual(tree.roothash, x, "should fail when not encoded correctly")
       }

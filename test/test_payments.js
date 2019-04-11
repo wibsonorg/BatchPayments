@@ -1,4 +1,4 @@
-/* global contract:true before:true describe:true it:true beforeEach:true */
+
 var StandardToken = artifacts.require('StandardToken')
 var BatPay = artifacts.require('BatPay')
 const catchRevert = require('./exceptions').catchRevert
@@ -21,9 +21,9 @@ async function skipBlocks (n) {
   for (let i = 0; i < n; i++) { await v[i] }
 }
 
-contract('Payments', (addr) => {
-  let a0 = addr[0]
-  let a1 = addr[1]
+contract('Payments', (accounts) => {
+  let a0 = accounts[0]
+  let a1 = accounts[1]
 
   let bp, tAddress, st
   const newAccountFlag = new BigNumber(2).pow(256).minus(1)
@@ -223,9 +223,8 @@ contract('Payments', (addr) => {
     })
   })
 
-  describe('collect', (accounts) => {
+  describe('collect', () => {
     let b, id
-    let acc
     let userid = []
     let payid = []
     let nUsers = 10
@@ -234,14 +233,13 @@ contract('Payments', (addr) => {
 
     before(async () => {
       b = new bat.BP(bp, st)
-      acc = addr
 
       await b.init()
-      let [mainId, receipt] = await b.deposit(100000, -1, acc[0])
+      let [mainId, receipt] = await b.deposit(100000, -1, accounts[0])
       id = mainId
 
       for (let i = 0; i < nUsers; i++) {
-        let [ id, t ] = await b.register(acc[0])
+        let [ id, t ] = await b.register(accounts[0])
         userid.push(id)
       }
 
@@ -336,15 +334,15 @@ contract('Payments', (addr) => {
       let fee = Math.floor(amount / 3)
       let b0 = (await b.balanceOf(mid)).toNumber()
       let c0 = (await b.balanceOf(id)).toNumber()
-      let d0 = (await b.tokenBalance(acc[1])).toNumber()
+      let d0 = (await b.tokenBalance(accounts[1])).toNumber()
 
-      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, acc[1])
+      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, accounts[1])
       await utils.skipBlocks(b.challengeBlocks)
       await b.freeSlot(id, slot)
 
       let b1 = (await b.balanceOf(mid)).toNumber()
       let c1 = (await b.balanceOf(id)).toNumber()
-      let d1 = (await b.tokenBalance(acc[1])).toNumber()
+      let d1 = (await b.tokenBalance(accounts[1])).toNumber()
 
       assert.equal(d0 + amount - fee, d1)
       assert.equal(c0 + fee, c1)
@@ -358,11 +356,11 @@ contract('Payments', (addr) => {
       let fee = Math.floor(amount / 3)
       let b0 = (await b.balanceOf(mid)).toNumber()
       let c0 = (await b.balanceOf(id)).toNumber()
-      let d0 = (await b.tokenBalance(acc[1])).toNumber()
+      let d0 = (await b.tokenBalance(accounts[1])).toNumber()
 
-      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, acc[1])
+      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, accounts[1])
       let b1 = (await b.balanceOf(mid)).toNumber()
-      let d1 = (await b.tokenBalance(acc[1])).toNumber()
+      let d1 = (await b.tokenBalance(accounts[1])).toNumber()
 
       await utils.skipBlocks(b.challengeBlocks)
       await b.freeSlot(id, slot)
@@ -380,7 +378,7 @@ contract('Payments', (addr) => {
       let amount = await b.getCollectAmount(collectorAccountId, 0, maxPayIndex + 1)
       let [, , lastCollectedPaymentId] = await b.getAccount(collectorAccountId)
 
-      await assertRequire(b.collect(id, slot, collectorAccountId, lastCollectedPaymentId.toNumber() - 1, maxPayIndex + 1, amount, amount / 3, acc[1]))
+      await assertRequire(b.collect(id, slot, collectorAccountId, lastCollectedPaymentId.toNumber() - 1, maxPayIndex + 1, amount, amount / 3, accounts[1]))
     })
 
     it('should reject if payIndex is invalid', async () => {
@@ -399,7 +397,7 @@ contract('Payments', (addr) => {
           tooHighPayIndex,
           amount,
           amount / 3,
-          acc[1]),
+          accounts[1]),
         'invalid payIndex, payments is not that long yet'
       )
     })
@@ -411,7 +409,7 @@ contract('Payments', (addr) => {
       const invalidCollectorId = 123454321
 
       await assertRequire(
-        b.collect(id, slot, invalidCollectorId, 0, 1, amount, amount / 3, acc[1]),
+        b.collect(id, slot, invalidCollectorId, 0, 1, amount, amount / 3, accounts[1]),
         'toAccountId must be a valid account id'
       )
     })

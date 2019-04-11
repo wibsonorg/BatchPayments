@@ -12,7 +12,6 @@ const merkle = lib.merkle
 var globalDebug = false
 
 var b, id, challenger
-var acc
 var userid = []
 var payid = []
 var nUsers = 10
@@ -92,29 +91,24 @@ async function challenge (delegate, slot, challenger, list, index, payList, stop
   }
 }
 
-// before(async function () {
-
-// })
-
 contract('challenge', (accounts) => {
   before(async function () {
     await utils.skipBlocks(1)
     let ins = await utils.getInstances()
 
     b = new bat.BP(ins.bp, ins.token)
-    acc = accounts
 
     await b.init()
-    let [mainId, receipt] = await b.deposit(100000, -1, acc[0])
+    let [mainId, receipt] = await b.deposit(100000, -1, accounts[0])
     id = mainId
 
-    await b.tokenTransfer(acc[0], acc[1], 1000)
+    await b.tokenTransfer(accounts[0], accounts[1], 1000)
 
-    let [ch, receipt2] = await b.deposit(1000, -1, acc[1])
+    let [ch, receipt2] = await b.deposit(1000, -1, accounts[1])
     challenger = ch
 
     for (let i = 0; i < nUsers; i++) {
-      let [ id, t ] = await b.register(acc[0])
+      let [ id, t ] = await b.register(accounts[0])
       userid.push(id)
     }
   })
