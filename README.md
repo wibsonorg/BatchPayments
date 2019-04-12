@@ -36,39 +36,39 @@ In addition, it includes many relevant features, like meta-transactions for end-
 - Batch-Payments Using zk-Snarks: Scalability through verifiable offchain computation (see [6]).
 
 ## Getting started
-### Using docker
+### Setup
+##### Using docker
 Setup docker, then run `docker-compose up` to get truffle & ganache-cli running.
 Then, in a different terminal, run `./docker-run.sh`
 
-### Alternatively install truffle
-- Install truffle@4 locally
-- Install ganache or ganache-cli.
-
+##### Local installation
+Install dependencies:
+```
+$ npm i
+```
 ### Using Batchpayments
-Run the following commands to get ganache started
+Run the test suite to verify everything is going smoothly:
 ```
-npm install
-ganache-cli
+npm run test
 ```
-Then, in a different terminal, execute the following commands to get BP deployed and to verify everything is going smoothly
+To run a development client use `ganache-cli`:
 ```
-truffle deploy
-truffle test
+$ npx ganache-cli
 ```
-
 **Simple example**
 Run the following command to complete a couple of basic operations on BP
-`truffle exec src/run.js`
+
+    $ npx truffle exec src/run.js
 
 **Getting Benchmark Data**
 The following command will exeute BatchPayments and measure gas usage, producing a detailed report
 
-```truffle exec src/benchmarks.js```
+    $ npx truffle exec src/benchmarks.js
 
 **Complete Walkthrough**
 Take a look at *src/demo.js* for a detailed exploration of most BP features.
 
-```truffle exec src/demo.js```
+    $ npx truffle exec src/demo.js
 
 
 ## Detailed description
