@@ -8,14 +8,7 @@ var test
 
 async function skipBlocks (n) {
   console.log('skipping ' + n + ' blocks')
-  let v = []
-  for (let i = 0; i < n; i++) { v.push(test.skip()) }
-
-  for (let i = 0; i < n; i++) { await v[i] }
-}
-
-function calcSignature () {
-
+  await utils.skipBlocks(n)
 }
 
 async function doStuff () {
