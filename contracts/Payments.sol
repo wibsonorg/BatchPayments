@@ -158,17 +158,6 @@ contract Payments is Accounts {
         return true;
     }
 
-    /**
-     * @dev release a slot used for the collect channel game, if the challenge 
-     *      game has ended.
-     * @param delegate id of the account requesting the release operation
-     * @param slot id of the slot requested for the duration of the challenge game
-     */
-    function freeSlot(uint32 delegate, uint32 slot) public {
-        require(isAccountOwner(delegate), "only delegate can call");
-        _freeSlot(delegate, slot);
-    }
-
     /** 
      * @dev let users claim pending balance associated with prior transactions
      * @param delegate id of the delegate account performing the operation on the name of the user.
@@ -193,7 +182,7 @@ contract Payments is Accounts {
     public
     {
         require(isAccountOwner(delegate), "invalid delegate");
-        _freeSlot(delegate, slotId);
+        freeSlot(delegate, slotId);
         Account memory acc = accounts[delegate];
         // Check toAccountId is valid
         require(isValidId(toAccountId), "toAccountId must be a valid account id");
@@ -379,11 +368,10 @@ contract Payments is Accounts {
      *        2. Pay the delegate
      *        3. Pay the destinationAccount
      *      Also, if a token.transfer was requested, transfer the outstanding balance to the specified address.
-     *      This function is private. There is a public version
      * @param delegate id of the account requesting the release operation
      * @param slot id of the slot requested for the duration of the challenge game
      */
-    function _freeSlot(uint32 delegate, uint32 slot) private {
+    function freeSlot(uint32 delegate, uint32 slot) public {
         CollectSlot memory s = collects[delegate][slot];
 
         // If this is slot is empty, nothing else to do here.
