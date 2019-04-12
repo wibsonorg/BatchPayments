@@ -9,8 +9,6 @@ import "./SafeMath.sol";
  */
 contract TestHelper {
 
-    function skip() public {}
-
     /**
      * @dev wrapper. see `Merkle` contract
      */
