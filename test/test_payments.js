@@ -407,6 +407,8 @@ contract('Payments', (accounts) => {
       let slot = b.instantSlot + 2
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
       const invalidCollectorId = 123454321
+      // We need a valid address to sign the collect transaction.
+      b.ids[invalidCollectorId] = accounts[0]
 
       await assertRequire(
         b.collect(id, slot, invalidCollectorId, 0, 1, amount, amount / 3, accounts[1]),

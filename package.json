@@ -39,6 +39,7 @@
   },
   "standard": {
     "globals": [
+      "after",
       "assert",
       "before",
       "beforeEach",
