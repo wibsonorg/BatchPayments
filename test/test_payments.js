@@ -14,13 +14,6 @@ const merkle = lib.merkle
 
 var test
 
-async function skipBlocks (n) {
-  let v = []
-  for (let i = 0; i < n; i++) { v.push(test.skip()) }
-
-  for (let i = 0; i < n; i++) { await v[i] }
-}
-
 contract('Payments', (accounts) => {
   let a0 = accounts[0]
   let a1 = accounts[1]
