@@ -8,5 +8,5 @@ RUN mkdir /src
 WORKDIR /src
 
 # Install Truffle
-RUN apt-get update && apt-get -y install vim curl wget git less
+RUN apt-get update && apt-get -y install vim curl wget git less netcat
 RUN yarn global add truffle@4 ganache-cli truffle-assertions

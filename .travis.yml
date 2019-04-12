@@ -1,25 +1,29 @@
 dist: xenial
 language: node_js
+sudo: false
 
 node_js:
   - '8'
 
-env: 
-  - WORKING_DIR=.
+env:
+  global:
+    secure: Hn9i85xD6uDMvWs/wdtLMJDViEkQyxTDR+viMXOzf4bnSV67tMXbYsumQxxtbyEpdnz5JCmKbZMufBdwD+mK7ktpwI+6RSmEhoVoyVXUvmKzjabLWeHEYdcK+RNgy9tHdRP014A5AmN4q9w380c9DiHcc1E7fN+4fm1WqIwbrxMHovsZXMwKIY6Nekahx9wM4c1Ct0z3nzWyb58OwYGBUYpOlDA2hKLGATT1o/fzofa92DKi6RfZx/arAIKUMqDOJbCMzdHy62Q7I5R1YaUwVbEuCJmefaKWN97SDDezCOGIyFw9JxWXh1KRB7l2u2lgXx0kcc9mq+NPa+yOkUSK1BqqhGaNa8RQt3Km5ZmWmAee9WDYIa9lQ0KZ2XQKNm9ndVamCEw7dT+B0YW5tKrfqPVLQfctgge6g0L8lm+kLZdWaYT8Te2T0XUwM2jP9rG27KewzPZt2/XhBgFMSk+9MjXEwTOZYi4DXY4mareR+KZXf73J/84aoEX+cH8t5zBSQPrNqxmw4rD71NhIx3cqV54MNf97Cn4ZQ4T9Hov0xvHlyEg7jNQJH3BpE/hJPHv1/ksdpYqyolDAC1aUnKKOEtZBEOU72zicZHi9y2fRw8gwakhRRXNG37fOzYuKJG6AxsYAJP8oC5B+mcDBFYoYqjtVVlWHvUWOlFrWlroBeVA=
 
 cache:
   directories:
-    - "$WORKING_DIR/node_modules"
+    - node_modules
 
-before_install: npm i -g npm@6.1.0
+jobs:
+  include:
+    - stage: test
+      script: npm run lint
+      name: "Lint"
+    - script: npm run test
+      name: "Unit tests"
+    - script: npm run test:coverage
+      name: "Unit tests with coverage report"
 
-install:
-  - cd $WORKING_DIR
-  - npm install
+after_success:
+  - npm run coverage:report
+  - bash <(curl -s https://codecov.io/bash)
 
-before_script:
-  - npm run lint
-#  - npm run test:coverage
-#  - bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info
-
-script: npm run test
