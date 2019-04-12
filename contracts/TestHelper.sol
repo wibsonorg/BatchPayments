@@ -12,22 +12,6 @@ contract TestHelper {
     function skip() public {}
 
     /**
-     * @dev prefix a bytes32 value with "\x19Ethereum Signed Message:"
-     *      and hash the result
-     */
-    function toEthSignedMessageHash(bytes32 _hash)
-        public
-        pure
-        returns (bytes32)
-    {
-        // 32 is the length in bytes of hash,
-        // enforced by the type signature above
-        return keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)
-        );
-    }
-
-    /**
      * @dev wrapper. see `Merkle` contract
      */
     function combinedHash(bytes32 a, bytes32 b) public pure returns (bytes32) {
@@ -39,26 +23,6 @@ contract TestHelper {
      */
     function getProofRootHash(bytes32[] memory proof, uint256 key, bytes32 value) public pure returns (bytes32) {
         return Merkle.getProofRootHash(proof, key, value);
-    }
-
-    /**
-     * TODO: complete this one
-     * @dev TBC
-     */
-    function test(uint y, bytes memory x) public pure returns (uint256) {
-        uint256 ret = y;
-        for (uint i = 0; i < x.length && i < 32; i++) ret = ret * 256 + uint(x[i]);
-
-        return ret;
-    }
-
-    /**
-     * TODO: complete this one
-     * @dev TBC
-     */
-    function testlen(uint y, bytes memory x) public pure returns (uint256) {
-        if (y == 1234) return 0;
-        return x.length;
     }
 
     /**
