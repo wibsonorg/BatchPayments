@@ -5,9 +5,13 @@ node_modules
 # testing
 coverage
 
-# production
+# builds
 build
 build_webpack
+.0x-artifacts
+
+# Node xmlHttpRequest
+.node-xmlhttprequest*
 
 # misc
 .DS_Store

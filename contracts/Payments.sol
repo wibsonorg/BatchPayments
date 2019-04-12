@@ -19,7 +19,7 @@ contract Payments is Accounts {
     );
 
     event PaymentUnlocked(uint indexed payIndex, bytes key);
-
+    event PaymentRefunded(uint32 beneficiaryAccountId, uint64 amountRefunded);
     /**
      * Event for collection logging. Off-chain monitoring services may listen
      * to this event to trigger challenges.
@@ -39,8 +39,6 @@ contract Payments is Accounts {
     event Challenge4(uint indexed delegate, uint indexed slot);
     event ChallengeSuccess(uint indexed delegate, uint indexed slot);
     event ChallengeFailed(uint indexed delegate, uint indexed slot);
-
-    uint8 public constant PAY_DATA_HEADER_MARKER = 0xff; // marker in payData header
 
     Payment[] public payments;
     mapping (uint32 => mapping (uint32 => CollectSlot)) public collects;
@@ -88,7 +86,7 @@ contract Payments is Accounts {
         p.greatestAccountId = SafeMath.add32(p.smallestAccountId, newCount);
         p.lockTimeoutBlockNumber = SafeMath.add64(block.number, params.unlockBlocks);
         p.paymentDataHash = keccak256(abi.encodePacked(payData));
-        p.totalNumberOfPayees = SafeMath.add32(getPayDataCount(payData), newCount);
+        p.totalNumberOfPayees = SafeMath.add32(Challenge.getPayDataCount(payData), newCount);
 
         require(p.totalNumberOfPayees < params.maxTransfer, "too many payees, should be less than config maxTransfer");
 
@@ -140,21 +138,23 @@ contract Payments is Accounts {
         require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
-        Payment memory p = payments[payIndex];
-
-        require(p.totalNumberOfPayees > 0, "payment already refunded");
+        Payment memory payment = payments[payIndex];
+        require(payment.totalNumberOfPayees > 0, "payment already refunded");
 
         uint64 total = SafeMath.add64(
-            SafeMath.mul64(p.totalNumberOfPayees, p.amount),
-            p.fee);
+            SafeMath.mul64(payment.totalNumberOfPayees, payment.amount),
+            payment.fee
+        );
 
-        p.totalNumberOfPayees = 0;
-        p.fee = 0;
-        p.amount = 0;
-        payments[payIndex] = p;
+        payment.totalNumberOfPayees = 0;
+        payment.fee = 0;
+        payment.amount = 0;
+        payments[payIndex] = payment;
 
         // Complete refund
-        balanceAdd(p.fromAccountId, total);
+        balanceAdd(payment.fromAccountId, total);
+        emit PaymentRefunded(payment.fromAccountId, total);
+
         return true;
     }
 
@@ -364,30 +364,6 @@ contract Payments is Accounts {
     {
         Challenge.challenge_failed(collects[delegate][slot], params, accounts);
         emit ChallengeFailed(delegate, slot);
-    }
-
-    /// @dev calculates the number of accounts included in payData
-    /// @param payData efficient binary representation of a list of accountIds
-    /// @return number of accounts present
-    function getPayDataCount(bytes payData) internal pure returns (uint) {
-        // payData includes a 2 byte header and a list of ids
-        // [0xff][bytesPerId]
-
-        uint len = payData.length;
-        require(len >= 2, "payData length should be >= 2");
-        require(uint8(payData[0]) == PAY_DATA_HEADER_MARKER, "payData header missing");
-        uint bytesPerId = uint(payData[1]);
-        require(bytesPerId > 0, "second byte of payData should be positive");
-
-        // substract header bytes
-        len -= 2;
-
-        // remaining bytes should be a multiple of bytesPerId
-        require(len % bytesPerId == 0,
-        "payData length is invalid, all payees must have same amount of bytes (payData[1])");
-
-        // calculate number of records
-        return SafeMath.div(len, bytesPerId);
     }
 
     /// @dev release a slot used for the collect channel game, if the challenge game has ended.

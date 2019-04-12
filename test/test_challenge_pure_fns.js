@@ -4,6 +4,17 @@ const { getChallengeData } = require('../lib/bat')
 const { getPayData } = require('../lib/utils')
 
 const assertRevert = (promise, message) => reverts(promise, ErrorType.REVERT, message)
+const itBehavesLikeAPayDataValidator = (fn) => {
+  it('rejects when the payData has wrong format', async () => {
+    await assertRevert(fn('0x'), 'must fail when payData has zero length')
+    await assertRevert(fn('0x00040000000a00000005'), 'must fail when payData header is missing')
+    await assertRevert(fn('0xfff40000000a00000005'), 'must fail when bytesPerId field is negative')
+    await assertRevert(fn('0xff0400000a000005'), 'must fail when record size is lower than expected')
+    await assertRevert(fn('0xff04000000000a0000000005'), 'must fail when record is greater than expected')
+    await assertRevert(fn('0xff04000000a000000000005'), 'must fail when record size is inconsistent')
+  })
+}
+
 let challenge
 
 contract('Challenge', () => {
@@ -79,23 +90,22 @@ contract('Challenge', () => {
       const result = await challenge.getPayDataSum(payData, 30, amount)
       assert.equal(Number(result), 20, 'wrong summarization')
     })
-    it('returns 0 when the id is not present in payData', async () => {
+    it('returns zero when the id is not present in payData', async () => {
       const result = await challenge.getPayDataSum(payData, 20, amount)
       assert.equal(Number(result), 0, 'wrong summarization')
     })
-    it('rejects when the payData has wrong format', async () => {
-      await assertRevert(
-        challenge.getPayDataSum('0x', 30, amount),
-        'must fail when payData has zero length'
-      )
-      await assertRevert(
-        challenge.getPayDataSum('0xff0400000a000005', 30, amount),
-        'must fail when record size is lower than expected'
-      )
-      await assertRevert(
-        challenge.getPayDataSum('0xff04000000000a0000000005', 30, amount),
-        'must fail when record is greater than expected'
-      )
+    itBehavesLikeAPayDataValidator(pd => challenge.getPayDataSum(pd, 30, amount))
+  })
+
+  describe('getPayDataCount', () => {
+    it('returns the record count', async () => {
+      const result = await challenge.getPayDataCount(getPayData([5, 15, 25]))
+      assert.equal(Number(result), 3, 'wrong payData count')
     })
+    it('returns zero when there are no records present in payData', async () => {
+      const result = await challenge.getPayDataCount('0xff04')
+      assert.equal(Number(result), 0, 'wrong payData count')
+    })
+    itBehavesLikeAPayDataValidator(pd => challenge.getPayDataCount(pd))
   })
 })
