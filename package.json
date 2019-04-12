@@ -40,9 +40,11 @@
   "standard": {
     "globals": [
       "after",
+      "artifacts",
       "assert",
       "before",
       "beforeEach",
+      "BigNumber",
       "contract",
       "describe",
       "it",
