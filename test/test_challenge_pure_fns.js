@@ -3,7 +3,8 @@ const Challenge = artifacts.require('Challenge')
 const { getChallengeData } = require('../lib/bat')
 const { getPayData } = require('../lib/utils')
 
-const assertRevert = (promise, message) => reverts(promise, ErrorType.REVERT, message)
+const assertRevert = (promise, message) => reverts(promise, ErrorType.REVERT, message);
+
 const itBehavesLikeAPayDataValidator = (fn) => {
   it('rejects when the payData has wrong format', async () => {
     await assertRevert(fn('0x'), 'must fail when payData has zero length')
@@ -13,7 +14,7 @@ const itBehavesLikeAPayDataValidator = (fn) => {
     await assertRevert(fn('0xff04000000000a0000000005'), 'must fail when record is greater than expected')
     await assertRevert(fn('0xff04000000a000000000005'), 'must fail when record size is inconsistent')
   })
-}
+};
 
 let challenge
 
@@ -108,4 +109,16 @@ contract('Challenge', () => {
     })
     itBehavesLikeAPayDataValidator(pd => challenge.getPayDataCount(pd))
   })
+
+  describe('recoverHelper', () => {
+    it('Should return 0x0 if signature has wrong length', async () => {
+      const result = await challenge.recoverHelper('0x123', '0x1234');
+      assert.equal(Number(result), 0, 'wrong recovered address');
+    });
+
+    it('Should return 0x0 if version v is not correct', async () => {
+      const result = await challenge.recoverHelper('0x123', '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa05');
+      assert.equal(Number(result), 0, 'wrong recovered address');
+    });
+  });
 })
