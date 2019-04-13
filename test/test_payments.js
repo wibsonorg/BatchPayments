@@ -409,7 +409,7 @@ contract('Payments', (accounts) => {
       )
     })
 
-    it('should reject invalid signature/wrong fromPayIndex', async () => {
+    it('should reject wrong fromPayIndex / Invalid Signature', async () => {
       let collectorId = userid[7]
       let slot = b.instantSlot + 2
       let amount = await b.getCollectAmount(collectorId, 0, maxPayIndex + 1)
@@ -429,6 +429,7 @@ contract('Payments', (accounts) => {
         'Bad user signature'
       )
     })
+  
       it('Should not allow race condition on collect', async () => {
         let stake = b.collectStake
         let [id, r0] = await b.deposit(2*stake+1, -1, a0)
@@ -442,6 +443,6 @@ contract('Payments', (accounts) => {
         assert.isBelow(b1, b0)
 
     })
-    
+
   })
 })
