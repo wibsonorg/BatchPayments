@@ -212,7 +212,8 @@ contract Payments is Accounts {
         require(payments[payIndex - 1].lockTimeoutBlockNumber < block.number,
             "cannot collect payments that can be unlocked");
 
-        // Check if fee is valid
+        // Check if declaredAmount and fee are valid
+        require(declaredAmount <= params.maxCollectAmount, "declaredAmount is too big");
         require(fee <= declaredAmount, "fee is too big, should be smaller than declaredAmount");
 
         // Prepare the challenge slot

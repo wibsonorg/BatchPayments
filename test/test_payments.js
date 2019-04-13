@@ -444,5 +444,28 @@ contract('Payments', (accounts) => {
 
     })
 
+    it('Should reject collects over maxCollectAmount', async () => {
+      let stake = b.collectStake
+      let [id, r0] = await b.deposit(2*stake+1, -1, a0)
+      let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
+      utils.skipBlocks(b.unlockBlocks)
+
+       let b0 = (await b.balanceOf(id)).toNumber()      
+      await assertRequire( b.collect(id, 0, id, 0, pid+1, b.maxCollectAmount+1, 0, 0),
+        "declaredAmount is too big") 
+    })
+
+    it('Should accept collects with just maxCollectAmount', async () => {
+      let stake = b.collectStake
+      let [id, r0] = await b.deposit(2*stake+1, -1, a0)
+      let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
+      utils.skipBlocks(b.unlockBlocks)
+
+      let b0 = (await b.balanceOf(id)).toNumber()      
+      await b.collect(id, 0, id, 0, pid+1, b.maxCollectAmount, 0, 0)   
+    })
+
+
   })
+
 })
