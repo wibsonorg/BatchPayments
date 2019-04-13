@@ -63,6 +63,7 @@ contract Data {
         uint32 massExitBalanceStepBlocks;
         uint64 massExitStake;
         uint64 massExitChallengeStake;
+        uint64 maxCollectAmount;
     }
 
     Config public params;

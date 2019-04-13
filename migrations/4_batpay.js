@@ -19,6 +19,7 @@ module.exports = function (deployer) {
       2, // challengeStepBlocks
       500, // collectStake
       100, // challengeStake
-      5) // unlockBlocks
+      5,    // unlockBlocks
+      1000000)  // maxCollectAmount
   })
 }

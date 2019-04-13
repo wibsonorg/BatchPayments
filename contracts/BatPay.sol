@@ -35,7 +35,8 @@ contract BatPay is Payments {
         uint32 challengeStepBlocks,
         uint64 collectStake,
         uint64 challengeStake,
-        uint32 unlockBlocks
+        uint32 unlockBlocks,
+        uint64 maxCollectAmount
     )
         public
     {
@@ -49,5 +50,6 @@ contract BatPay is Payments {
         params.collectStake = collectStake;
         params.challengeStake = challengeStake;
         params.unlockBlocks = unlockBlocks;
+        params.maxCollectAmount = maxCollectAmount;
     }
 }
