@@ -1,4 +1,3 @@
-
 var StandardToken = artifacts.require('StandardToken')
 var BatPay = artifacts.require('BatPay')
 const catchRevert = require('./exceptions').catchRevert
@@ -12,16 +11,16 @@ var { utils, bat } = lib
 const TestHelper = artifacts.require('./TestHelper')
 const merkle = lib.merkle
 
-var test
 
-contract('Payments', (accounts) => {
-  let a0 = accounts[0]
-  let a1 = accounts[1]
+contract('Payments', (addr) => {
+  let a0 = addr[0]
+  let a1 = addr[1]
 
   let bp, tAddress, st
   const newAccountFlag = new BigNumber(2).pow(256).minus(1)
 
   before(async function () {
+    this.timeout(10000)
     await utils.skipBlocks(1)
     let ret = await utils.getInstances()
     bp = ret.bp
@@ -50,7 +49,7 @@ contract('Payments', (accounts) => {
 
     beforeEach(async () => {
       // create a list of 100 random ids
-      list = utils.randomIds(100, 50000, 'batpay tests seed')
+      list = utils.randomIds(100, 50000)
       pay_data = utils.getPayData(list)
       total_amount = amount_each * list.length + fee
 
@@ -218,6 +217,7 @@ contract('Payments', (accounts) => {
 
   describe('collect', () => {
     let b, id
+    let acc
     let userid = []
     let payid = []
     let nUsers = 10
@@ -226,13 +226,14 @@ contract('Payments', (accounts) => {
 
     before(async () => {
       b = new bat.BP(bp, st)
+      acc = web3.eth.accounts
 
       await b.init()
-      let [mainId, receipt] = await b.deposit(100000, -1, accounts[0])
+      let [mainId, receipt] = await b.deposit(100000, -1, acc[0])
       id = mainId
 
       for (let i = 0; i < nUsers; i++) {
-        let [ id, t ] = await b.register(accounts[0])
+        let [ id, t ] = await b.register(acc[0])
         userid.push(id)
       }
 
@@ -266,7 +267,6 @@ contract('Payments', (accounts) => {
 
       assert.equal(b0 + amount, b1)
     })
-
     it('should reuse slot', async () => {
       let mid = userid[2]
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex / 2)
@@ -283,7 +283,6 @@ contract('Payments', (accounts) => {
       assert.equal(b0 + amount, b1)
       assert.equal(b1 + amount2, b2)
     })
-
     it('should pay fee on instant-collect', async () => {
       let mid = userid[3]
       let slot = b.instantSlot + 1
@@ -301,7 +300,6 @@ contract('Payments', (accounts) => {
       assert.equal(b0 + amount - fee, b1)
       assert.equal(c0 + fee, c1)
     })
-
     it('should pay fee', async () => {
       let mid = userid[4]
       let slot = 2
@@ -319,7 +317,6 @@ contract('Payments', (accounts) => {
       assert.equal(b0 + amount - fee, b1)
       assert.equal(c0 + fee, c1)
     })
-
     it('should withdraw if requested', async () => {
       let mid = userid[5]
       let slot = 3
@@ -327,21 +324,20 @@ contract('Payments', (accounts) => {
       let fee = Math.floor(amount / 3)
       let b0 = (await b.balanceOf(mid)).toNumber()
       let c0 = (await b.balanceOf(id)).toNumber()
-      let d0 = (await b.tokenBalance(accounts[1])).toNumber()
+      let d0 = (await b.tokenBalance(acc[1])).toNumber()
 
-      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, accounts[1])
+      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, acc[1])
       await utils.skipBlocks(b.challengeBlocks)
       await b.freeSlot(id, slot)
 
       let b1 = (await b.balanceOf(mid)).toNumber()
       let c1 = (await b.balanceOf(id)).toNumber()
-      let d1 = (await b.tokenBalance(accounts[1])).toNumber()
+      let d1 = (await b.tokenBalance(acc[1])).toNumber()
 
       assert.equal(d0 + amount - fee, d1)
       assert.equal(c0 + fee, c1)
       //  assert.equal(b1, 0);
     })
-
     it('should withdraw if requested instant', async () => {
       let mid = userid[6]
       let slot = b.instantSlot + 2
@@ -349,11 +345,11 @@ contract('Payments', (accounts) => {
       let fee = Math.floor(amount / 3)
       let b0 = (await b.balanceOf(mid)).toNumber()
       let c0 = (await b.balanceOf(id)).toNumber()
-      let d0 = (await b.tokenBalance(accounts[1])).toNumber()
+      let d0 = (await b.tokenBalance(acc[1])).toNumber()
 
-      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, accounts[1])
+      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, acc[1])
       let b1 = (await b.balanceOf(mid)).toNumber()
-      let d1 = (await b.tokenBalance(accounts[1])).toNumber()
+      let d1 = (await b.tokenBalance(acc[1])).toNumber()
 
       await utils.skipBlocks(b.challengeBlocks)
       await b.freeSlot(id, slot)
@@ -364,70 +360,87 @@ contract('Payments', (accounts) => {
       assert.equal(c0 + fee, c1)
       assert.equal(b1, 0)
     })
-
-    it('should reject if payIndex is less or equal to last collected payment ID', async () => {
-      let collectorAccountId = userid[6]
-      let slot = b.instantSlot
-      let amount = await b.getCollectAmount(collectorAccountId, 0, maxPayIndex + 1)
-      let [, , lastCollectedPaymentId] = await b.getAccount(collectorAccountId)
-
-      await assertRequire(b.collect(id, slot, collectorAccountId, lastCollectedPaymentId.toNumber() - 1, maxPayIndex + 1, amount, amount / 3, accounts[1]))
-    })
-
-    it('should reject if payIndex is invalid', async () => {
-      let collectorId = userid[6]
-      let slot = b.instantSlot + 2
-      let amount = await b.getCollectAmount(collectorId, 0, maxPayIndex + 1)
-      let [, , lastCollectedPaymentId] = await b.getAccount(collectorId)
-      const tooHighPayIndex = (await b.getPaymentsLength()) + 1
-
-      await assertRequire(
-        b.collect(
-          id,
-          slot,
-          collectorId,
-          lastCollectedPaymentId.toNumber(),
-          tooHighPayIndex,
-          amount,
-          amount / 3,
-          accounts[1]),
-        'invalid payIndex, payments is not that long yet'
-      )
-    })
-
-    it('should reject if invalid toAccountId', async () => {
+    it('should reject if wrong payIndex', async () => {
       let mid = userid[6]
       let slot = b.instantSlot + 2
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
-      const invalidCollectorId = 123454321
-      // We need a valid address to sign the collect transaction.
-      b.ids[invalidCollectorId] = accounts[0]
+      let [addr, balance, lastCollectedPaymentId] = await b.getAccount(mid)
 
-      await assertRequire(
-        b.collect(id, slot, invalidCollectorId, 0, 1, amount, amount / 3, accounts[1]),
-        'toAccountId must be a valid account id'
-      )
+      let fee = Math.floor(amount / 3)
+      let b0 = (await b.balanceOf(mid)).toNumber()
+      let c0 = (await b.balanceOf(id)).toNumber()
+      let d0 = (await b.tokenBalance(acc[1])).toNumber()
+
+      assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, maxPayIndex + 1, amount, amount / 3, acc[1]), 'payIndex is not a valid value')
+    })
+    it('should reject if invalid payIndex', async () => {
+      let mid = userid[6]
+      let slot = b.instantSlot + 2
+      let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
+      let [addr, balance, lastCollectedPaymentId] = await b.getAccount(mid)
+
+      let fee = Math.floor(amount / 3)
+      let b0 = (await b.balanceOf(mid)).toNumber()
+      let c0 = (await b.balanceOf(id)).toNumber()
+      let d0 = (await b.tokenBalance(acc[1])).toNumber()
+
+      assertRequire(b.collect(id, slot, mid, lastCollectedPaymentId, (await b.getPaymentsLength()) + 100, amount, amount / 3, acc[1]), 'invalid payIndex')
+    })
+
+    it('should reject if invalid to-id', async () => {
+      let mid = userid[6]
+      let slot = b.instantSlot + 2
+      let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
+      let [addr, balance, lastCollectedPaymentId] = await b.getAccount(mid)
+
+      let fee = Math.floor(amount / 3)
+      let b0 = (await b.balanceOf(mid)).toNumber()
+      let c0 = (await b.balanceOf(id)).toNumber()
+      let d0 = (await b.tokenBalance(acc[1])).toNumber()
+
+      assertRequire(b.collect(id, slot, 1000000, 0, 1, amount, amount / 3, acc[1]), 'to must be a valid account id')
+    })
+    it('should reject invalid signature/wrong fromPayIndex', async () => {
+      let mid = userid[7]
+      let slot = b.instantSlot + 2
+      let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
+      let [addr, balance, lastCollectedPaymentId] = await b.getAccount(mid)
+
+      let fee = Math.floor(amount / 3)
+      let b0 = (await b.balanceOf(mid)).toNumber()
+      let c0 = (await b.balanceOf(id)).toNumber()
+      let d0 = (await b.tokenBalance(acc[1])).toNumber()
+
+      assertRequire(b.collect(id, slot, 1000000, lastCollectedPaymentId + 1, maxPayIndex, amount, amount / 3, 0), 'Bad user signature')
     })
 
     it('should reject invalid signature/wrong fromPayIndex', async () => {
-      let collectorId = userid[7]
+      let mid = userid[7]
       let slot = b.instantSlot + 2
-      let amount = await b.getCollectAmount(collectorId, 0, maxPayIndex + 1)
-      const invalidFromPayIndex = 123454321
+      let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
+      let [addr, balance, lastCollectedPaymentId] = await b.getAccount(mid)
 
-      await assertRequire(
-        b.collect(
-          id,
-          slot,
-          collectorId,
-          invalidFromPayIndex,
-          maxPayIndex,
-          amount,
-          amount / 3,
-          0
-        ),
-        'Bad user signature'
-      )
+      let fee = Math.floor(amount / 3)
+      let b0 = (await b.balanceOf(mid)).toNumber()
+      let c0 = (await b.balanceOf(id)).toNumber()
+      let d0 = (await b.tokenBalance(acc[1])).toNumber()
+
+      assertRequire(b.collect(id, slot, 1000000, lastCollectedPaymentId + 1, maxPayIndex, amount, amount / 3, 0), 'Bad user signature')
     })
+
+    it('Should not allow race condition on collect', async () => {
+      let stake = b.collectStake
+      let [id, r0] = await b.deposit(2*stake+1, -1, a0)
+      let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
+      utils.skipBlocks(b.unlockBlocks)
+
+      let b0 = (await b.balanceOf(id)).toNumber()      
+      await b.collect(id, b.instantSlot, id, 0, pid+1, stake, 0, 0)
+      let b1 = (await b.balanceOf(id)).toNumber()
+      
+      assert.isBelow(b1, b0)
+
+  })
+
   })
 })
