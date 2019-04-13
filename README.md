@@ -1,4 +1,4 @@
-# BatchPayment :anger:
+# BatPay :anger: Gas conscious batch payments.
 [![Build Status](https://travis-ci.com/wibsonorg/BatchPayments.svg?token=k5H2Cw9NKvrr4RbRXrEA&branch=master)](https://travis-ci.com/wibsonorg/BatchPayments)
 [![codecov.io](https://codecov.io/gh/wibsonorg/BatchPayments/branch/master/graphs/badge.svg)](https://codecov.io/gh/wibsonorg/BatchPayments/)
 
