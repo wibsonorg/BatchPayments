@@ -74,7 +74,7 @@ async function bulkReg (count) {
   let bulk = await b.bulkRegister(list)
   addStat('bulkRegister-' + count, bulk.recp.gasUsed)
 
-  let [, t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.smallestAccountId)
+  let [,,t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.smallestAccountId)
   addStat('claimBulkRegistrationId', t.gasUsed)
 }
 
