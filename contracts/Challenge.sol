@@ -97,13 +97,9 @@ library Challenge {
 
         // solium-disable-next-line security/no-inline-assembly
         assembly {
-            amount := mod(
-                mload(add(data, add(8, i))),
-                mod1)
+            amount := mod( mload(add(data, add(8, i))), mod1 )
 
-            payIndex := mod(
-                mload(add(data, add(12, i))),
-                mod2)
+            payIndex := mod( mload(add(data, add(12, i))), mod2 )
         }
     }
 
