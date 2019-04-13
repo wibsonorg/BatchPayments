@@ -106,7 +106,7 @@ There are four data structures maintained on contract storage.  Accounts, paymen
 
 **CollectSlot** is a map used to open and manage the collect-challenge game, it stores several attributes associated with the challenge state.
 
-### Workflows
+### Mechanics
 
 #### Contract Instantiation
 When the BatchPayment contract is instantiated, the address of a contract implementing the IERC20 interface is supplied. This address is stored to be used later, and cannot be changed. All deposit and withdrawal operations are performed through this address.
@@ -129,3 +129,7 @@ At a later time, the claimBulkRegistrationId function can be used to assign an a
 
 **Registration on initial deposit**
 In addition, specifying -1 as an account number while sending a token deposit to the BatchPayment contract, will register a new account.
+
+#### Payments funds collection
+
+See [Collect mechanics](docs/collect_mechanics.md).
