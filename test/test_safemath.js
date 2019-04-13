@@ -234,7 +234,59 @@ describe('SafeMath', function () {
         const a = new BigNumber('12345')
         const b = new BigNumber('85937')
 
-        await assertFailure(testhelper.sub(a, b))
+        await reverts(testhelper.sub(a, b))
+      })
+    })
+
+    describe('mul256', function () {
+      it('multiplies correctly', async function () {
+        const a = new BigNumber('12345')
+        const b = new BigNumber('85937')
+        const c = a.mul(b)
+
+        c.should.be.bignumber.equal(await testhelper.mul(a, b))
+      })
+
+      it('reverts on overflow', async function () {
+        const a = MAX_UINT256
+        const b = new BigNumber('2')
+
+        await reverts(testhelper.mul(a, b))
+      })
+
+      it('multiplies by zero correctly', async function () {
+        const a = new BigNumber('12345')
+        const b = new BigNumber('0');
+
+        (await testhelper.mul(a, b)).should.be.bignumber.equal(0);
+        (await testhelper.mul(b, a)).should.be.bignumber.equal(0)
+      })
+    })
+    describe('div256', function () {
+      it('divides correctly when remainder == 0', async () => {
+        const a = new BigNumber('12345')
+        const b = new BigNumber('5')
+        const c = a.div(b)
+
+        c.should.be.bignumber.equal(await testhelper.div(a, b))
+      })
+
+      it('divides correctly when remainder != 0', async () => {
+        const a = new BigNumber('12345')
+        const b = new BigNumber('4')
+        const c = a.div(b)
+
+        c.should.be.bignumber.equal(await testhelper.div(a, b))
+      })
+
+      it('reverts when divisor is zero', async () => {
+        await fails(testhelper.div(12345, 0), ErrorType.INVALID_OPCODE)
+      })
+
+      it('divides zero correctly', async function () {
+        const a = new BigNumber('12345');
+
+        (await testhelper.div(0, a)).should.be.bignumber.equal(0)
       })
     })
   })
