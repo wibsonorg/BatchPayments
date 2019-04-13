@@ -429,5 +429,19 @@ contract('Payments', (accounts) => {
         'Bad user signature'
       )
     })
+      it('Should not allow race condition on collect', async () => {
+        let stake = b.collectStake
+        let [id, r0] = await b.deposit(2*stake+1, -1, a0)
+        let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
+        utils.skipBlocks(b.unlockBlocks)
+
+        let b0 = (await b.balanceOf(id)).toNumber()      
+        await b.collect(id, b.instantSlot, id, 0, pid+1, stake, 0, 0)
+        let b1 = (await b.balanceOf(id)).toNumber()
+        
+        assert.isBelow(b1, b0)
+
+    })
+    
   })
 })
