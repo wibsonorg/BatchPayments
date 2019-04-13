@@ -34,17 +34,17 @@ describe('SafeMath', function () {
     it('mul64 should check uint64 overflow', async () => {
       let a = 2 ** 32
       let b = 2 ** 32
-      await assertFailure(testhelper.mul64.call(a, b))
+      await reverts(testhelper.mul64.call(a, b))
     })
 
     it('div64 should fail when divide by zero', async () => {
-      await assertFailure(testhelper.div64.call(10, 0))
+      await fails(testhelper.div64.call(10, 0), ErrorType.INVALID_OPCODE)
     })
 
     it('div64 should fail with remainder larger than uint64', async () => {
       let a = 8 ** 64
       let b = 2 ** 64
-      await assertFailure(testhelper.div64.call(a, b))
+      await reverts(testhelper.div64.call(a, b))
     })
 
     it('div64 happy case with reaminder = 0', async () => {
@@ -64,7 +64,7 @@ describe('SafeMath', function () {
     it('sub64 should check uint64 overflow', async () => {
       let a = 10 ** 64
       let b = 2 ** 64
-      await assertFailure(testhelper.sub64.call(a, b))
+      await reverts(testhelper.sub64.call(a, b))
     })
 
     it('sub64 with positive result', async () => {
@@ -77,7 +77,7 @@ describe('SafeMath', function () {
     it('sub64 cannot produce a negative result', async () => {
       let a = 4
       let b = 14
-      await assertFailure(testhelper.sub64.call(a, b))
+      await reverts(testhelper.sub64.call(a, b))
     })
 
     it('sub64 with result = 0', async () => {
@@ -90,7 +90,7 @@ describe('SafeMath', function () {
     it('add64 should check uint64 overflow', async () => {
       let a = 10 ** 64
       let b = 10 ** 64
-      await assertFailure(testhelper.add64.call(a, b))
+      await reverts(testhelper.add64.call(a, b))
     })
 
     it('add64 should happy case', async () => {
@@ -118,17 +118,17 @@ describe('SafeMath', function () {
     it('mul32 should check uint32 overflow', async () => {
       let a = 2 ** 16
       let b = 2 ** 16
-      await assertFailure(testhelper.mul32.call(a, b))
+      await reverts(testhelper.mul32.call(a, b))
     })
 
     it('div32 should fail when divide by zero', async () => {
-      await assertFailure(testhelper.div32.call(10, 0))
+      await fails(testhelper.div32.call(10, 0), ErrorType.INVALID_OPCODE)
     })
 
     it('div32 should fail with remainder larger than uint32', async () => {
       let a = 8 ** 32
       let b = 2 ** 32
-      await assertFailure(testhelper.div32.call(a, b))
+      await reverts(testhelper.div32.call(a, b))
     })
 
     it('div32 happy case with remainder = 0', async () => {
@@ -148,7 +148,7 @@ describe('SafeMath', function () {
       it('should check uint32 overflow', async () => {
         let a = 10 ** 32
         let b = 2 ** 32
-        await assertFailure(testhelper.sub32.call(a, b))
+        await reverts(testhelper.sub32.call(a, b))
       })
 
       it('with positive result', async () => {
@@ -161,7 +161,7 @@ describe('SafeMath', function () {
       it('cannot produce a negative result', async () => {
         let a = 4
         let b = 14
-        await assertFailure(testhelper.sub32.call(a, b))
+        await reverts(testhelper.sub32.call(a, b))
       })
 
       it('with result = 0', async () => {
@@ -190,7 +190,7 @@ describe('SafeMath', function () {
       it('fails on overflow', async () => {
         const a = MAX_UINT32
         const b = new BigNumber('1')
-        await assertFailure(testhelper.add32.call(a, b))
+        await reverts(testhelper.add32.call(a, b))
       })
     })
   })
@@ -217,11 +217,11 @@ describe('SafeMath', function () {
         const a = MAX_UINT256
         const b = new BigNumber('1')
 
-        await assertFailure(testhelper.add(a, b))
+        await reverts(testhelper.add(a, b))
       })
     })
 
-    describe('add256', function () {
+    describe('sub256', function () {
       it('subtracts correctly', async function () {
         const a = new BigNumber('12345')
         const b = new BigNumber('85937')
