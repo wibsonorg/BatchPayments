@@ -206,7 +206,6 @@ contract Payments is Accounts {
             require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
         }
 
-
         // Check payIndex is valid
         require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex, payments is not that long yet");
         require(payIndex > tacc.lastCollectedPaymentId, "account already collected payments up to payIndex");
@@ -262,90 +261,7 @@ contract Payments is Accounts {
 
         emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
     }
-
-    /** 
-     * @dev let users claim pending balance associated with prior transactions
-     * @param delegate id of the delegate account performing the operation on the name of the user.
-     * @param slotId Individual slot used for the challenge game.
-     * @param toAccountId Destination of the collect operation.
-     * @param payIndex payIndex of the first payment index not covered by this application.
-     * @param declaredAmount amount of tokens owed to this user account
-     * @param fee fee in tokens to be paid for the end user help.
-     * @param destination Address to withdraw the full account balance.
-     * @param signature An R,S,V ECDS signature provided by a user.
-     */
-    function collectOld(
-        uint32 delegate,
-        uint32 slotId,
-        uint32 toAccountId,
-        uint32 payIndex,
-        uint64 declaredAmount,
-        uint64 fee,
-        address destination,
-        bytes memory signature
-    )
-    public
-    {
-        require(isAccountOwner(delegate), "invalid delegate");
-        freeSlot(delegate, slotId);
-        Account memory acc = accounts[delegate];
-        // Check toAccountId is valid
-        require(isValidId(toAccountId), "toAccountId must be a valid account id");
-        Account memory tacc = accounts[toAccountId];
-        require(tacc.owner != 0, "account registration has to be completed");
-        // Check payIndex is valid
-        require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex, payments is not that long yet");
-        require(payIndex > tacc.lastCollectedPaymentId, "account already collected payments up to payIndex");
-        require(payments[payIndex - 1].lockTimeoutBlockNumber < block.number,
-            "cannot collect payments that can be unlocked");
-        // Check if fee is valid
-        require(fee <= declaredAmount, "fee is too big, should be smaller than declaredAmount");
-        CollectSlot storage sl = collects[delegate][slotId];
-        sl.delegate = delegate;
-        if (delegate != toAccountId) {
-            // If "toAccountId" != delegate, check who signed this transaction
-            bytes32 hash =
-            keccak256(
-            abi.encodePacked(
-                address(this), delegate, toAccountId, tacc.lastCollectedPaymentId,
-                payIndex, declaredAmount, fee, destination
-            ));
-            require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
-        }
-        sl.minPayIndex = tacc.lastCollectedPaymentId;
-        sl.maxPayIndex = payIndex;
-        uint64 needed = params.collectStake;
-        // check if this is an instant collect
-        if (slotId >= instantSlot) {
-            sl.delegateAmount = declaredAmount;
-            tacc.balance = SafeMath.add64(tacc.balance, SafeMath.sub64(declaredAmount, fee));
-            sl.addr = address(0);
-            needed = SafeMath.add64(needed, SafeMath.sub64(declaredAmount, fee));
-        } else
-        {   // not instant-collect
-            sl.addr = destination;
-            sl.delegateAmount = fee;
-        }
-        // Check amount & balance
-        require(acc.balance >= needed, "not enough funds");
-     
-        sl.amount = declaredAmount;
-        sl.to = toAccountId;
-        sl.block = SafeMath.add64(block.number, params.challengeBlocks);
-        sl.status = 1;
-        tacc.lastCollectedPaymentId = uint32(payIndex);
-        accounts[toAccountId] = tacc;
-        
-        balanceSub(delegate, needed);
-     
-        // check if the user is withdrawing its balance
-        if (destination != address(0) && slotId >= instantSlot) {
-            accounts[toAccountId].balance = 0;
-            require(token.transfer(destination, tacc.balance), "transfer failed");
-        }
-        emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
-    }
-
+    
     /**
      * @dev gets the number of payments issued
      * @return returns the size of the payments array.
