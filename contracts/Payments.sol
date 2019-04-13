@@ -223,13 +223,16 @@ contract Payments is Accounts {
         }
         // Check amount & balance
         require(acc.balance >= needed, "not enough funds");
-        balanceSub(delegate, needed);
+     
         sl.amount = declaredAmount;
         sl.to = toAccountId;
         sl.block = SafeMath.add64(block.number, params.challengeBlocks);
         sl.status = 1;
         tacc.lastCollectedPaymentId = uint32(payIndex);
         accounts[toAccountId] = tacc;
+        
+        balanceSub(delegate, needed);
+     
         // check if the user is withdrawing its balance
         if (destination != address(0) && slotId >= instantSlot) {
             accounts[toAccountId].balance = 0;
