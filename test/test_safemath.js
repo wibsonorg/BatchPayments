@@ -20,7 +20,7 @@ describe('SafeMath', function () {
 
   before(async () => {
     testhelper = await TestHelper.deployed()
-    return await testhelper
+    return testhelper
   })
 
   describe('uint64 arithmetic', () => {
