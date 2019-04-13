@@ -1,10 +1,12 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.25;
+
 import "./Payments.sol";
 import "./SafeMath.sol";
 import "./MassExitLib.sol";
 
-/// @title MassExit, lets a group of users exit the contract together to minimize
-/// associated transaction costs
+/// @title MassExit, lets a group of users exit the contract together to
+///        minimize associated transaction costs. This contract is mainly a
+///        wrapper to `MassExitLib`
 
 contract MassExit is Payments {
     mapping (uint32 => mapping(uint32 => MassExitLib.ExitSlot)) exits;
@@ -12,19 +14,29 @@ contract MassExit is Payments {
     address defaultMonitor;
     mapping (uint32 => address) monitor;
 
+    /// @dev modifier to validate that mass exit is enabled
     modifier enabled() {
         require(defaultMonitor != address(0), "massExit is disabled");
         _;
     }
 
+    /// TODO: complete this one
+    /// @dev Specify params for mass exit
+    /// @param massExitIdBlocks TBC
+    /// @param massExitIdStepBlocks TBC
+    /// @param massExitBalanceBlocks TBC
+    /// @param massExitBalanceStepBlocks TBC
+    /// @param massExitStake TBC
+    /// @param massExitChallengeStake TBC
+
     function setExitParams(
         uint32 massExitIdBlocks,
         uint32 massExitIdStepBlocks,
         uint32 massExitBalanceBlocks,
-        uint32 massExitBalanceStepBlocks,  
+        uint32 massExitBalanceStepBlocks,
         uint64 massExitStake,
-        uint64 massExitChallengeStake) 
-        public 
+        uint64 massExitChallengeStake)
+        public
     {
         require(massExitIdBlocks != 0 && params.massExitIdBlocks == 0);
 
@@ -36,14 +48,23 @@ contract MassExit is Payments {
         params.massExitChallengeStake = massExitChallengeStake;
     }
 
+    /// @dev sets the default monitor
+    /// @param _monitor Address of the monitor
+
     function setDefaultMonitor(address _monitor) public {
         require(msg.sender == owner);
         defaultMonitor = _monitor;
     }
 
-    function setMonitor(uint32 id, address _monitor) public onlyOwnerId(id) {
+    /// @dev sets a new monitor
+    /// @param id The id of the contract to exit
+    /// @param _monitor Address of the monitor
+
+    function setMonitor(uint32 id, address _monitor) public onlyAccountOwner(id) {
         monitor[id] = _monitor;
     }
+
+    /// @dev see `MassExitLib` method
 
     function startExit(
         uint32 delegate,
@@ -51,18 +72,20 @@ contract MassExit is Payments {
         bytes sellerList,
         address destination
     )
-    public
-    enabled()
-    onlyOwnerId(delegate) 
+        public
+        enabled()
+        onlyAccountOwner(delegate) 
     {
         MassExitLib.startExit(
-            exits[delegate][exitId], 
-            params, 
-            accounts, 
-            delegate, 
-            sellerList, 
+            exits[delegate][exitId],
+            params,
+            accounts,
+            delegate,
+            sellerList,
             destination);
     }
+
+    /// @dev see `MassExitLib` method
 
     function challengeExitId_1(
         uint32 delegate,
@@ -70,9 +93,9 @@ contract MassExit is Payments {
         uint32 challenger,
         uint32 seller,
         bytes  sellerList
-        ) 
+    )
         public
-        onlyOwnerId(challenger)
+        onlyAccountOwner(challenger)
         validId(delegate)
     {
         MassExitLib.challengeExitId_1(
@@ -85,14 +108,16 @@ contract MassExit is Payments {
         );
     }
 
+    /// @dev see `MassExitLib` method
+
     function challengeExitId_2(
         uint32 delegate,
         uint32 exitId,
         bytes sellerSignature,
         bytes monitorSignature
-        ) 
+    ) 
         public
-        onlyOwnerId(delegate)
+        onlyAccountOwner(delegate)
     {
         uint32 seller = exits[delegate][exitId].seller;
         address mon = monitor[seller];
@@ -108,10 +133,12 @@ contract MassExit is Payments {
         );
     }
 
+    /// @dev see `MassExitLib` method
+
     function challengeExit_success(
         uint32 delegate,
         uint32 exitId
-        ) 
+    ) 
         public
         validId(delegate)
     {
@@ -121,11 +148,12 @@ contract MassExit is Payments {
             accounts);
     }
 
+    /// @dev see `MassExitLib` method
 
     function challengerTimeout(
         uint32 delegate,
         uint32 exitId
-        ) 
+    ) 
         public
         validId(delegate)
     {
@@ -135,26 +163,29 @@ contract MassExit is Payments {
             accounts);
     }
 
+    /// @dev see `MassExitLib` method
+
     function startExitBalance(
-        uint32 delegate, 
-        uint32 exitId) 
-        public 
+        uint32 delegate,
+        uint32 exitId)
+        public
         validId(delegate)
     {
         MassExitLib.startExitBalance(
-            exits[delegate][exitId], 
+            exits[delegate][exitId],
             params
-            );
+        );
     }
 
-    
+    /// @dev see `MassExitLib` method
+
     function challengeExitBalance_3(
         uint32 delegate,
         uint32 exitId,
         uint64 totalBalance
-        ) 
+    ) 
         public
-        onlyOwnerId(delegate) 
+        onlyAccountOwner(delegate)
     {
         MassExitLib.challengeExitBalance_3(
             exits[delegate][exitId],
@@ -163,13 +194,15 @@ contract MassExit is Payments {
         );
     }
 
+    /// @dev see `MassExitLib` method
+
     function challengeExitBalance_4(
         uint32 delegate,
         uint32 exitId,
         uint32 challenger
-        ) 
+    ) 
         public
-        onlyOwnerId(challenger)    
+        onlyAccountOwner(challenger)
         validId(delegate)
     {
         MassExitLib.challengeExitBalance_4(
@@ -180,13 +213,15 @@ contract MassExit is Payments {
         );
     }
 
+    /// @dev see `MassExitLib` method
+
     function challengeExitBalance_5(
         uint32 delegate,
         uint32 exitId,
         bytes balanceList
-        ) 
+    ) 
         public
-        onlyOwnerId(delegate)    
+        onlyAccountOwner(delegate)
     {
         MassExitLib.challengeExitBalance_5(
             exits[delegate][exitId],
@@ -195,18 +230,20 @@ contract MassExit is Payments {
         );
     }
 
+    /// @dev see `MassExitLib` method
+
     function challengeExitBalance_6(
         uint32 delegate,
         uint32 exitId,
         bytes sellerList,
         bytes balanceList,
         uint32 seller
-        ) 
+    ) 
         public
-        validId(delegate)    
+        validId(delegate)
     {
-        require(isOwnerId(exits[delegate][exitId].challenger), "only challenger");
-  
+        require(isAccountOwner(exits[delegate][exitId].challenger), "only challenger");
+
         MassExitLib.challengeExitBalance_6(
             exits[delegate][exitId],
             params,
@@ -216,22 +253,27 @@ contract MassExit is Payments {
         );
     }
 
+    /// @dev see `MassExitLib` method
+
     function challengeExit_collectSuccessful(
         uint32 delegate,
         uint32 slot,
         uint32 exitDelegate,
         uint32 exitId    
-        )
+    )
         public 
-        onlyOwnerId(exitDelegate)
-        onlyOwnerId(delegate)
+        onlyAccountOwner(exitDelegate)
+        onlyAccountOwner(delegate)
     {
         MassExitLib.challengeExit_collectSuccessful(
             collects[delegate][slot],
             exits[exitDelegate][exitId],
             params,
-            accounts);
+            accounts
+        );
     }
+
+    /// @dev see `MassExitLib` method
 
     function challenge_accountClosed(
         uint32 delegate,
@@ -244,7 +286,7 @@ contract MassExit is Payments {
         public
         validId(delegate)
         validId(exitDelegate)
-        onlyOwnerId(challenger)
+        onlyAccountOwner(challenger)
     {
         MassExitLib.challenge_accountClosed(
             collects[delegate][slot],
@@ -254,7 +296,4 @@ contract MassExit is Payments {
             challenger,
             sellerList);
     }
-
-    
-
 }

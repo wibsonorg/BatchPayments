@@ -1,11 +1,13 @@
-pragma solidity ^0.4.10;
+pragma solidity ^0.4.25;
+
 
 import "./SafeMath.sol";
 import "./IERC20.sol";
 
+
 contract StandardToken is IERC20 {
     using SafeMath for uint;
-      
+
     string internal _name;
     string internal _symbol;
     uint8 internal _decimals;
@@ -25,34 +27,38 @@ contract StandardToken is IERC20 {
     function name()
         public
         view
-        returns (string) {
+        returns (string)
+    {
         return _name;
     }
 
     function symbol()
         public
         view
-        returns (string) {
+        returns (string)
+    {
         return _symbol;
     }
 
     function decimals()
         public
         view
-        returns (uint8) {
+        returns (uint8)
+    {
         return _decimals;
     }
 
     function totalSupply()
         public
         view
-        returns (uint256) {
+        returns (uint256)
+    {
         return _totalSupply;
     }
 
     function transfer(address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[msg.sender]);
+        require(_to != address(0), "invalid _to address");
+        require(_value <= balances[msg.sender], "sender does not have enough balance");
         balances[msg.sender] = SafeMath.sub(balances[msg.sender], _value);
         balances[_to] = SafeMath.add(balances[_to], _value);
         emit Transfer(msg.sender, _to, _value);
@@ -64,9 +70,9 @@ contract StandardToken is IERC20 {
     }
 
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[_from]);
-        require(_value <= allowed[_from][msg.sender]);
+        require(_to != address(0), "invalid _to address");
+        require(_value <= balances[_from], "sender does not have enough balance");
+        require(_value <= allowed[_from][msg.sender], "sender does not have enough allowed balance");
 
         balances[_from] = SafeMath.sub(balances[_from], _value);
         balances[_to] = SafeMath.add(balances[_to], _value);
@@ -92,12 +98,7 @@ contract StandardToken is IERC20 {
     }
 
     function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
-        uint oldValue = allowed[msg.sender][_spender];
-        if (_subtractedValue > oldValue) {
-            allowed[msg.sender][_spender] = 0;
-        } else {
-            allowed[msg.sender][_spender] = SafeMath.sub(oldValue, _subtractedValue);
-        }
+        allowed[msg.sender][_spender] = SafeMath.sub(allowed[msg.sender][_spender], _subtractedValue);
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
     }

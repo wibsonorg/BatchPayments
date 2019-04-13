@@ -5,9 +5,13 @@ node_modules
 # testing
 coverage
 
-# production
+# builds
 build
 build_webpack
+.0x-artifacts
+
+# Node xmlHttpRequest
+.node-xmlhttprequest*
 
 # misc
 .DS_Store
@@ -22,3 +26,9 @@ blockchain/history
 #truffle
 .tern-port
 
+# testchain data and passphrases
+config/testchain/data
+config/testchain/secret
+
+# Directory for temporary files
+tmp

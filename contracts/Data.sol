@@ -1,31 +1,35 @@
- pragma solidity ^0.4.24;
-/// @title Data Structures for BatPay: Accounts, Payments & Challenge
+pragma solidity ^0.4.25;
+
 
 import "./IERC20.sol";
 
+
+/**
+ * @title Data Structures for BatPay: Accounts, Payments & Challenge
+ */
 contract Data {
     struct Account {
-        address addr;
+        address owner;
         uint64  balance;
-        uint32  collected;
+        uint32  lastCollectedPaymentId;
     }
 
-    struct BulkRecord {
+    struct BulkRegistration {
         bytes32 rootHash;
-        uint32  n;
-        uint32  minId;
+        uint32  recordCount;
+        uint32  smallestRecordId;
     }
 
     struct Payment {
-        uint32  from;
+        uint32  fromAccountId;
         uint64  amount;
         uint64  fee;
-        uint32  minId;  
-        uint32  maxId;
-        uint32  totalCount;
-        uint64  block;
-        bytes32 hash;
-        bytes32 lock;
+        uint32  smallestAccountId;
+        uint32  greatestAccountId;
+        uint32  totalNumberOfPayees;
+        uint64  lockTimeoutBlockNumber;
+        bytes32 paymentDataHash;
+        bytes32 lockingKeyHash;
         bytes32 metadata;
     }
 
@@ -45,29 +49,28 @@ contract Data {
         bytes32 data;
     }
 
-    struct Params {
-        uint32 maxBulk;                                
-        uint32 maxTransfer;               
-        uint32 challengeBlocks;               
-        uint32 challengeStepBlocks;      
+    struct Config {
+        uint32 maxBulk;
+        uint32 maxTransfer;
+        uint32 challengeBlocks;
+        uint32 challengeStepBlocks;
         uint64 collectStake;
-        uint64 challengeStake;     
-        uint32 unlockBlocks;  
+        uint64 challengeStake;
+        uint32 unlockBlocks;
         uint32 massExitIdBlocks;
         uint32 massExitIdStepBlocks;
         uint32 massExitBalanceBlocks;
-        uint32 massExitBalanceStepBlocks;  
+        uint32 massExitBalanceStepBlocks;
         uint64 massExitStake;
-        uint64 massExitChallengeStake;     
+        uint64 massExitChallengeStake;
+        uint64 maxCollectAmount;
     }
 
-
-    Params public params;
+    Config public params;
     address public owner;
-   
-    uint public constant maxAccount = 2**32-1;      // Maximum account id (32-bits)
-    uint public constant newAccount = 2**256-1;     // Request registration of new account
+
+    uint public constant maxAccountId = 2**32-1;    // Maximum account id (32-bits)
+    uint public constant newAccountFlag = 2**256-1; // Request registration of new account
     uint public constant instantSlot = 32768;
 
-   
 }
