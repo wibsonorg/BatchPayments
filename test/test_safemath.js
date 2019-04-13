@@ -1,19 +1,13 @@
 const chai = require('chai')
 const { MAX_UINT32, MAX_UINT256 } = require('./constants')
 const TestHelper = artifacts.require('./TestHelper')
+const { fails, reverts, ErrorType } = require('truffle-assertions')
+
 chai.use(require('chai-bignumber')(BigNumber)).should()
-
-async function assertFailure (promise) {
-  try {
-    await promise
-  } catch (error) {
-    // we're expecting the assert -> return
-    return
-  }
-
-  // we shouldn't reach this point
-  assert(false, 'operation was expected to fail but succeeded')
-}
+BigNumber.config({
+  ROUNDING_MODE: BigNumber.ROUND_DOWN, // Rounds towards zero, ie. truncate
+  DECIMAL_PLACES: 0 // Integer results
+})
 
 describe('SafeMath', function () {
   var testhelper
