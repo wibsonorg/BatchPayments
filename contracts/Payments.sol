@@ -213,7 +213,7 @@ contract Payments is Accounts {
             "cannot collect payments that can be unlocked");
 
         // Check if declaredAmount and fee are valid
-        require(declaredAmount <= params.maxCollectAmount, "declaredAmount is to big");
+        require(declaredAmount <= params.maxCollectAmount, "declaredAmount is too big");
         require(fee <= declaredAmount, "fee is too big, should be smaller than declaredAmount");
 
         // Prepare the challenge slot

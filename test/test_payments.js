@@ -452,7 +452,7 @@ contract('Payments', (accounts) => {
 
        let b0 = (await b.balanceOf(id)).toNumber()      
       await assertRequire( b.collect(id, 0, id, 0, pid+1, b.maxCollectAmount+1, 0, 0),
-        "declaredAmount is to big") 
+        "declaredAmount is too big") 
     })
 
     it('Should accept collects with just maxCollectAmount', async () => {
