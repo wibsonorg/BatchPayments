@@ -1,6 +1,6 @@
 # BatPay :anger: Gas conscious batch payments.
 [![Build Status](https://travis-ci.com/wibsonorg/BatchPayments.svg?token=k5H2Cw9NKvrr4RbRXrEA&branch=master)](https://travis-ci.com/wibsonorg/BatchPayments)
-[![codecov.io](https://codecov.io/gh/wibsonorg/BatchPayments/branch/master/graphs/badge.svg)](https://codecov.io/gh/wibsonorg/BatchPayments/)
+[![codecov.io](https://codecov.io/gh/wibsonorg/BatchPayments/branch/master/graphs/badge.svg?token=MBTgdNZ5fr)](https://codecov.io/gh/wibsonorg/BatchPayments/)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
 A payment scaling solution to reduce gas costs associated with operating with ERC20 tokens on the ethereum blockchain.
