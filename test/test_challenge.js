@@ -123,11 +123,11 @@ contract('challenge', (accounts) => {
     for (let i = 0; i < nPays; i++) {
       let lockingKeyHash = 0
       if (i == 2) lockingKeyHash = 1
-      let [ pid, t ] = await b.registerPayment(id, 10, 2, userid, lockingKeyHash)
+      let [ pid, t ] = await b.registerPayment(id, 10, 0, userid, lockingKeyHash)
       payid.push(pid)
       if (pid > maxPayIndex) maxPayIndex = pid
     }
-    let [ pid, t ] = await b.registerPayment(id, 10, 2, [id], 0)
+    let [ pid, t ] = await b.registerPayment(id, 10, 0, [id], 0)
     if (pid > maxPayIndex) maxPayIndex = pid
     otherIndex = pid
     await utils.skipBlocks(b.unlockBlocks)
@@ -223,26 +223,26 @@ contract('challenge', (accounts) => {
     let [id, r0] = await b.deposit(2*stake+1, -1, a0)
     let [challenger, r2] = await b.deposit(2*stake+1, -1, a0)
     let [pid, bulk, r1] = await b.registerPaymentWithBulk(id, 1, 0, [id], [a1, a0, a1], 0)
-    
+
     let toId = 1 + bulk.smallestAccountId
-    
+
     await b.claimBulkRegistrationId(bulk, a0, toId)
     await utils.skipBlocks(b.unlockBlocks)
 
     let amount = await b.getCollectAmount(toId, 0, pid+1)
     let data = b.getCollectData(toId, 0, pid + 1)
-    
+
     await b.collect(id, 0, toId, 0, pid + 1, amount, 0, 0)
- 
+
 
     let index = 0
     let payIndex = data[index]
     let payList = b.getPayList(payIndex)
-    
+
 
     await challenge(id, 0, challenger, data, index, payList)
 
     let b1 = (await b.balanceOf(id)).toNumber()
-    
+
 })
 })

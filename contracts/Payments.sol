@@ -72,11 +72,18 @@ contract Payments is Accounts {
     )
         external
     {
-        require(isAccountOwner(fromId), "invalid fromId");
+        require(isAccountOwner(fromId), "Invalid fromId");
+        require(amount > 0, "Invalid amount");
+        require(newCount == 0 || rootHash > 0, "Invalid root hash");
+        require(fee == 0 || lockingKeyHash > 0, "Invalid lock hash");
 
         Payment memory p;
 
         // Prepare a Payment struct
+        p.totalNumberOfPayees = SafeMath.add32(Challenge.getPayDataCount(payData), newCount);
+        require(p.totalNumberOfPayees > 0, "Invalid number of payees, should at least be 1 payee");
+        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees, should be less than config maxTransfer");
+
         p.fromAccountId = fromId;
         p.amount = amount;
         p.fee = fee;
@@ -86,9 +93,6 @@ contract Payments is Accounts {
         p.greatestAccountId = SafeMath.add32(p.smallestAccountId, newCount);
         p.lockTimeoutBlockNumber = SafeMath.add64(block.number, params.unlockBlocks);
         p.paymentDataHash = keccak256(abi.encodePacked(payData));
-        p.totalNumberOfPayees = SafeMath.add32(Challenge.getPayDataCount(payData), newCount);
-
-        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees, should be less than config maxTransfer");
 
         // calculate total cost of payment
         uint64 totalCost = SafeMath.mul64(amount, p.totalNumberOfPayees);
@@ -158,10 +162,10 @@ contract Payments is Accounts {
         return true;
     }
 
-    /** 
+    /**
      * @dev let users claim pending balance associated with prior transactions
             Users ask a delegate to complete the transaction on their behalf,
-            the delegate calculates the apropiate amount (declaredAmount) and 
+            the delegate calculates the apropiate amount (declaredAmount) and
             waits for a possible challenger.
             If this is an instant collect, tokens are transfered immediatly.
      * @param delegate id of the delegate account performing the operation on the name of the user.
@@ -189,7 +193,7 @@ contract Payments is Accounts {
         require(isAccountOwner(delegate), "invalid delegate");
         require(isValidId(toAccountId), "toAccountId must be a valid account id");
 
-        // make sure the game slot is empty (release it if necessary) 
+        // make sure the game slot is empty (release it if necessary)
         freeSlot(delegate, slotId);
 
         Account memory tacc = accounts[toAccountId];
@@ -217,7 +221,7 @@ contract Payments is Accounts {
         require(fee <= declaredAmount, "fee is too big, should be smaller than declaredAmount");
 
         // Prepare the challenge slot
-        CollectSlot storage sl = collects[delegate][slotId];  
+        CollectSlot storage sl = collects[delegate][slotId];
         sl.delegate = delegate;
         sl.minPayIndex = tacc.lastCollectedPaymentId;
         sl.maxPayIndex = payIndex;
@@ -226,13 +230,13 @@ contract Payments is Accounts {
         sl.block = Challenge.getFutureBlock(params.challengeBlocks);
         sl.status = 1;
 
-        // Calculate how many tokens needs the delegate, and setup delegateAmount and addr 
+        // Calculate how many tokens needs the delegate, and setup delegateAmount and addr
         uint64 needed = params.collectStake;
-        
+
         // check if this is an instant collect
         if (slotId >= instantSlot) {
             uint64 declaredAmountLessFee = SafeMath.sub64(declaredAmount, fee);
-            sl.delegateAmount = declaredAmount; 
+            sl.delegateAmount = declaredAmount;
             needed = SafeMath.add64(needed, declaredAmountLessFee);
             sl.addr = address(0);
 
@@ -249,7 +253,7 @@ contract Payments is Accounts {
 
         // Update the lastCollectPaymentId for the toAccount
         accounts[toAccountId].lastCollectedPaymentId = uint32(payIndex);
-        
+
         // Now the delegate Pays
         balanceSub(delegate, needed);
 
@@ -262,7 +266,7 @@ contract Payments is Accounts {
 
         emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
     }
-    
+
     /**
      * @dev gets the number of payments issued
      * @return returns the size of the payments array.

@@ -78,6 +78,37 @@ contract('Payments', (accounts) => {
       assert.equal(b0, b1 + total_amount)
     })
 
+    it('should reject invalid ids', async () => {
+      const from_id = await bp.getAccountsLength.call()
+      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'Invalid fromId')
+    })
+
+    it('should reject amount zero as payment', async () => {
+      const amount_each = 0
+      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'Invalid amount')
+      // check original balance didn't change
+      const b1 = (await bp.balanceOf.call(from_id)).toNumber()
+      assert.equal(b0, b1)
+    })
+
+    it('should reject rootHash zero if newCount > 0', async () => {
+      const new_count = 10
+      const rootHash = 0
+      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'Invalid root hash')
+      // check original balance didn't change
+      const b1 = (await bp.balanceOf.call(from_id)).toNumber()
+      assert.equal(b0, b1)
+    })
+
+    it('should reject fee payment with no lock', async () => {
+      const fee = 10
+      const lockingKeyHash = 0
+      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'Invalid lock hash')
+      // check original balance didn't change
+      const b1 = (await bp.balanceOf.call(from_id)).toNumber()
+      assert.equal(b0, b1)
+    })
+
     it('should accept registerPayment+unlock with good key', async () => {
       let v1 = await bp.registerPayment(from_id, 1, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata)
       let payId = (await bp.getPaymentsLength.call()).toNumber() - 1
@@ -208,7 +239,7 @@ contract('Payments', (accounts) => {
       let balance0 = await bp.balanceOf(from_id)
       let new_count = 10
 
-      let pdata = pay_data = utils.getPayData([])
+      let pdata = utils.getPayData([])
       await bp.registerPayment(from_id, amount_each, fee, pdata, new_count, rootHash, lockingKeyHash, metadata)
       let balance1 = await bp.balanceOf(from_id)
 
@@ -237,7 +268,7 @@ contract('Payments', (accounts) => {
       }
 
       for (let i = 0; i < nPays; i++) {
-        let [ pid, t ] = await b.registerPayment(id, 10, 2, userid, 0)
+        let [ pid, t ] = await b.registerPayment(id, 10, 0, userid, 0)
         payid.push(pid)
         if (pid > maxPayIndex) maxPayIndex = pid
       }
@@ -429,17 +460,17 @@ contract('Payments', (accounts) => {
         'Bad user signature'
       )
     })
-  
+
       it('Should not allow race condition on collect', async () => {
         let stake = b.collectStake
         let [id, r0] = await b.deposit(2*stake+1, -1, a0)
         let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
         utils.skipBlocks(b.unlockBlocks)
 
-        let b0 = (await b.balanceOf(id)).toNumber()      
+        let b0 = (await b.balanceOf(id)).toNumber()
         await b.collect(id, b.instantSlot, id, 0, pid+1, stake, 0, 0)
         let b1 = (await b.balanceOf(id)).toNumber()
-        
+
         assert.isBelow(b1, b0)
 
     })
@@ -450,9 +481,9 @@ contract('Payments', (accounts) => {
       let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
       utils.skipBlocks(b.unlockBlocks)
 
-       let b0 = (await b.balanceOf(id)).toNumber()      
+       let b0 = (await b.balanceOf(id)).toNumber()
       await assertRequire( b.collect(id, 0, id, 0, pid+1, b.maxCollectAmount+1, 0, 0),
-        "declaredAmount is too big") 
+        "declaredAmount is too big")
     })
 
     it('Should accept collects with just maxCollectAmount', async () => {
@@ -461,8 +492,8 @@ contract('Payments', (accounts) => {
       let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
       utils.skipBlocks(b.unlockBlocks)
 
-      let b0 = (await b.balanceOf(id)).toNumber()      
-      await b.collect(id, 0, id, 0, pid+1, b.maxCollectAmount, 0, 0)   
+      let b0 = (await b.balanceOf(id)).toNumber()
+      await b.collect(id, 0, id, 0, pid+1, b.maxCollectAmount, 0, 0)
     })
 
 
