@@ -9,7 +9,7 @@ module.exports = function (deployer, network) {
   deployer.link(Challenge, BatPay)
   deployer.link(MassExitLib, BatPay)
   deployer.then(() => {
-    if(network === "remoteDevelopment") return { address: process.env.wibsonToken }
+    if(network === "remoteDevelopment") return { address: process.env.deployedToken }
     return StandardToken.deployed()
   }).then(token => {
     return deployer.deploy(BatPay,

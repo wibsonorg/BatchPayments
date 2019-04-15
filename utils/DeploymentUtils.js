@@ -19,8 +19,8 @@ exports.getProvider = function getProvider(network, environment) {
   const envConfig = config.environments[environment] || {};
   const infura = `https://${network}.infura.io/v3/${config.infuraToken}`;
   const privKeys = [envConfig.deployPrivateKey];
-  const wibsonToken = [envConfig.wibsonToken];
-  process.env.wibsonToken = wibsonToken
+  const deployedToken = [envConfig.deployedToken];
+  process.env.deployedToken = deployedToken
   // web3-provider-engine is not synced with truffle last version,
   // so we would use just this at the moment
   // return new PrivKeyWalletProvider(privKeys, infura);
