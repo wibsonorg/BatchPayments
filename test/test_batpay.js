@@ -45,7 +45,7 @@ contract('BatPay', (addr) => {
   describe('misc', () => {
     var test
     var unlockBlocks
-    
+
     let a0 = addr[0]
     let a1 = addr[1]
 
@@ -53,7 +53,7 @@ contract('BatPay', (addr) => {
     const newAccountFlag = new BigNumber(2).pow(256).minus(1)
 
     before(async () => {
-      let ret = await utils.getInstances()
+      let ret = await utils.newInstances()
       batPay = ret.bp
       st = ret.token
 
