@@ -297,7 +297,7 @@ library Challenge {
 
         accounts[collectSlot.challenger].balance = SafeMath.add64(
             accounts[collectSlot.challenger].balance,
-            config.collectStake);
+            SafeMath.add64(config.collectStake, config.challengeStake));
 
         collectSlot.status = 0;
     }
