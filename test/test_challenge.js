@@ -123,11 +123,11 @@ contract('challenge', (accounts) => {
     for (let i = 0; i < nPays; i++) {
       let lockingKeyHash = 0
       if (i == 2) lockingKeyHash = 1
-      let [ pid, t ] = await b.registerPayment(id, 10, 2, userid, lockingKeyHash)
+      let [ pid, t ] = await b.registerPayment(id, 10, 0, userid, lockingKeyHash)
       payid.push(pid)
       if (pid > maxPayIndex) maxPayIndex = pid
     }
-    let [ pid, t ] = await b.registerPayment(id, 10, 2, [id], 0)
+    let [ pid, t ] = await b.registerPayment(id, 10, 0, [id], 0)
     if (pid > maxPayIndex) maxPayIndex = pid
     otherIndex = pid
     await utils.skipBlocks(b.unlockBlocks)

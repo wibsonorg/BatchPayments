@@ -17,7 +17,7 @@ contract Accounts is Data {
     Account[] public accounts;
     BulkRegistration[] public bulkRegistrations;
 
-    /** 
+    /**
       * @dev determines whether accountId is valid
       * @param accountId an account id
       * @return boolean
@@ -68,6 +68,7 @@ contract Accounts is Data {
         require(bulkSize > 0, "Bulk size can't be zero");
         require(bulkSize < params.maxBulk, "Cannot register this number of ids simultaneously");
         require(SafeMath.add(accounts.length, bulkSize) <= maxAccountId, "Cannot register: ran out of ids");
+        require(rootHash > 0, "Root hash can't be zero");
 
         emit BulkRegister(bulkSize, accounts.length, bulkRegistrations.length);
         bulkRegistrations.push(BulkRegistration(rootHash, uint32(bulkSize), uint32(accounts.length)));
@@ -88,7 +89,7 @@ contract Accounts is Data {
         uint n = bulkRegistrations[bulkId].recordCount;
         bytes32 rootHash = bulkRegistrations[bulkId].rootHash;
         bytes32 hash = Merkle.getProofRootHash(proof, SafeMath.sub(accountId, smallestAccountId), bytes32(addr));
-        
+
         require(accountId >= smallestAccountId && accountId < smallestAccountId + n,
             "the accountId specified is not part of that bulk registration slot");
         require(hash == rootHash, "invalid Merkle proof");
@@ -113,7 +114,7 @@ contract Accounts is Data {
     /**
      * @dev withdraw tokens from the BatchPayment contract into the original address.
      * @param amount Amount of tokens to withdraw.
-     * @param accountId Id of the user requesting the withdraw. 
+     * @param accountId Id of the user requesting the withdraw.
      */
     function withdraw(uint64 amount, uint256 accountId)
         public
@@ -149,7 +150,7 @@ contract Accounts is Data {
             uint newId = register();
             accounts[newId].balance = amount;
         } else {
-            // existing account  
+            // existing account
             balanceAdd(accountId, amount);
         }
     }
@@ -209,7 +210,7 @@ contract Accounts is Data {
       * @dev gets the number of bulk registrations performed
       * @return the size of the bulkRegistrations array.
       */
-      
+
     function getBulkLength() public view returns (uint) {
         return bulkRegistrations.length;
     }
