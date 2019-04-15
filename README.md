@@ -1,10 +1,13 @@
-# BatchPayment
-## Payment scaling contract
-An intermediary contract to reduce gas costs associated with operating with existing erc20 tokens on the ethereum blockchain.
+# BatPay :anger: Gas conscious batch payments.
+[![Build Status](https://travis-ci.com/wibsonorg/BatchPayments.svg?token=k5H2Cw9NKvrr4RbRXrEA&branch=master)](https://travis-ci.com/wibsonorg/BatchPayments)
+[![codecov.io](https://codecov.io/gh/wibsonorg/BatchPayments/branch/master/graphs/badge.svg?token=MBTgdNZ5fr)](https://codecov.io/gh/wibsonorg/BatchPayments/)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+
+A payment scaling solution to reduce gas costs associated with operating with ERC20 tokens on the ethereum blockchain.
 
 ## Summary
 
-BatchPayment is a proxy scaling solution for the transfer of erc20 tokens. It is suitable for micropayments in one-to-many and few-to-many scenarios, including digital markets, reward and dividends distribution.
+BatchPayment is a proxy contract for the transfer of ERC20 tokens. It is suitable for micropayments in one-to-many and few-to-many scenarios, including digital markets, reward and dividends distribution.
 
 In BatchPayment many similar operations are bundled together into a single transaction in order to optimize gas consumption. In addition, some costly verifications are replaced by a challenge game, pushing most of the computing cost off-chain. This results in a 100x gas reduction in transfer costs, achieving ~1700 tps on the ethereum blockchain.  
 
@@ -82,7 +85,7 @@ Players may interact with BatchPayment in  more than one of these roles, dependi
 The buyer deposits tokens into the BatchPayment contract, and uses her balance to pay sellers.
 
 #### Seller
-The seller participates in several operations with one or many buyers, and collects afterwards her earnings in her account. The balance could be withdrawn into an erc20 token account.
+The seller participates in several operations with one or many buyers, and collects afterwards her earnings in her account. The balance could be withdrawn into an ERC20 token account.
 
 #### Unlocker
 The unlocker looks for a locked payment issued by a buyer, which references a key she possess, and provides the required key in exchange for a fee. This releases the payment to both sellers and unlocker.
@@ -106,7 +109,7 @@ There are four data structures maintained on contract storage.  Accounts, paymen
 
 **CollectSlot** is a map used to open and manage the collect-challenge game, it stores several attributes associated with the challenge state.
 
-### Workflows
+### Mechanics
 
 #### Contract Instantiation
 When the BatchPayment contract is instantiated, the address of a contract implementing the IERC20 interface is supplied. This address is stored to be used later, and cannot be changed. All deposit and withdrawal operations are performed through this address.
@@ -129,3 +132,7 @@ At a later time, the claimBulkRegistrationId function can be used to assign an a
 
 **Registration on initial deposit**
 In addition, specifying -1 as an account number while sending a token deposit to the BatchPayment contract, will register a new account.
+
+#### Payments funds collection
+
+See [Collect mechanics](docs/collect_mechanics.md).

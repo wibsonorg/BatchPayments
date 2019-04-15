@@ -243,6 +243,5 @@ contract('challenge', (accounts) => {
     await challenge(id, 0, challenger, data, index, payList)
 
     let b1 = (await b.balanceOf(id)).toNumber()
-
-})
+  })
 })
