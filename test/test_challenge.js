@@ -223,25 +223,46 @@ contract('challenge', (accounts) => {
     let [id, r0] = await b.deposit(2*stake+1, -1, a0)
     let [challenger, r2] = await b.deposit(2*stake+1, -1, a0)
     let [pid, bulk, r1] = await b.registerPaymentWithBulk(id, 1, 0, [id], [a1, a0, a1], 0)
-
+    
     let toId = 1 + bulk.smallestAccountId
-
+    
     await b.claimBulkRegistrationId(bulk, a0, toId)
     await utils.skipBlocks(b.unlockBlocks)
 
     let amount = await b.getCollectAmount(toId, 0, pid+1)
     let data = b.getCollectData(toId, 0, pid + 1)
-
+    
     await b.collect(id, 0, toId, 0, pid + 1, amount, 0, 0)
-
+ 
 
     let index = 0
     let payIndex = data[index]
     let payList = b.getPayList(payIndex)
-
+    
 
     await challenge(id, 0, challenger, data, index, payList)
 
     let b1 = (await b.balanceOf(id)).toNumber()
-  })
+    
+})
+it('challenger winning should get back both collectStake + challengeStake', async () => {
+  let index = 1
+  let payIndex = data[index]
+  let payList = b.getPayList(payIndex)
+  let b0 = (await b.balanceOf(challenger)).toNumber()
+  await challenge(id, slot, challenger, data, index, payList, stop = 3)
+  let b1 = (await b.balanceOf(challenger)).toNumber()
+  assert.equal(b1-b0, b.collectStake)
+})
+it('delegate winning should get challengeStake', async () => {
+  let index = 1
+  let payIndex = data[index]
+  let payList = b.getPayList(payIndex)
+  let b0 = (await b.balanceOf(id)).toNumber()
+  await challenge(id, slot, challenger, data, index, payList)
+  let b1 = (await b.balanceOf(id)).toNumber()
+  assert.equal(b1-b0, b.challengeStake)
+})
+
+
 })
