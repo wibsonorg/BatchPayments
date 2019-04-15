@@ -11,31 +11,7 @@ var { utils, bat } = lib
 const TestHelper = artifacts.require('./TestHelper')
 const merkle = lib.merkle
 
-var test
-var unlockBlocks
-
 contract('BatPay', (addr) => {
-  let a0 = addr[0]
-  let a1 = addr[1]
-
-  let batPay, tAddress, st
-  const newAccountFlag = new BigNumber(2).pow(256).minus(1)
-
-  before(async () => {
-    let ret = await utils.getInstances()
-    batPay = ret.bp
-    st = ret.token
-
-    test = await TestHelper.new()
-
-    let params = await batPay.params.call()
-
-    unlockBlocks = params[7].toNumber()
-    challengeBlocks = params[3].toNumber()
-    challengeStepBlocks = params[4].toNumber()
-    instantSlot = (await batPay.instantSlot.call()).toNumber()
-  })
-
   describe('input Validation', () => {
     it('cannot create a BatPay with token address at zero', async () => {
       await assertRequire(utils.newInstances({}, 0x0), 'Token address can\'t be zero');
@@ -67,6 +43,30 @@ contract('BatPay', (addr) => {
   });
 
   describe('misc', () => {
+    var test
+    var unlockBlocks
+    
+    let a0 = addr[0]
+    let a1 = addr[1]
+
+    let batPay, tAddress, st
+    const newAccountFlag = new BigNumber(2).pow(256).minus(1)
+
+    before(async () => {
+      let ret = await utils.getInstances()
+      batPay = ret.bp
+      st = ret.token
+
+      test = await TestHelper.new()
+
+      let params = await batPay.params.call()
+
+      unlockBlocks = params[7].toNumber()
+      challengeBlocks = params[3].toNumber()
+      challengeStepBlocks = params[4].toNumber()
+      instantSlot = (await batPay.instantSlot.call()).toNumber()
+    })
+
     it('cannot obtain the balance for invalid id', async () => {
       let l0 = await batPay.getAccountsLength.call()
       let invalid_id = l0.toNumber()
