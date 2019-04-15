@@ -1,0 +1,9 @@
+{
+  "infuraToken": "<infura-token>",
+  "environments": {
+    "remoteDevelopment": {
+      "deployPrivateKey": "<private-key-without-0x>",
+      "wibsonToken": "<deployed-wibson-token-address>"
+    }
+  }
+}

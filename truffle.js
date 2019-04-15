@@ -1,4 +1,5 @@
 const coverageWeb3Provider = require('./lib/CoverageWeb3Provider')
+const DeployUtils = require('./utils/DeploymentUtils');
 
 module.exports = {
   networks: {
@@ -10,7 +11,12 @@ module.exports = {
     coverage: {
       provider: coverageWeb3Provider,
       network_id: '*'
-    }
+    },
+    remoteDevelopment: { // 'development' collides with truffle's default
+      provider: () => DeployUtils.getProvider('ropsten', 'remoteDevelopment'),
+      network_id: 3, // official id of the ropsten network
+      gas: 7900000,
+    },
   },
   solc: {
     optimizer: {

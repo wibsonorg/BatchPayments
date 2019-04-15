@@ -4,11 +4,12 @@ const Merkle = artifacts.require('./Merkle')
 const Challenge = artifacts.require('./Challenge')
 const MassExitLib = artifacts.require('./MassExitLib')
 
-module.exports = function (deployer) {
+module.exports = function (deployer, network) {
   deployer.link(Merkle, BatPay)
   deployer.link(Challenge, BatPay)
   deployer.link(MassExitLib, BatPay)
   deployer.then(() => {
+    if(network === "remoteDevelopment") return { address: process.env.wibsonToken }
     return StandardToken.deployed()
   }).then(token => {
     return deployer.deploy(BatPay,
