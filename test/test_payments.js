@@ -31,7 +31,7 @@ contract('Payments', (accounts) => {
   })
 
   describe('registerPayment', () => {
-    const rootHash = 0x1234
+    const rootHash = web3.fromUtf8('1234');
     const new_count = 0
     const metadata = 0
     const fee = 10
@@ -186,7 +186,7 @@ contract('Payments', (accounts) => {
       // because 100000 < 2 ** 32 we can only trigger the first condition
       let toobig_count = 100000 // this should actually be bp.maxTransfer, however it crashes
 
-      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, toobig_count, rootHash, lockingKeyHash, metadata), 'too many payees')
+      await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, toobig_count, rootHash, lockingKeyHash, metadata), 'Too many payees, it should be less than config maxTransfer')
 
       // check original balance didn't change
       let b1 = (await bp.balanceOf.call(from_id)).toNumber()

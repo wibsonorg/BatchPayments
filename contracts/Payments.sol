@@ -74,7 +74,7 @@ contract Payments is Accounts {
     {
         require(isAccountOwner(fromId), "Invalid fromId");
         require(amount > 0, "Invalid amount");
-        require(newCount == 0 || rootHash > 0, "Invalid root hash");
+        require(newCount == 0 || rootHash > 0, "Invalid root hash"); // although bulkRegister checks this, we anticipate
         require(fee == 0 || lockingKeyHash > 0, "Invalid lock hash");
 
         Payment memory p;
@@ -82,7 +82,7 @@ contract Payments is Accounts {
         // Prepare a Payment struct
         p.totalNumberOfPayees = SafeMath.add32(Challenge.getPayDataCount(payData), newCount);
         require(p.totalNumberOfPayees > 0, "Invalid number of payees, should at least be 1 payee");
-        require(p.totalNumberOfPayees < params.maxTransfer, "too many payees, should be less than config maxTransfer");
+        require(p.totalNumberOfPayees < params.maxTransfer, "Too many payees, it should be less than config maxTransfer");
 
         p.fromAccountId = fromId;
         p.amount = amount;

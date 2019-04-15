@@ -235,6 +235,14 @@ contract('Accounts', (addr) => {
       await assertRequire(bp.bulkRegister(n, rootHash), "Bulk size can't be zero")
     })
 
+    it('Bulk registration should fail for rootHash == 0', async () => {
+      let v0 = await bp.getBulkLength.call()
+      const n = 10;
+      const rootHash = 0;
+
+      await assertRequire(bp.bulkRegister(n, rootHash), "Root hash can't be zero")
+    })
+
     it('register() adds 1 account at a time', async () => {
       let l0 = await bp.getAccountsLength.call()
       let new_id = await bp.register()
