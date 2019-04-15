@@ -97,7 +97,7 @@ contract('challenge', (accounts) => {
 
   before(async function () {
     await utils.skipBlocks(1)
-    let ins = await utils.getInstances()
+    let ins = await utils.newInstances()
 
     b = new bat.BP(ins.bp, ins.token)
 
@@ -223,27 +223,27 @@ contract('challenge', (accounts) => {
     let [id, r0] = await b.deposit(2*stake+1, -1, a0)
     let [challenger, r2] = await b.deposit(2*stake+1, -1, a0)
     let [pid, bulk, r1] = await b.registerPaymentWithBulk(id, 1, 0, [id], [a1, a0, a1], 0)
-    
+
     let toId = 1 + bulk.smallestAccountId
-    
+
     await b.claimBulkRegistrationId(bulk, a0, toId)
     await utils.skipBlocks(b.unlockBlocks)
 
     let amount = await b.getCollectAmount(toId, 0, pid+1)
     let data = b.getCollectData(toId, 0, pid + 1)
-    
+
     await b.collect(id, 0, toId, 0, pid + 1, amount, 0, 0)
- 
+
 
     let index = 0
     let payIndex = data[index]
     let payList = b.getPayList(payIndex)
-    
+
 
     await challenge(id, 0, challenger, data, index, payList)
 
     let b1 = (await b.balanceOf(id)).toNumber()
-    
+
 })
 it('challenger winning should get back both collectStake + challengeStake', async () => {
   let index = 1

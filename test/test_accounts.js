@@ -22,7 +22,7 @@ contract('Accounts', (addr) => {
 
   before(async () => {
     await utils.skipBlocks(1)
-    let ret = await utils.getInstances()
+    let ret = await utils.newInstances()
     bp = ret.bp
     st = ret.token
 
