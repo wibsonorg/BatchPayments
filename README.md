@@ -88,8 +88,8 @@ If a remote network is used, a private key is needed to sign the deployment tran
 * `infuraToken`: The API key supplied by [Infura](https://infura.io/) to be used on remote environments.
 * `environments`: Allowed keys are `development`, `coverage`, `remoteDevelopment`.
 * Environment options:
-    * `deployPrivateKey`: Private key for the deployer account only used in remote environments.
-
+    * `privateKeys`: Private keys used by truffle, the first one will be the deployer account (used in remote environments).
+    * `deployedToken`: In remote environments, you have to provide this address of a previously deployed ERC20 token.
 
 ## Detailed description
 The BatchPayment contract can be instantiated to act as an optimization proxy for a standard pre existing ERC20 token contract. User and contract accounts can use it to relay batch micropayments with a 100x lower gas footprint.

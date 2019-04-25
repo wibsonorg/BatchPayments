@@ -2,7 +2,7 @@
   "infuraToken": "<infura-token>",
   "environments": {
     "remoteDevelopment": {
-      "deployPrivateKey": "<private-key-without-0x>",
+      "privateKeys": ["<private-key-without-0x>"],
       "deployedToken": "<deployed-token-address>"
     }
   }
