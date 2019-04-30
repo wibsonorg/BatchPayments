@@ -31,6 +31,7 @@ library SafeMath {
     function div64(uint256 a, uint256 b) internal pure returns (uint64) {
         uint256 c = a / b;
         require(c < 2**64);
+        /* solcov ignore next */
         return uint64(c);
     }
 
@@ -44,7 +45,7 @@ library SafeMath {
         require(b <= a);
         uint256 c = a - b;
         require(c < 2**64);
-
+        /* solcov ignore next */
         return uint64(c);
     }
 
@@ -57,6 +58,7 @@ library SafeMath {
     function add64(uint256 a, uint256 b) internal pure returns (uint64) {
         uint256 c = a + b;
         require(c >= a && c < 2**64);
+        /* solcov ignore next */
         return uint64(c);
     }
 
@@ -73,6 +75,7 @@ library SafeMath {
         uint256 c = a * b;
         require(c / a == b);
         require(c < 2**32);
+        /* solcov ignore next */
         return uint32(c);
     }
 
@@ -85,6 +88,7 @@ library SafeMath {
     function div32(uint256 a, uint256 b) internal pure returns (uint32) {
         uint256 c = a / b;
         require(c < 2**32);
+        /* solcov ignore next */
         return uint32(c);
     }
 
@@ -98,7 +102,7 @@ library SafeMath {
         require(b <= a);
         uint256 c = a - b;
         require(c < 2**32);
-
+        /* solcov ignore next */
         return uint32(c);
     }
 
@@ -126,6 +130,7 @@ library SafeMath {
         }
         uint256 c = a * b;
         require(c / a == b);
+        /* solcov ignore next */
         return c;
     }
 
@@ -137,6 +142,7 @@ library SafeMath {
      */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 c = a / b;
+        /* solcov ignore next */
         return c;
     }
 
