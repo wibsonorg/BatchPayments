@@ -1,7 +1,10 @@
-const StandardToken = artifacts.require('./StandardToken')
+const DeployUtils = require('../utils/DeploymentUtils');
 
-module.exports = function (deployer, network) {
-  if(network !== "remoteDevelopment"){
-    return deployer.deploy(StandardToken, 'Token', 'TOK', 2, 1000000)
+const StandardToken = artifacts.require('./StandardToken');
+
+module.exports = function(deployer, network) {
+  const { deployedToken } = DeployUtils.getEnvConfig(network);
+  if (typeof deployedToken === 'undefined' || deployedToken === "") {
+    return deployer.deploy(StandardToken, 'Token', 'TOK', 2, 1000000);
   }
-}
+};
