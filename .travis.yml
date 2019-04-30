@@ -13,17 +13,11 @@ cache:
   directories:
     - node_modules
 
-jobs:
-  include:
-    - stage: test
-      script: npm run lint
-      name: "Lint"
-    - script: npm run test
-      name: "Unit tests"
-    - script: npm run test:coverage
-      name: "Unit tests with coverage report"
+script:
+  - npm run lint
+  - npm run test
+  - npm run test:coverage
 
 after_success:
   - npm run coverage:report
   - bash <(curl -s https://codecov.io/bash)
-
