@@ -15,6 +15,20 @@
         "maxCollectAmount": 1000000
       }
     },
+    "coverage": {
+      "privateKeys": ["<private-key-without-0x>"],
+      "deployedToken": "<deployed-token-address>",
+      "batPay": {
+        "maxBulk": 5000,
+        "maxTransfer": 3000,
+        "challengeBlocks": 5,
+        "challengeStepBlocks": 2,
+        "collectStake": 500,
+        "challengeStake": 100,
+        "unlockBlocks": 5,
+        "maxCollectAmount": 1000000
+      }
+    },
     "remoteDevelopment": {
       "privateKeys": ["<private-key-without-0x>"],
       "deployedToken": "<deployed-token-address>",
