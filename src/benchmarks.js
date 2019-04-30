@@ -81,7 +81,7 @@ async function bulkReg (count) {
 async function registerPayment (amount, fee, count, lockingKeyHash, name) {
   let list = utils.randomIds(count, max, 'batpay tests seed')
 
-  let [, t] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
+  let [, t] = await b.registerPayment(0, 10, fee, list, lockingKeyHash)
   addStat(name, t.gasUsed)
 }
 
@@ -146,19 +146,19 @@ async function doStuff () {
     await depositE(depositAmount)
     await bulkReg(100)
     await bulkReg(1000)
-
+    
     await withdraw(10)
-
+    
     let lockingKeyHash = utils.hashLock(0, passcode)
     let run = [10, 50, 100, 250, 500, 1000, 2000, 3000]
-
+    
     for (let i = 0; i < run.length; i++) {
       let count = run[i]
-      await registerPayment(1, 2, count, 0, 'registerPayment-' + count + '-nolock')
+      await registerPayment(1, 0, count, 0, 'registerPayment-' + count + '-nolock')
       await registerPayment(1, 2, count, lockingKeyHash, 'registerPayment-' + count + '-lock')
       console.log(count)
     }
-
+    
     await unlock()
     await refundLockedPayment()
     await collect()

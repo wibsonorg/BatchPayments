@@ -46,7 +46,9 @@ async function doStuff () {
 
     console.log('bulk registering ' + (ids - 1) + ' accounts')
 
-    let v0 = await bp.bulkRegister(ids - 1, 0)
+    // Reserve accounts.
+    // We won't claim the accounts, so we'll use a dummy rootHash for now.
+    let v0 = await bp.bulkRegister(ids - 1, 1)
     await v0
 
     let balance = await bp.balanceOf.call(id)
