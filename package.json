@@ -9,13 +9,14 @@
     "test": "test"
   },
   "scripts": {
+    "coverage:report": "istanbul report html",
     "lint": "npm run lint:sol && npm run lint:js",
     "lint:js": "standard || :",
     "lint:js:fix": "standard --fix || :",
     "lint:sol": "solhint contracts/**/*.sol || :",
     "test": "scripts/test.sh",
     "test:coverage": "TEST_COVERAGE=true truffle test --network coverage && npm run coverage:report",
-    "coverage:report": "istanbul report html"
+    "truffle": "truffle"
   },
   "keywords": [],
   "author": "",
@@ -35,7 +36,8 @@
     "ganache-cli": "^6.4.1",
     "istanbul": "^0.4.5",
     "solhint": "^2.0.0",
-    "standard": "^12.0.1"
+    "standard": "^12.0.1",
+    "truffle-hdwallet-provider": "^1.0.6"
   },
   "standard": {
     "globals": [

@@ -73,6 +73,23 @@ Take a look at *src/demo.js* for a detailed exploration of most BP features.
 
     $ npx truffle exec src/demo.js
 
+**Remote Deployment**
+In order to deploy any remote environment, the `deploy.json` file must be set up.
+You can start by copying the `deploy.example.json` file, renaming it and editing it as suitable.
+
+```bash
+$ cp deploy.example.json deploy.json
+$ vi deploy.json
+```
+
+If a remote network is used, a private key is needed to sign the deployment transactions.
+
+### Configuration
+* `infuraToken`: The API key supplied by [Infura](https://infura.io/) to be used on remote environments.
+* `environments`: Allowed keys are `development`, `coverage`, `remoteDevelopment`, `staging` and `production`.
+* Environment options:
+    * `privateKeys`: Private keys used by truffle, the first one will be the deployer account (used in remote environments).
+    * `deployedToken`: Optionally, an address of a previously deployed ERC20 token can be used to deploy a new BatPay instance. This property can be defined in any environment.
 
 ## Detailed description
 The BatchPayment contract can be instantiated to act as an optimization proxy for a standard pre existing ERC20 token contract. User and contract accounts can use it to relay batch micropayments with a 100x lower gas footprint.
