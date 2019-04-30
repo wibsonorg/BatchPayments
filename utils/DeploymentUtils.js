@@ -13,14 +13,23 @@ function getConfig() {
   }
 }
 
-exports.getEnvConfig = function getEnvConfig(environment) {
+function getEnvConfig(environment) {
   const config = getConfig();
-  return config.environments[environment] || {};
-};
+  const envConfig = config.environments[environment];
+  if (!envConfig) {
+    const error = `Missing environment ${environment} in deploy.json. ` +
+      'Please take a look at the README.md file before continuing.';
+    console.error(`\n--> ${error}\n\n`);
+    throw new Error(error);
+  }
+  return envConfig;
+}
+
+exports.getEnvConfig = getEnvConfig;
 
 exports.getProvider = function getProvider(network, environment) {
   const config = getConfig();
-  const envConfig = config.environments[environment] || {};
+  const envConfig = getEnvConfig(environment);
   const infura = `https://${network}.infura.io/v3/${config.infuraToken}`;
   const privKeys = envConfig.privateKeys;
   return new HDWalletProvider(privKeys, infura, 0, privKeys.length, false);
