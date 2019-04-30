@@ -4,14 +4,12 @@ const BatPay = artifacts.require('./BatPay');
 const StandardToken = artifacts.require('./StandardToken');
 const Merkle = artifacts.require('./Merkle');
 const Challenge = artifacts.require('./Challenge');
-const MassExitLib = artifacts.require('./MassExitLib');
 
 module.exports = function(deployer, network) {
   const { deployedToken, batPay } = DeployUtils.getEnvConfig(network);
 
   return deployer.link(Merkle, BatPay);
   deployer.link(Challenge, BatPay);
-  deployer.link(MassExitLib, BatPay);
   deployer
     .then(() => {
       if (typeof deployedToken === 'undefined' || deployedToken === '') {
