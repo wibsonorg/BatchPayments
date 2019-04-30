@@ -1,26 +1,36 @@
-const BatPay = artifacts.require('./BatPay')
-const StandardToken = artifacts.require('./StandardToken')
-const Merkle = artifacts.require('./Merkle')
-const Challenge = artifacts.require('./Challenge')
-const MassExitLib = artifacts.require('./MassExitLib')
+const DeployUtils = require('../utils/DeploymentUtils');
 
-module.exports = function (deployer, network) {
-  deployer.link(Merkle, BatPay)
-  deployer.link(Challenge, BatPay)
-  deployer.link(MassExitLib, BatPay)
-  deployer.then(() => {
-    if(network === "remoteDevelopment") return { address: process.env.deployedToken }
-    return StandardToken.deployed()
-  }).then(token => {
-    return deployer.deploy(BatPay,
-      token.address,
-      5000, // maxBulk
-      3000, // maxTransfer
-      5, // challengeBlocks
-      2, // challengeStepBlocks
-      500, // collectStake
-      100, // challengeStake
-      5,    // unlockBlocks
-      1000000)  // maxCollectAmount
-  })
-}
+const BatPay = artifacts.require('./BatPay');
+const StandardToken = artifacts.require('./StandardToken');
+const Merkle = artifacts.require('./Merkle');
+const Challenge = artifacts.require('./Challenge');
+const MassExitLib = artifacts.require('./MassExitLib');
+
+module.exports = function(deployer, network) {
+  const { deployedToken, batPay } = DeployUtils.getEnvConfig(network);
+
+  return deployer.link(Merkle, BatPay);
+  deployer.link(Challenge, BatPay);
+  deployer.link(MassExitLib, BatPay);
+  deployer
+    .then(() => {
+      if (typeof deployedToken === 'undefined' || deployedToken === '') {
+        return { address: deployedToken };
+      }
+      return StandardToken.deployed();
+    })
+    .then(token =>
+      deployer.deploy(
+        BatPay,
+        token.address,
+        batPay.maxBulk,
+        batPay.maxTransfer,
+        batPay.challengeBlocks,
+        batPay.challengeStepBlocks,
+        batPay.collectStake,
+        batPay.challengeStake,
+        batPay.unlockBlocks,
+        batPay.maxCollectAmount,
+      ),
+    );
+};

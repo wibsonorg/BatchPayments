@@ -13,12 +13,15 @@ function getConfig() {
   }
 }
 
+exports.getEnvConfig = function getEnvConfig(environment) {
+  const config = getConfig();
+  return config.environments[environment] || {};
+};
+
 exports.getProvider = function getProvider(network, environment) {
   const config = getConfig();
   const envConfig = config.environments[environment] || {};
   const infura = `https://${network}.infura.io/v3/${config.infuraToken}`;
   const privKeys = envConfig.privateKeys;
-  const deployedToken = envConfig.deployedToken;
-  process.env.deployedToken = deployedToken
   return new HDWalletProvider(privKeys, infura, 0, privKeys.length, false);
 };
