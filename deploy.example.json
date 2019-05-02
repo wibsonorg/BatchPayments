@@ -3,7 +3,7 @@
   "environments": {
     "development": {
       "privateKeys": ["<private-key-without-0x>"],
-      "deployedToken": "<deployed-token-address>",
+      "deployedToken": "",
       "batPay": {
         "maxBulk": 5000,
         "maxTransfer": 3000,
@@ -17,7 +17,7 @@
     },
     "coverage": {
       "privateKeys": ["<private-key-without-0x>"],
-      "deployedToken": "<deployed-token-address>",
+      "deployedToken": "",
       "batPay": {
         "maxBulk": 5000,
         "maxTransfer": 3000,
@@ -31,7 +31,7 @@
     },
     "remoteDevelopment": {
       "privateKeys": ["<private-key-without-0x>"],
-      "deployedToken": "<deployed-token-address>",
+      "deployedToken": "",
       "batPay": {
         "maxBulk": 5000,
         "maxTransfer": 3000,
