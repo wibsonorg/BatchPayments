@@ -8,14 +8,14 @@ const Challenge = artifacts.require('./Challenge');
 module.exports = function(deployer, network) {
   const { deployedToken, batPay } = DeployUtils.getEnvConfig(network);
 
-  return deployer.link(Merkle, BatPay);
+  deployer.link(Merkle, BatPay);
   deployer.link(Challenge, BatPay);
   deployer
     .then(() => {
       if (typeof deployedToken === 'undefined' || deployedToken === '') {
-        return { address: deployedToken };
+        return StandardToken.deployed();
       }
-      return StandardToken.deployed();
+      return { address: deployedToken };
     })
     .then(token =>
       deployer.deploy(
