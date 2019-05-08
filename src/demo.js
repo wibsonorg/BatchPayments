@@ -1,16 +1,132 @@
-var lib = require('../lib')(web3, artifacts)
+const lib = require('../lib')(web3, artifacts)
 const BatPay = artifacts.require('./BatPay')
 const StandardToken = artifacts.require('./StandardToken')
-var utils = lib.utils
-var merkle = lib.merkle
-var BP = lib.bat.BP
-var bat = lib.bat
+const utils = lib.utils
+const merkle = lib.merkle
+const BP = lib.bat.BP
+const bat = lib.bat
 
+// Globals
+var accounts
 var b
 
+async function main () {
+  console.log('Instantiating contracts')
+  let x = await lib.newInstances(bat.prefs.testing)
+  b = new BP(x.bp, x.token)
+  await b.init()
+
+  console.log('registering')
+  for (let i = 0; i < 10; i++) await b.register(accounts[i])
+  await b.showBalance()
+
+  console.log('bulkRegistering accounts')
+  let list = []
+  let nbulk = 100
+  for (let i = 0; i < nbulk; i++) list.push(accounts[i % 10])
+  console.log('list', list)
+
+  let bulk = await b.bulkRegister(list)
+  console.log('claiming ' + nbulk + ' accounts')
+  let w = []
+  for (let i = 0; i < nbulk; i++) {
+    w.push(b.claimBulkRegistrationId(bulk, list[i], i + bulk.smallestAccountId))
+  }
+  await Promise.all(w)
+
+  console.log('transfering some tokens')
+  for (let i = 1; i < accounts.length; i++) { await b.tokenTransfer(accounts[0], accounts[i], 1000) }
+
+  await b.showBalance()
+
+  console.log('deposit')
+  await b.deposit(10000, 0)
+  await b.deposit(500, 8)
+  await b.showBalance()
+
+  let key = 'hello world'
+  let p = []
+  let m = 20
+
+  let unlocker = 9
+
+  console.log('doing ' + m + ' transfers & unlocks')
+  for (let i = 0; i < m; i++) {
+    console.log('registerPayment', i)
+    let [payIndex] = await b.registerPayment(0, 10, 1, [1, 2, 3, 4, 5], utils.hashLock(unlocker, key))
+    p.push(payIndex)
+    await b.unlock(payIndex, unlocker, key)
+  }
+
+  await b.showBalance()
+  console.log('payments:')
+  console.log(b.payments)
+  console.log('payList')
+  console.log(b.payList)
+
+  await skipBlocks(b.unlockBlocks)
+
+  let max = p[(p.length / 2) - 1] + 1
+
+  console.log('collect without instant slot. payIndex=' + max)
+  let minIndex = await b.getCollectedIndex(3)
+
+  for (let i = 1; i <= 5; i++) {
+    let [addr, bb, c] = await b.getAccount(i)
+
+    c = c.toNumber()
+    addr = 0
+    if (i == 5) addr = b.ids[6] // #5 withdraw to #6
+
+    let amount = await b.getCollectAmount(i, c, max)
+    await b.collect(0, i, i, c, max, amount, 2, addr)
+  }
+
+  await b.showBalance()
+  console.log('challenging #3')
+
+  let data = b.getCollectData(3, minIndex, max)
+  await challenge(0, 3, 8, data)
+
+  await skipBlocks(b.challengeBlocks)
+  console.log('Freeing collect slots')
+  for (let i = 1; i <= 5; i++) {
+    await b.freeSlot(0, i)
+  }
+  await b.showBalance()
+
+  max = p[p.length - 1] + 1
+  console.log('collect with instant slot. payIndex=' + max)
+
+  for (let i = 1; i <= 5; i++) {
+    let [addr, bb, c] = await b.getAccount(i)
+
+    c = c.toNumber()
+    addr = 0
+    if (i == 5) addr = b.ids[6] // #5 withdraw to #6
+
+    let amount = await b.getCollectAmount(i, c, max)
+    if (i == 3) amount = amount + 100
+
+    await b.collect(0, i + b.instantSlot, i, c, max, amount, 1, addr)
+  }
+
+  await b.showBalance()
+
+  await skipBlocks(b.challengeBlocks)
+  console.log('Freeing collect slots')
+  for (let i = 1; i <= 5; i++) {
+    console.log('freeSlot', i)
+    await b.freeSlot(0, i + b.instantSlot)
+  }
+  await b.showBalance()
+}
+
 async function skipBlocks (n) {
+  console.log('block number: ', web3.eth.blockNumber)
   console.log('skipping ' + n + ' blocks')
   await utils.skipBlocks(n)
+  console.log('block number: ', web3.eth.blockNumber)
 }
 
 async function showSlot (delegate, slot) {
@@ -56,126 +172,17 @@ async function challenge (delegate, slot, challenger, list) {
   console.log('delegate=' + await b.balanceOf(delegate))
 }
 
-async function doStuff () {
-  try {
-    console.log('Instantiate contracts')
-    let x = await lib.newInstances(bat.prefs.testing)
-
-    b = new BP(x.bp, x.token)
-    await b.init()
-
-    let acc = web3.eth.accounts
-
-    console.log('registering')
-    for (let i = 0; i < 10; i++) await b.register(acc[i])
-    await b.showBalance()
-
-    console.log('bulkRegistering accounts')
-    let list = []
-    let nbulk = 100
-    for (let i = 0; i < nbulk; i++) list.push(acc[i % 10])
-
-    let bulk = await b.bulkRegister(list)
-    console.log('claiming ' + nbulk + ' accounts')
-    let w = []
-    for (let i = 0; i < nbulk; i++) {
-      w.push(b.claimBulkRegistrationId(bulk, list[i], i + bulk.smallestAccountId))
+function demo (callback) {
+  web3.eth.getAccounts(async (error, acc) => {
+    accounts = acc
+    if (error) throw new Error('Could not get accounts')
+    try {
+      await main()
+      callback()
+    } catch (e) {
+      callback(e)
     }
-    await Promise.all(w)
-
-    console.log('transfering some tokens')
-    for (let i = 1; i < acc.length; i++) { await b.tokenTransfer(acc[0], acc[i], 1000) }
-
-    await b.showBalance()
-
-    console.log('deposit')
-    await b.deposit(10000, 0)
-    await b.deposit(500, 8)
-    await b.showBalance()
-
-    let key = 'hello world'
-    let p = []
-    let m = 20
-
-    let unlocker = 9
-
-    console.log('doing ' + m + ' transfers & unlocks')
-    for (let i = 0; i < m; i++) {
-      let [payIndex] = await b.registerPayment(0, 10, 1, [1, 2, 3, 4, 5], utils.hashLock(unlocker, key))
-      p.push(payIndex)
-      await b.unlock(payIndex, unlocker, key)
-    }
-
-    await b.showBalance()
-    console.log('payments:')
-    console.log(b.payments)
-    console.log('payList')
-    console.log(b.payList)
-
-    await skipBlocks(b.unlockBlocks)
-
-    let max = p[(p.length / 2) - 1] + 1
-
-    console.log('collect without instant slot. payIndex=' + max)
-    let minIndex = await b.getCollectedIndex(3)
-
-    for (let i = 1; i <= 5; i++) {
-      let [addr, bb, c] = await b.getAccount(i)
-
-      c = c.toNumber()
-      addr = 0
-      if (i == 5) addr = b.ids[6] // #5 withdraw to #6
-
-      let amount = await b.getCollectAmount(i, c, max)
-      await b.collect(0, i, i, c, max, amount, 2, addr)
-    }
-
-    await b.showBalance()
-    console.log('challenging #3')
-
-    let data = b.getCollectData(3, minIndex, max)
-    await challenge(0, 3, 8, data)
-
-    await skipBlocks(b.challengeBlocks)
-    console.log('Freeing collect slots')
-    for (let i = 1; i <= 5; i++) {
-      await b.freeSlot(0, i)
-    }
-    await b.showBalance()
-
-    max = p[p.length - 1] + 1
-    console.log('collect with instant slot. payIndex=' + max)
-
-    for (let i = 1; i <= 5; i++) {
-      let [addr, bb, c] = await b.getAccount(i)
-
-      c = c.toNumber()
-      addr = 0
-      if (i == 5) addr = b.ids[6] // #5 withdraw to #6
-
-      let amount = await b.getCollectAmount(i, c, max)
-      if (i == 3) amount = amount + 100
-
-      await b.collect(0, i + b.instantSlot, i, c, max, amount, 1, addr)
-    }
-
-    await b.showBalance()
-
-    await skipBlocks(b.challengeBlocks)
-    console.log('Freeing collect slots')
-    for (let i = 1; i <= 5; i++) {
-      await b.freeSlot(0, i + b.instantSlot)
-    }
-    await b.showBalance()
-  } catch (e) {
-    console.log(e)
-  }
+  })
 }
 
-module.exports = function () {
-  try {
-    doStuff()
-  } catch (e) {
-    console.log(e)
-  }
-}
+module.exports = demo
