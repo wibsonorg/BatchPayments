@@ -46,34 +46,46 @@ Then, in a different terminal, run `./docker-run.sh`
 
 ##### Local installation
 Install dependencies:
-```
+```bash
 $ npm i
 ```
-### Using Batchpayments
-Run the test suite to verify everything is going smoothly:
-```
-npm run test
-```
-To run a development client use `ganache-cli`:
+Run the test suite to check everything is running smoothly:
 ```
 $ npx ganache-cli
+$ npm run test
 ```
-**Simple example**
-Run the following command to complete a couple of basic operations on BP
+### Using Batch Payments library
+```javascript
+const { Batpay } = require('../lib')(web3, artifacts)
 
-    $ npx truffle exec src/run.js
+// Initialize Baypay
+batpay = new Batpay.BP(
+    batpayContractInstance,
+    yourTokenContractInstance
+)
 
-**Getting Benchmark Data**
-The following command will exeute BatchPayments and measure gas usage, producing a detailed report
+batpay.init()
 
-    $ npx truffle exec src/benchmarks.js
+// Start registering Batch Payments
+batpay.registerPayment(...)
+```
 
-**Complete Walkthrough**
-Take a look at *src/demo.js* for a detailed exploration of most BP features.
+Take a look at [this example](src/demo.js) for a walkthrough most of BatPay features.
 
     $ npx truffle exec src/demo.js
 
-**Remote Deployment**
+**Getting Benchmark Data**
+The following command will execute BatchPayments and measure gas usage, producing a detailed report
+
+    $ npx truffle exec src/benchmarks.js
+
+### Using Batch Payments contracts
+**Simple example**
+Run the following command to complete a couple of basic operations on BP.
+
+    $ npx truffle exec src/run.js
+
+### Remote Deployment
 In order to deploy any remote environment, the `deploy.json` file must be set up.
 You can start by copying the `deploy.example.json` file, renaming it and editing it as suitable.
 
@@ -84,7 +96,7 @@ $ vi deploy.json
 
 If a remote network is used, a private key is needed to sign the deployment transactions.
 
-### Configuration
+#### Configuration
 * `infuraToken`: The API key supplied by [Infura](https://infura.io/) to be used on remote environments.
 * `environments`: Allowed keys are `development`, `coverage`, `remoteDevelopment`, `staging` and `production`.
 * Environment options:
