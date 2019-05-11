@@ -8,7 +8,7 @@ const assertPasses = truffleAssertions.passes
 const eventEmitted = truffleAssertions.eventEmitted
 var BigNumber = web3.BigNumber
 var lib = require('../lib')(web3, artifacts)
-var { utils, bat } = lib
+var { utils, Batpay } = lib
 const TestHelper = artifacts.require('./TestHelper')
 const merkle = lib.merkle
 
@@ -256,19 +256,25 @@ contract('Payments', (accounts) => {
     let maxPayIndex = 0
 
     before(async () => {
-      b = new bat.BP(bp, st)
+      b = new Batpay.BP(bp, st)
 
       await b.init()
       let [mainId, receipt] = await b.deposit(100000, -1, accounts[0])
       id = mainId
 
       for (let i = 0; i < nUsers; i++) {
-        let [ id, t ] = await b.register(accounts[0])
+        let [ id, t ] = await b.registerAccount(accounts[0])
         userid.push(id)
       }
 
       for (let i = 0; i < nPays; i++) {
-        let [ pid, t ] = await b.registerPayment(id, 10, 0, userid, 0)
+        let [ pid, t ] = await b.registerPayment({
+          fromAccountId: id,
+          amount: 10,
+          unlockerFee: 0,
+          payeesAccountsIds: userid,
+          lockingKeyHash: 0
+        })
         payid.push(pid)
         if (pid > maxPayIndex) maxPayIndex = pid
       }
@@ -280,7 +286,16 @@ contract('Payments', (accounts) => {
       let mid = userid[0]
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
       let b0 = (await b.balanceOf(mid)).toNumber()
-      const txr = await b.collect(id, 0, mid, 0, maxPayIndex + 1, amount, 0, 0)
+      const txr = await b.collect({
+        delegate: id,
+        slot: 0,
+        toAccountId: mid,
+        fromPaymentId: 0,
+        toPaymentId: maxPayIndex + 1,
+        amount: amount,
+        fee: 0,
+        address: 0
+      })
       await utils.skipBlocks(b.challengeBlocks)
       await b.freeSlot(id, 0)
       let b1 = (await b.balanceOf(mid)).toNumber()
@@ -292,7 +307,16 @@ contract('Payments', (accounts) => {
       let mid = userid[1]
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
       let b0 = (await b.balanceOf(mid)).toNumber()
-      await b.collect(id, b.instantSlot, mid, 0, maxPayIndex + 1, amount, 0, 0)
+      await b.collect({
+        delegate: id,
+        slot: b.instantSlot,
+        toAccountId: mid,
+        fromPaymentId: 0,
+        toPaymentId: maxPayIndex + 1,
+        amount: amount,
+        fee: 0,
+        address: 0
+      })
       let b1 = (await b.balanceOf(mid)).toNumber()
 
       assert.equal(b0 + amount, b1)
@@ -302,11 +326,29 @@ contract('Payments', (accounts) => {
       let mid = userid[2]
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex / 2)
       let b0 = (await b.balanceOf(mid)).toNumber()
-      await b.collect(id, 1, mid, 0, maxPayIndex / 2, amount, 0, 0)
+      await b.collect({
+        delegate: id,
+        slot: 1,
+        toAccountId: mid,
+        fromPaymentId: 0,
+        toPaymentId: maxPayIndex / 2,
+        amount: amount,
+        fee: 0,
+        address: 0
+      })
       await utils.skipBlocks(b.challengeBlocks)
       let amount2 = await b.getCollectAmount(mid, maxPayIndex / 2, maxPayIndex + 1)
       // await b.freeSlot(id, 1);
-      await b.collect(id, 1, mid, maxPayIndex / 2, maxPayIndex + 1, amount2, 0, 0)
+      await b.collect({
+        delegate: id,
+        slot: 1,
+        toAccountId: mid,
+        fromPaymentId: maxPayIndex / 2,
+        toPaymentId: maxPayIndex + 1,
+        amount: amount2,
+        fee: 0,
+        address: 0
+      })
       let b1 = (await b.balanceOf(mid)).toNumber()
       await utils.skipBlocks(b.challengeBlocks)
       await b.freeSlot(id, 1)
@@ -322,7 +364,16 @@ contract('Payments', (accounts) => {
       let fee = Math.floor(amount / 3)
       let b0 = (await b.balanceOf(mid)).toNumber()
       let c0 = (await b.balanceOf(id)).toNumber()
-      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, 0)
+      await b.collect({
+        delegate: id,
+        slot: slot,
+        toAccountId: mid,
+        fromPaymentId: 0,
+        toPaymentId: maxPayIndex + 1,
+        amount: amount,
+        fee: amount / 3,
+        address: 0
+      })
       await utils.skipBlocks(b.challengeBlocks)
       await b.freeSlot(id, slot)
 
@@ -340,7 +391,16 @@ contract('Payments', (accounts) => {
       let fee = Math.floor(amount / 3)
       let b0 = (await b.balanceOf(mid)).toNumber()
       let c0 = (await b.balanceOf(id)).toNumber()
-      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, 0)
+      await b.collect({
+        delegate: id,
+        slot: slot,
+        toAccountId: mid,
+        fromPaymentId: 0,
+        toPaymentId: maxPayIndex + 1,
+        amount: amount,
+        fee: amount / 3,
+        address: 0
+      })
       await utils.skipBlocks(b.challengeBlocks)
       await b.freeSlot(id, slot)
 
@@ -360,7 +420,16 @@ contract('Payments', (accounts) => {
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(accounts[1])).toNumber()
 
-      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, accounts[1])
+      await b.collect({
+        delegate: id,
+        slot: slot,
+        toAccountId: mid,
+        fromPaymentId: 0,
+        toPaymentId: maxPayIndex + 1,
+        amount: amount,
+        fee: amount / 3,
+        address: accounts[1]
+      })
       await utils.skipBlocks(b.challengeBlocks)
       await b.freeSlot(id, slot)
 
@@ -382,7 +451,16 @@ contract('Payments', (accounts) => {
       let c0 = (await b.balanceOf(id)).toNumber()
       let d0 = (await b.tokenBalance(accounts[1])).toNumber()
 
-      await b.collect(id, slot, mid, 0, maxPayIndex + 1, amount, amount / 3, accounts[1])
+      await b.collect({
+        delegate: id,
+        slot: slot,
+        toAccountId: mid,
+        fromPaymentId: 0,
+        toPaymentId: maxPayIndex + 1,
+        amount: amount,
+        fee: amount / 3,
+        address: accounts[1]
+      })
       let b1 = (await b.balanceOf(mid)).toNumber()
       let d1 = (await b.tokenBalance(accounts[1])).toNumber()
 
@@ -402,7 +480,16 @@ contract('Payments', (accounts) => {
       let amount = await b.getCollectAmount(collectorAccountId, 0, maxPayIndex + 1)
       let [, , lastCollectedPaymentId] = await b.getAccount(collectorAccountId)
 
-      await assertRequire(b.collect(id, slot, collectorAccountId, lastCollectedPaymentId.toNumber() - 1, maxPayIndex + 1, amount, amount / 3, accounts[1]))
+      await assertRequire(b.collect({
+        delegate: id,
+        slot: slot,
+        toAccountId: collectorAccountId,
+        fromPaymentId: lastCollectedPaymentId.toNumber() - 1,
+        toPaymentId: maxPayIndex + 1,
+        amount: amount,
+        fee: amount / 3,
+        address: accounts[1]
+      }))
     })
 
     it('should reject if payIndex is invalid', async () => {
@@ -413,15 +500,16 @@ contract('Payments', (accounts) => {
       const tooHighPayIndex = (await b.getPaymentsLength()) + 1
 
       await assertRequire(
-        b.collect(
-          id,
-          slot,
-          collectorId,
-          lastCollectedPaymentId.toNumber(),
-          tooHighPayIndex,
-          amount,
-          amount / 3,
-          accounts[1]),
+        b.collect({
+          delegate: id,
+          slot: slot,
+          toAccountId: collectorId,
+          fromPaymentId: lastCollectedPaymentId.toNumber(),
+          toPaymentId: tooHighPayIndex,
+          amount: amount,
+          fee: amount / 3,
+          address: accounts[1]
+        }),
         'invalid payIndex, payments is not that long yet'
       )
     })
@@ -435,7 +523,16 @@ contract('Payments', (accounts) => {
       b.ids[invalidCollectorId] = accounts[0]
 
       await assertRequire(
-        b.collect(id, slot, invalidCollectorId, 0, 1, amount, amount / 3, accounts[1]),
+        b.collect({
+          delegate: id,
+          slot: slot,
+          toAccountId: invalidCollectorId,
+          fromPaymentId: 0,
+          toPaymentId: 1,
+          amount: amount,
+          fee: amount / 3,
+          address: accounts[1]
+        }),
         'toAccountId must be a valid account id'
       )
     })
@@ -447,16 +544,16 @@ contract('Payments', (accounts) => {
       const invalidFromPayIndex = 123454321
 
       await assertRequire(
-        b.collect(
-          id,
-          slot,
-          collectorId,
-          invalidFromPayIndex,
-          maxPayIndex,
-          amount,
-          amount / 3,
-          0
-        ),
+        b.collect({
+          delegate: id,
+          slot: slot,
+          toAccountId: collectorId,
+          fromPaymentId: invalidFromPayIndex,
+          toPaymentId: maxPayIndex,
+          amount: amount,
+          fee: amount / 3,
+          address: 0
+        }),
         'Bad user signature'
       )
     })
@@ -464,11 +561,26 @@ contract('Payments', (accounts) => {
       it('Should not allow race condition on collect', async () => {
         let stake = b.collectStake
         let [id, r0] = await b.deposit(2*stake+1, -1, a0)
-        let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
+        let [pid, r1] = await b.registerPayment({
+          fromAccountId: id,
+          amount: 1,
+          unlockerFee: 0,
+          payeesAccountsIds: [id],
+          lockingKeyHash: 0
+        })
         utils.skipBlocks(b.unlockBlocks)
 
         let b0 = (await b.balanceOf(id)).toNumber()
-        await b.collect(id, b.instantSlot, id, 0, pid+1, stake, 0, 0)
+        await b.collect({
+          delegate: id,
+          slot: b.instantSlot,
+          toAccountId: id,
+          fromPaymentId: 0,
+          toPaymentId: pid+1,
+          amount: stake,
+          fee: 0,
+          address: 0
+        })
         let b1 = (await b.balanceOf(id)).toNumber()
 
         assert.isBelow(b1, b0)
@@ -478,22 +590,52 @@ contract('Payments', (accounts) => {
     it('Should reject collects over maxCollectAmount', async () => {
       let stake = b.collectStake
       let [id, r0] = await b.deposit(2*stake+1, -1, a0)
-      let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
+      let [pid, r1] = await b.registerPayment({
+        fromAccountId: id,
+        amount: 1,
+        unlockerFee: 0,
+        payeesAccountsIds: [id],
+        lockingKeyHash: 0
+      })
       utils.skipBlocks(b.unlockBlocks)
 
        let b0 = (await b.balanceOf(id)).toNumber()
-      await assertRequire( b.collect(id, 0, id, 0, pid+1, b.maxCollectAmount+1, 0, 0),
+      await assertRequire(b.collect({
+        delegate: id,
+        slot: 0,
+        toAccountId: id,
+        fromPaymentId: 0,
+        toPaymentId: pid+1,
+        amount: b.maxCollectAmount+1,
+        fee: 0,
+        address: 0
+      }),
         "declaredAmount is too big")
     })
 
     it('Should accept collects with just maxCollectAmount', async () => {
       let stake = b.collectStake
       let [id, r0] = await b.deposit(2*stake+1, -1, a0)
-      let [pid, r1] = await b.registerPayment(id, 1, 0, [id], 0)
+      let [pid, r1] = await b.registerPayment({
+        fromAccountId: id,
+        amount: 1,
+        unlockerFee: 0,
+        payeesAccountsIds: [id],
+        lockingKeyHash: 0
+      })
       utils.skipBlocks(b.unlockBlocks)
 
       let b0 = (await b.balanceOf(id)).toNumber()
-      await b.collect(id, 0, id, 0, pid+1, b.maxCollectAmount, 0, 0)
+      await b.collect({
+        delegate: id,
+        slot: 0,
+        toAccountId: id,
+        fromPaymentId: 0,
+        toPaymentId: pid+1,
+        amount: b.maxCollectAmount,
+        fee: 0,
+        address: 0
+      })
     })
 
 

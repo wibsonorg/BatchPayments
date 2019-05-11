@@ -7,7 +7,7 @@ const assertPasses = truffleAssertions.passes
 const eventEmitted = truffleAssertions.eventEmitted
 var BigNumber = web3.BigNumber
 var lib = require('../lib')(web3, artifacts)
-var { utils, bat } = lib
+var { utils } = lib
 const TestHelper = artifacts.require('./TestHelper')
 const merkle = lib.merkle
 

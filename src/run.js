@@ -105,9 +105,10 @@ async function doStuff () {
   }
 }
 
-module.exports = function () {
+module.exports = async function (callback) {
   try {
-    doStuff()
+    await doStuff()
+    callback()
   } catch (e) {
     console.log(e)
   }
