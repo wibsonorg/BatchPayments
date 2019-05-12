@@ -49,7 +49,7 @@ Install dependencies:
 ```bash
 $ npm i
 ```
-Run the test suite to check everything is running smoothly:
+Run the test suite to check everything is going smoothly:
 ```
 $ npx ganache-cli
 $ npm run test
@@ -74,13 +74,13 @@ Take a look at [this example](src/demo.js) for a walkthrough most of BatPay feat
 
     $ npx truffle exec src/demo.js
 
-**Getting Benchmark Data**
+#### Getting Benchmark Data
 The following command will execute BatchPayments and measure gas usage, producing a detailed report
 
     $ npx truffle exec src/benchmarks.js
 
 ### Using Batch Payments contracts
-**Simple example**
+#### Simple example
 Run the following command to complete a couple of basic operations on BP.
 
     $ npx truffle exec src/run.js
