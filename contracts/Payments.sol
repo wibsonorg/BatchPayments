@@ -118,7 +118,7 @@ contract Payments is Accounts {
      * @param unlockerAccountId id of the party providing the unlocking service. Fees wil be payed to this id.
      * @param key Cryptographic key used to encrypt traded data.
      */
-    function unlock(uint32 payIndex, uint32 unlockerAccountId, bytes memory key) public returns(bool) {
+    function unlock(uint32 payIndex, uint32 unlockerAccountId, bytes memory key) external returns(bool) {
         require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(isValidId(unlockerAccountId), "Invalid unlockerAccountId");
         require(block.number < payments[payIndex].lockTimeoutBlockNumber, "Hash lock expired");
@@ -138,7 +138,7 @@ contract Payments is Accounts {
      * @param payIndex Index of the payment transaction associated with this request.
      * @return true if the operation succeded.
      */
-    function refundLockedPayment(uint payIndex) public returns (bool) {
+    function refundLockedPayment(uint payIndex) external returns (bool) {
         require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
@@ -187,7 +187,7 @@ contract Payments is Accounts {
         address destination,
         bytes memory signature
     )
-    public
+    external
     {
         // Check delegate and toAccountId are valid
         require(isAccountOwner(delegate), "invalid delegate");
@@ -241,7 +241,7 @@ contract Payments is Accounts {
             sl.addr = address(0);
 
             // Instant-collect, toAccount gets the declaredAmount now
-            balanceAdd(toAccountId,declaredAmountLessFee);
+            balanceAdd(toAccountId, declaredAmountLessFee);
         } else
         {   // not instant-collect
             sl.delegateAmount = fee;
@@ -271,7 +271,7 @@ contract Payments is Accounts {
      * @dev gets the number of payments issued
      * @return returns the size of the payments array.
      */
-    function getPaymentsLength() public view returns (uint) {
+    function getPaymentsLength() external view returns (uint) {
         return payments.length;
     }
 

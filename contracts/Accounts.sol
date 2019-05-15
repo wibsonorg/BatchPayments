@@ -83,7 +83,7 @@ contract Accounts is Data {
       * @param bulkId BulkRegistration id for the transaction reserving this account
       */
 
-    function claimBulkRegistrationId(address addr, bytes32[] memory proof, uint accountId, uint bulkId) public {
+    function claimBulkRegistrationId(address addr, bytes32[] memory proof, uint accountId, uint bulkId) external {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
         uint smallestAccountId = bulkRegistrations[bulkId].smallestRecordId;
         uint n = bulkRegistrations[bulkId].recordCount;
@@ -117,7 +117,7 @@ contract Accounts is Data {
      * @param accountId Id of the user requesting the withdraw.
      */
     function withdraw(uint64 amount, uint256 accountId)
-        public
+        external
         onlyAccountOwner(accountId)
     {
         address addr = accounts[accountId].owner;
@@ -140,7 +140,7 @@ contract Accounts is Data {
      *        deposited in a single operation.
      */
 
-    function deposit(uint64 amount, uint256 accountId) public {
+    function deposit(uint64 amount, uint256 accountId) external {
         require(accountId < accounts.length || accountId == newAccountFlag, "invalid accountId");
         require(amount > 0, "amount should be positive");
         require(token.transferFrom(msg.sender, address(this), amount), "transfer failed");
@@ -189,7 +189,7 @@ contract Accounts is Data {
      */
 
     function balanceOf(uint accountId)
-        public
+        external
         view
         validId(accountId)
         returns (uint64)
@@ -202,7 +202,7 @@ contract Accounts is Data {
       * @return returns the size of the accounts array.
       */
 
-    function getAccountsLength() public view returns (uint) {
+    function getAccountsLength() external view returns (uint) {
         return accounts.length;
     }
 
@@ -211,7 +211,7 @@ contract Accounts is Data {
       * @return the size of the bulkRegistrations array.
       */
 
-    function getBulkLength() public view returns (uint) {
+    function getBulkLength() external view returns (uint) {
         return bulkRegistrations.length;
     }
 }
