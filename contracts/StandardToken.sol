@@ -22,6 +22,7 @@ contract StandardToken is IERC20 {
         _decimals = decimals;
         _totalSupply = totalSupply;
         balances[msg.sender] = totalSupply;
+        emit Transfer(address(0), msg.sender, totalSupply);
     }
 
     function transfer(address _to, uint256 _value) external returns (bool) {
