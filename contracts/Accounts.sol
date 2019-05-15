@@ -22,7 +22,6 @@ contract Accounts is Data {
       * @param accountId an account id
       * @return boolean
       */
-
     function isValidId(uint accountId) public view returns (bool) {
         return (accountId < accounts.length);
     }
@@ -32,7 +31,6 @@ contract Accounts is Data {
       * @param accountId an account id
       * @return boolean
       */
-
     function isAccountOwner(uint accountId) public view returns (bool) {
         return isValidId(accountId) && msg.sender == accounts[accountId].owner;
     }
@@ -41,7 +39,6 @@ contract Accounts is Data {
       * @dev modifier to restrict that accountId is valid
       * @param accountId an account id
       */
-
     modifier validId(uint accountId) {
         require(isValidId(accountId), "accountId is not valid");
         _;
@@ -51,7 +48,6 @@ contract Accounts is Data {
       * @dev modifier to restrict that accountId is owner
       * @param accountId an account ID
       */
-
     modifier onlyAccountOwner(uint accountId) {
         require(isAccountOwner(accountId), "Only account owner can invoke this method");
         _;
@@ -63,7 +59,6 @@ contract Accounts is Data {
       * @param bulkSize Number of accounts to reserve.
       * @param rootHash Hash of the root node of the Merkle Tree referencing the list of addresses.
       */
-
     function bulkRegister(uint256 bulkSize, bytes32 rootHash) public {
         require(bulkSize > 0, "Bulk size can't be zero");
         require(bulkSize < params.maxBulk, "Cannot register this number of ids simultaneously");
@@ -82,7 +77,6 @@ contract Accounts is Data {
       * @param accountId Id of the account to be registered.
       * @param bulkId BulkRegistration id for the transaction reserving this account
       */
-
     function claimBulkRegistrationId(address addr, bytes32[] memory proof, uint accountId, uint bulkId) external {
         require(bulkId < bulkRegistrations.length, "the bulkId referenced is invalid");
         uint smallestAccountId = bulkRegistrations[bulkId].smallestRecordId;
@@ -102,7 +96,6 @@ contract Accounts is Data {
       * @dev Register a new account
       * @return the id of the new account
       */
-
     function register() public returns (uint32 ret) {
         require(accounts.length < maxAccountId, "no more accounts left");
         ret = (uint32)(accounts.length);
@@ -139,7 +132,6 @@ contract Accounts is Data {
      *        a new account will be registered and the requested amount will be
      *        deposited in a single operation.
      */
-
     function deposit(uint64 amount, uint256 accountId) external {
         require(accountId < accounts.length || accountId == newAccountFlag, "invalid accountId");
         require(amount > 0, "amount should be positive");
@@ -160,7 +152,6 @@ contract Accounts is Data {
      * @param accountId An account id
      * @param amount number of tokens
      */
-
     function balanceAdd(uint accountId, uint64 amount)
     internal
     validId(accountId)
@@ -173,13 +164,12 @@ contract Accounts is Data {
      *  @param accountId An account id
      *  @param amount number of tokens
      */
-
     function balanceSub(uint accountId, uint64 amount)
     internal
     validId(accountId)
     {
         uint64 balance = accounts[accountId].balance;
-        require (balance >= amount, "not enough funds");
+        require(balance >= amount, "not enough funds");
         accounts[accountId].balance = SafeMath.sub64(balance, amount);
     }
 
@@ -187,7 +177,6 @@ contract Accounts is Data {
      *  @dev returns the balance associated with the account in tokens
      *  @param accountId account requested.
      */
-
     function balanceOf(uint accountId)
         external
         view
@@ -201,7 +190,6 @@ contract Accounts is Data {
       * @dev gets number of accounts registered and reserved.
       * @return returns the size of the accounts array.
       */
-
     function getAccountsLength() external view returns (uint) {
         return accounts.length;
     }
@@ -210,7 +198,6 @@ contract Accounts is Data {
       * @dev gets the number of bulk registrations performed
       * @return the size of the bulkRegistrations array.
       */
-
     function getBulkLength() external view returns (uint) {
         return bulkRegistrations.length;
     }

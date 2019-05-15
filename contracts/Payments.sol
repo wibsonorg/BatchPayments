@@ -20,6 +20,7 @@ contract Payments is Accounts {
 
     event PaymentUnlocked(uint indexed payIndex, bytes key);
     event PaymentRefunded(uint32 beneficiaryAccountId, uint64 amountRefunded);
+
     /**
      * Event for collection logging. Off-chain monitoring services may listen
      * to this event to trigger challenges.
@@ -82,7 +83,8 @@ contract Payments is Accounts {
         // Prepare a Payment struct
         p.totalNumberOfPayees = SafeMath.add32(Challenge.getPayDataCount(payData), newCount);
         require(p.totalNumberOfPayees > 0, "Invalid number of payees, should at least be 1 payee");
-        require(p.totalNumberOfPayees < params.maxTransfer, "Too many payees, it should be less than config maxTransfer");
+        require(p.totalNumberOfPayees < params.maxTransfer,
+        "Too many payees, it should be less than config maxTransfer");
 
         p.fromAccountId = fromId;
         p.amount = amount;
