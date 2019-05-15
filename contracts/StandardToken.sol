@@ -24,39 +24,7 @@ contract StandardToken is IERC20 {
         balances[msg.sender] = totalSupply;
     }
 
-    function name()
-        public
-        view
-        returns (string)
-    {
-        return _name;
-    }
-
-    function symbol()
-        public
-        view
-        returns (string)
-    {
-        return _symbol;
-    }
-
-    function decimals()
-        public
-        view
-        returns (uint8)
-    {
-        return _decimals;
-    }
-
-    function totalSupply()
-        public
-        view
-        returns (uint256)
-    {
-        return _totalSupply;
-    }
-
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function transfer(address _to, uint256 _value) external returns (bool) {
         require(_to != address(0), "invalid _to address");
         require(_value <= balances[msg.sender], "sender does not have enough balance");
         balances[msg.sender] = SafeMath.sub(balances[msg.sender], _value);
@@ -65,11 +33,7 @@ contract StandardToken is IERC20 {
         return true;
     }
 
-    function balanceOf(address _owner) public view returns (uint256 balance) {
-        return balances[_owner];
-    }
-
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) external returns (bool) {
         require(_to != address(0), "invalid _to address");
         require(_value <= balances[_from], "sender does not have enough balance");
         require(_value <= allowed[_from][msg.sender], "sender does not have enough allowed balance");
@@ -81,26 +45,62 @@ contract StandardToken is IERC20 {
         return true;
     }
 
-    function approve(address _spender, uint256 _value) public returns (bool) {
+    function approve(address _spender, uint256 _value) external returns (bool) {
         allowed[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
         return true;
     }
 
-    function allowance(address _owner, address _spender) public view returns (uint256) {
-        return allowed[_owner][_spender];
-    }
-
-    function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
+    function increaseApproval(address _spender, uint _addedValue) external returns (bool) {
         allowed[msg.sender][_spender] = SafeMath.add(allowed[msg.sender][_spender], _addedValue);
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
     }
 
-    function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
+    function decreaseApproval(address _spender, uint _subtractedValue) external returns (bool) {
         allowed[msg.sender][_spender] = SafeMath.sub(allowed[msg.sender][_spender], _subtractedValue);
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
+    }
+
+    function name()
+        external
+        view
+        returns (string)
+    {
+        return _name;
+    }
+
+    function symbol()
+        external
+        view
+        returns (string)
+    {
+        return _symbol;
+    }
+
+    function decimals()
+        external
+        view
+        returns (uint8)
+    {
+        return _decimals;
+    }
+
+    function totalSupply()
+        external
+        view
+        returns (uint256)
+    {
+        return _totalSupply;
+    }
+
+    function balanceOf(address _owner) external view returns (uint256 balance) {
+        return balances[_owner];
+    }
+
+    function allowance(address _owner, address _spender) external view returns (uint256) {
+        return allowed[_owner][_spender];
     }
 
 }
