@@ -7,6 +7,9 @@
     "compiler-fixed": false,
     "function-max-lines": false,
     "mark-callable-contracts": false,
-    "no-inline-assembly": false
+    "no-inline-assembly": false,
+    "func-name-mixedcase": false,
+    "func-order": false,
+    "no-simple-event-func-name": false
   }
 }

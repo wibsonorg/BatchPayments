@@ -20,6 +20,7 @@ contract Payments is Accounts {
 
     event PaymentUnlocked(uint indexed payIndex, bytes key);
     event PaymentRefunded(uint32 beneficiaryAccountId, uint64 amountRefunded);
+
     /**
      * Event for collection logging. Off-chain monitoring services may listen
      * to this event to trigger challenges.
@@ -82,7 +83,8 @@ contract Payments is Accounts {
         // Prepare a Payment struct
         p.totalNumberOfPayees = SafeMath.add32(Challenge.getPayDataCount(payData), newCount);
         require(p.totalNumberOfPayees > 0, "Invalid number of payees, should at least be 1 payee");
-        require(p.totalNumberOfPayees < params.maxTransfer, "Too many payees, it should be less than config maxTransfer");
+        require(p.totalNumberOfPayees < params.maxTransfer,
+        "Too many payees, it should be less than config maxTransfer");
 
         p.fromAccountId = fromId;
         p.amount = amount;
@@ -138,7 +140,7 @@ contract Payments is Accounts {
      * @param payIndex Index of the payment transaction associated with this request.
      * @return true if the operation succeded.
      */
-    function refundLockedPayment(uint payIndex) public returns (bool) {
+    function refundLockedPayment(uint payIndex) external returns (bool) {
         require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
@@ -241,7 +243,7 @@ contract Payments is Accounts {
             sl.addr = address(0);
 
             // Instant-collect, toAccount gets the declaredAmount now
-            balanceAdd(toAccountId,declaredAmountLessFee);
+            balanceAdd(toAccountId, declaredAmountLessFee);
         } else
         {   // not instant-collect
             sl.delegateAmount = fee;
@@ -271,7 +273,7 @@ contract Payments is Accounts {
      * @dev gets the number of payments issued
      * @return returns the size of the payments array.
      */
-    function getPaymentsLength() public view returns (uint) {
+    function getPaymentsLength() external view returns (uint) {
         return payments.length;
     }
 
