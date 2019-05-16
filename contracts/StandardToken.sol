@@ -46,6 +46,9 @@ contract StandardToken is IERC20 {
         return true;
     }
 
+    /* Before using this method, please read:
+     * https://blog.smartdec.net/erc20-approve-issue-in-simple-words-a41aaf47bca6
+     */
     function approve(address _spender, uint256 _value) external returns (bool) {
         allowed[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
