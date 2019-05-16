@@ -10,6 +10,8 @@ const itBehavesLikeAPayDataValidator = (fn) => {
     await assertRevert(fn('0x'), 'must fail when payData has zero length')
     await assertRevert(fn('0x00040000000a00000005'), 'must fail when payData header is missing')
     await assertRevert(fn('0xfff40000000a00000005'), 'must fail when bytesPerId field is negative')
+    await assertRevert(fn('0xff200000000a00000005'), 'must fail when bytesPerId field is exactly 0x20')
+    await assertRevert(fn('0xff210000000a00000005'), 'must fail when bytesPerId field is greater than 0x20')
     await assertRevert(fn('0xff0400000a000005'), 'must fail when record size is lower than expected')
     await assertRevert(fn('0xff04000000000a0000000005'), 'must fail when record is greater than expected')
     await assertRevert(fn('0xff04000000a000000000005'), 'must fail when record size is inconsistent')
@@ -102,11 +104,11 @@ contract('Challenge', () => {
     it('returns the record count', async () => {
       const result = await challenge.getPayDataCount(getPayData([5, 15, 25]))
       assert.equal(Number(result), 3, 'wrong payData count')
-    })
+    });
     it('returns zero when there are no records present in payData', async () => {
       const result = await challenge.getPayDataCount('0xff04')
       assert.equal(Number(result), 0, 'wrong payData count')
-    })
+    });
     itBehavesLikeAPayDataValidator(pd => challenge.getPayDataCount(pd))
   })
 
