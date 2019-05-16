@@ -12,13 +12,13 @@ import "./Challenge.sol";
  */
 contract Payments is Accounts {
     event PaymentRegistered(
-        uint indexed payIndex,
+        uint32 indexed payIndex,
         uint indexed from,
         uint totalNumberOfPayees,
         uint amount
     );
 
-    event PaymentUnlocked(uint indexed payIndex, bytes key);
+    event PaymentUnlocked(uint32 indexed payIndex, bytes key);
     event PaymentRefunded(uint32 beneficiaryAccountId, uint64 amountRefunded);
 
     /**
@@ -29,8 +29,8 @@ contract Payments is Accounts {
         uint indexed delegate,
         uint indexed slot,
         uint indexed to,
-        uint fromPayindex,
-        uint toPayIndex,
+        uint32 fromPayindex,
+        uint32 toPayIndex,
         uint amount
     );
 
@@ -73,6 +73,7 @@ contract Payments is Accounts {
     )
         external
     {
+        require(payments.length < 2**32, "Cannot add more payments");
         require(isAccountOwner(fromId), "Invalid fromId");
         require(amount > 0, "Invalid amount");
         require(newCount == 0 || rootHash > 0, "Invalid root hash"); // although bulkRegister checks this, we anticipate
@@ -111,7 +112,7 @@ contract Payments is Accounts {
         // Save the new Payment
         payments.push(p);
 
-        emit PaymentRegistered(payments.length-1, p.fromAccountId, p.totalNumberOfPayees, p.amount);
+        emit PaymentRegistered(SafeMath.sub32(payments.length, 1), p.fromAccountId, p.totalNumberOfPayees, p.amount);
     }
 
     /**
@@ -140,7 +141,7 @@ contract Payments is Accounts {
      * @param payIndex Index of the payment transaction associated with this request.
      * @return true if the operation succeded.
      */
-    function refundLockedPayment(uint payIndex) external returns (bool) {
+    function refundLockedPayment(uint32 payIndex) external returns (bool) {
         require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
