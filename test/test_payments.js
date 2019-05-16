@@ -19,7 +19,7 @@ contract('Payments', (accounts) => {
   let a1 = accounts[1]
 
   let bp, tAddress, st
-  const newAccountFlag = new BigNumber(2).pow(256).minus(1)
+  const NEW_ACCOUNT_FLAG = new BigNumber(2).pow(256).minus(1)
 
   before(async function () {
     await utils.skipBlocks(1)
@@ -56,7 +56,7 @@ contract('Payments', (accounts) => {
 
       // put enough funds to transfer and bulk register ids
       await st.approve(bp.address, total_amount * 2)
-      t0 = await bp.deposit(total_amount * 2, newAccountFlag)
+      t0 = await bp.deposit(total_amount * 2, NEW_ACCOUNT_FLAG)
       from_id = await bp.getAccountsLength.call() - 1
       v0 = await bp.bulkRegister(list.length, rootHash)
 
@@ -181,7 +181,7 @@ contract('Payments', (accounts) => {
     it('should reject registerPayment if there are too many payees', async () => {
       // NOTE: there are 2 checks that depend on newCount:
       //   1. (payData.length-2) / bytesPerId + newCount < maxTransfer = 100000
-      //   2. accounts.length + newCount < maxAccountId = 2 ** 32
+      //   2. accounts.length + newCount < MAX_ACCOUNT_ID = 2 ** 32
       //
       // because 100000 < 2 ** 32 we can only trigger the first condition
       let toobig_count = 100000 // this should actually be bp.maxTransfer, however it crashes
@@ -309,7 +309,7 @@ contract('Payments', (accounts) => {
       let b0 = (await b.balanceOf(mid)).toNumber()
       await b.collect({
         delegate: id,
-        slot: b.instantSlot,
+        slot: b.INSTANT_SLOT,
         toAccountId: mid,
         fromPaymentId: 0,
         toPaymentId: maxPayIndex + 1,
@@ -359,7 +359,7 @@ contract('Payments', (accounts) => {
 
     it('should pay fee on instant-collect', async () => {
       let mid = userid[3]
-      let slot = b.instantSlot + 1
+      let slot = b.INSTANT_SLOT + 1
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
       let fee = Math.floor(amount / 3)
       let b0 = (await b.balanceOf(mid)).toNumber()
@@ -444,7 +444,7 @@ contract('Payments', (accounts) => {
 
     it('should withdraw if requested instant', async () => {
       let mid = userid[6]
-      let slot = b.instantSlot + 2
+      let slot = b.INSTANT_SLOT + 2
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
       let fee = Math.floor(amount / 3)
       let b0 = (await b.balanceOf(mid)).toNumber()
@@ -476,7 +476,7 @@ contract('Payments', (accounts) => {
 
     it('should reject if payIndex is less or equal to last collected payment ID', async () => {
       let collectorAccountId = userid[6]
-      let slot = b.instantSlot
+      let slot = b.INSTANT_SLOT
       let amount = await b.getCollectAmount(collectorAccountId, 0, maxPayIndex + 1)
       let [, , lastCollectedPaymentId] = await b.getAccount(collectorAccountId)
 
@@ -494,7 +494,7 @@ contract('Payments', (accounts) => {
 
     it('should reject if payIndex is invalid', async () => {
       let collectorId = userid[6]
-      let slot = b.instantSlot + 2
+      let slot = b.INSTANT_SLOT + 2
       let amount = await b.getCollectAmount(collectorId, 0, maxPayIndex + 1)
       let [, , lastCollectedPaymentId] = await b.getAccount(collectorId)
       const tooHighPayIndex = (await b.getPaymentsLength()) + 1
@@ -516,7 +516,7 @@ contract('Payments', (accounts) => {
 
     it('should reject if invalid toAccountId', async () => {
       let mid = userid[6]
-      let slot = b.instantSlot + 2
+      let slot = b.INSTANT_SLOT + 2
       let amount = await b.getCollectAmount(mid, 0, maxPayIndex + 1)
       const invalidCollectorId = 123454321
       // We need a valid address to sign the collect transaction.
@@ -539,7 +539,7 @@ contract('Payments', (accounts) => {
 
     it('should reject wrong fromPayIndex / Invalid Signature', async () => {
       let collectorId = userid[7]
-      let slot = b.instantSlot + 2
+      let slot = b.INSTANT_SLOT + 2
       let amount = await b.getCollectAmount(collectorId, 0, maxPayIndex + 1)
       const invalidFromPayIndex = 123454321
 
@@ -573,7 +573,7 @@ contract('Payments', (accounts) => {
         let b0 = (await b.balanceOf(id)).toNumber()
         await b.collect({
           delegate: id,
-          slot: b.instantSlot,
+          slot: b.INSTANT_SLOT,
           toAccountId: id,
           fromPaymentId: 0,
           toPaymentId: pid+1,

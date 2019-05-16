@@ -18,7 +18,7 @@ contract('Accounts', (addr) => {
   let a1 = addr[1]
 
   let bp, tAddress, st
-  const newAccountFlag = new BigNumber(2).pow(256).minus(1)
+  const NEW_ACCOUNT_FLAG = new BigNumber(2).pow(256).minus(1)
 
   before(async () => {
     await utils.skipBlocks(1)
@@ -35,10 +35,10 @@ contract('Accounts', (addr) => {
     it('Should fail on not enough approval', async () => {
       const amount = 100
       await st.approve(bp.address, amount - 1)
-      await catchRevert(bp.deposit(amount, newAccountFlag))
+      await catchRevert(bp.deposit(amount, NEW_ACCOUNT_FLAG))
 
       await st.approve(bp.address, 0)
-      await catchRevert(bp.deposit(amount, newAccountFlag))
+      await catchRevert(bp.deposit(amount, NEW_ACCOUNT_FLAG))
     })
 
     it('Should accept deposits for new accounts', async () => {
@@ -46,7 +46,7 @@ contract('Accounts', (addr) => {
       const amount = 100
 
       let r0 = await st.approve(bp.address, amount)
-      let r1 = await bp.deposit(amount, newAccountFlag)
+      let r1 = await bp.deposit(amount, NEW_ACCOUNT_FLAG)
 
       let v0 = await st.balanceOf.call(a0)
       let v1 = await st.balanceOf.call(bp.address)
@@ -60,7 +60,7 @@ contract('Accounts', (addr) => {
       const amount = 100
 
       let r0 = await st.approve(bp.address, 2 * amount)
-      let r1 = await bp.deposit(amount, newAccountFlag)
+      let r1 = await bp.deposit(amount, NEW_ACCOUNT_FLAG)
 
       let v0 = await bp.balanceOf.call(0)
       await bp.deposit(amount, 0)
@@ -71,7 +71,7 @@ contract('Accounts', (addr) => {
     })
 
     it('Should reject 0-token deposits', async () => {
-      await assertRequire(bp.deposit(0, newAccountFlag), 'amount should be positive')
+      await assertRequire(bp.deposit(0, NEW_ACCOUNT_FLAG), 'amount should be positive')
     })
   })
 
@@ -80,7 +80,7 @@ contract('Accounts', (addr) => {
       const amount = 100
 
       await st.approve(bp.address, amount)
-      await bp.deposit(amount, newAccountFlag)
+      await bp.deposit(amount, NEW_ACCOUNT_FLAG)
       let id = await bp.getAccountsLength.call()
       id = id.toNumber() - 1
 
@@ -105,7 +105,7 @@ contract('Accounts', (addr) => {
       const amount = 100
 
       await st.approve(bp.address, amount)
-      await bp.deposit(amount, newAccountFlag)
+      await bp.deposit(amount, NEW_ACCOUNT_FLAG)
       let id = await bp.getAccountsLength.call()
       id = id.toNumber() - 1
 
@@ -116,10 +116,10 @@ contract('Accounts', (addr) => {
       const amount = 100
 
       await st.approve(bp.address, amount)
-      await bp.deposit(amount, newAccountFlag)
+      await bp.deposit(amount, NEW_ACCOUNT_FLAG)
 
       let id = await bp.getAccountsLength.call()
-      id = id.toNumber() - 1 // this is a dangerous way to obtain the ID of the newAccountFlag, as many accounts c
+      id = id.toNumber() - 1 // this is a dangerous way to obtain the ID of the NEW_ACCOUNT_FLAG, as many accounts c
 
       await bp.withdraw(1, id) // make sure we can actually do a withdraw using a valid id
       await catchRevert(bp.withdraw(amount / 2, id + 1)) // try with invalid id
@@ -129,7 +129,7 @@ contract('Accounts', (addr) => {
       const amount = 100
 
       await st.approve(bp.address, amount)
-      await bp.deposit(amount, newAccountFlag)
+      await bp.deposit(amount, NEW_ACCOUNT_FLAG)
 
       let id = await bp.getAccountsLength.call()
       id = id.toNumber() - 1
@@ -144,7 +144,7 @@ contract('Accounts', (addr) => {
     //            const amount = 100;
     //
     //            await st.approve(bp.address, amount);
-    //            await bp.deposit(amount, newAccountFlag);
+    //            await bp.deposit(amount, NEW_ACCOUNT_FLAG);
     //
     //            let id = await bp.getAccountsLength.call();
     //            id = id.toNumber()-1;
@@ -166,7 +166,7 @@ contract('Accounts', (addr) => {
       const amount = 100
 
       await st.approve(bp.address, amount)
-      await bp.deposit(amount, newAccountFlag)
+      await bp.deposit(amount, NEW_ACCOUNT_FLAG)
 
       let id = await bp.getAccountsLength.call()
       id = id.toNumber() - 1
@@ -186,9 +186,9 @@ contract('Accounts', (addr) => {
       const amount = 100
 
       await st.approve(bp.address, amount)
-      let tx1 = await bp.deposit(1, newAccountFlag)
+      let tx1 = await bp.deposit(1, NEW_ACCOUNT_FLAG)
       const v1 = await bp.getAccountsLength.call()
-      let tx2 = await bp.deposit(1, newAccountFlag)
+      let tx2 = await bp.deposit(1, NEW_ACCOUNT_FLAG)
       const v2 = await bp.getAccountsLength.call()
 
       eventEmitted(tx1, 'AccountRegistered')
@@ -236,7 +236,7 @@ contract('Accounts', (addr) => {
     })
 
     // TODO: check case we run out of ids:
-    // require(accounts.length + n <= maxAccountId, "Cannot register: ran out of ids");
+    // require(accounts.length + n <= MAX_ACCOUNT_ID, "Cannot register: ran out of ids");
 
     it('Bulk registration should fail for n == 0', async () => {
       let v0 = await bp.getBulkLength.call()
@@ -272,7 +272,7 @@ contract('Accounts', (addr) => {
     })
 
     // TODO: check case we registered a lot of accounts
-    // accounts.length < maxAccountId, "no more accounts left");
+    // accounts.length < MAX_ACCOUNT_ID, "no more accounts left");
   })
 
   describe('claim', () => {

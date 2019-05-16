@@ -50,7 +50,7 @@ contract('BatPay', (addr) => {
     let a1 = addr[1]
 
     let batPay, tAddress, st
-    const newAccountFlag = new BigNumber(2).pow(256).minus(1)
+    const NEW_ACCOUNT_FLAG = new BigNumber(2).pow(256).minus(1)
 
     before(async () => {
       let ret = await utils.newInstances()
@@ -64,7 +64,7 @@ contract('BatPay', (addr) => {
       unlockBlocks = params[7].toNumber()
       challengeBlocks = params[3].toNumber()
       challengeStepBlocks = params[4].toNumber()
-      instantSlot = (await batPay.instantSlot.call()).toNumber()
+      INSTANT_SLOT = (await batPay.INSTANT_SLOT.call()).toNumber()
     })
 
     it('cannot obtain the balance for invalid id', async () => {

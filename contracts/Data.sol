@@ -69,8 +69,8 @@ contract Data {
     Config public params;
     address public owner;
 
-    uint public constant maxAccountId = 2**32-1;    // Maximum account id (32-bits)
-    uint public constant newAccountFlag = 2**256-1; // Request registration of new account
-    uint public constant instantSlot = 32768;
+    uint public constant MAX_ACCOUNT_ID = 2**32-1;    // Maximum account id (32-bits)
+    uint public constant NEW_ACCOUNT_FLAG = 2**256-1; // Request registration of new account
+    uint public constant INSTANT_SLOT = 32768;
 
 }

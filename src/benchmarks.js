@@ -165,7 +165,7 @@ async function collect () {
 
   let t7 = await b.collect({
     delegate: id,
-    slot: b.instantSlot,
+    slot: b.INSTANT_SLOT,
     toAccountId: id2,
     fromPaymentId: 3,
     toPaymentId: 4,

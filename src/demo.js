@@ -164,7 +164,7 @@ async function main () {
 
     await batpay.collect({
       delegate: 0,
-      slot: accountId + batpay.instantSlot,
+      slot: accountId + batpay.INSTANT_SLOT,
       toAccountId: accountId,
       fromPaymentId: lastCollectedPaymentId.toNumber(),
       toPaymentId: collectUntilPaymentId,
@@ -180,7 +180,7 @@ async function main () {
   await utils.skipBlocks(batpay.challengeBlocks + 1)
   console.log('Freeing collect slots.')
   for (let i = 1; i <= 5; i++) {
-    await batpay.freeSlot(0, i + batpay.instantSlot)
+    await batpay.freeSlot(0, i + batpay.INSTANT_SLOT)
   }
   await batpay.showBalance()
 }
