@@ -156,7 +156,7 @@ async function doStuff () {
       let amount = await b.getCollectAmount(i, c, max)
       if (i == 3) amount = amount + 100
 
-      await b.collect(0, i + b.instantSlot, i, c, max, amount, 1, addr)
+      await b.collect(0, i + b.INSTANT_SLOT, i, c, max, amount, 1, addr)
     }
 
     await b.showBalance()
@@ -164,7 +164,7 @@ async function doStuff () {
     await skipBlocks(b.challengeBlocks)
     console.log('Freeing collect slots')
     for (let i = 1; i <= 5; i++) {
-      await b.freeSlot(0, i + b.instantSlot)
+      await b.freeSlot(0, i + b.INSTANT_SLOT)
     }
     await b.showBalance()
   } catch (e) {

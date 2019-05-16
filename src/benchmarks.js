@@ -119,7 +119,7 @@ async function collect () {
   let t3 = await b.collect(id, 2, id2, 2, 3, 100, 2, acc[0])
   addStat('collect-empty-withdraw', t3.receipt.gasUsed)
 
-  let t7 = await b.collect(id, b.instantSlot, id2, 3, 4, 100, 2, acc[0])
+  let t7 = await b.collect(id, b.INSTANT_SLOT, id2, 3, 4, 100, 2, acc[0])
   addStat('collect-empty-instant-withdraw', t7.receipt.gasUsed)
 
   await utils.skipBlocks(b.challengeBlocks)
