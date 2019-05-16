@@ -109,7 +109,7 @@ contract('Accounts', (addr) => {
       let id = await bp.getAccountsLength.call()
       id = id.toNumber() - 1
 
-      await catchRevert(bp.withdraw(amount / 2, id, { from: web3.eth.accounts[1] }))
+      await catchRevert(bp.withdraw(amount / 2, id, { from: a1 }))
     })
 
     it('Should reject withdrawals for invalid accounts', async () => {
