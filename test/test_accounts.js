@@ -101,6 +101,17 @@ contract('Accounts', (addr) => {
       assert.equal(y1 - y0, amount / 2)
     })
 
+    it('Should reject withdrawals for existing accounts when sender is not the owner', async () => {
+      const amount = 100
+
+      await st.approve(bp.address, amount)
+      await bp.deposit(amount, newAccountFlag)
+      let id = await bp.getAccountsLength.call()
+      id = id.toNumber() - 1
+
+      await catchRevert(bp.withdraw(amount / 2, id, { from: a1 }))
+    })
+
     it('Should reject withdrawals for invalid accounts', async () => {
       const amount = 100
 

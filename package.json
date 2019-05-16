@@ -37,7 +37,7 @@
     "istanbul": "^0.4.5",
     "solhint": "^2.0.0",
     "standard": "^12.0.1",
-    "truffle-hdwallet-provider": "^1.0.6"
+    "truffle-hdwallet-provider": "1.0.6"
   },
   "standard": {
     "globals": [
