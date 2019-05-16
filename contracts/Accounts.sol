@@ -62,7 +62,7 @@ contract Accounts is Data {
     function bulkRegister(uint256 bulkSize, bytes32 rootHash) public {
         require(bulkSize > 0, "Bulk size can't be zero");
         require(bulkSize < params.maxBulk, "Cannot register this number of ids simultaneously");
-        require(SafeMath.add(accounts.length, bulkSize) <= maxAccountId, "Cannot register: ran out of ids");
+        require(SafeMath.add(accounts.length, bulkSize) <= MAX_ACCOUNT_ID, "Cannot register: ran out of ids");
         require(rootHash > 0, "Root hash can't be zero");
 
         emit BulkRegister(bulkSize, accounts.length, bulkRegistrations.length);
@@ -97,7 +97,7 @@ contract Accounts is Data {
       * @return the id of the new account
       */
     function register() public returns (uint32 ret) {
-        require(accounts.length < maxAccountId, "no more accounts left");
+        require(accounts.length < MAX_ACCOUNT_ID, "no more accounts left");
         ret = (uint32)(accounts.length);
         accounts.push(Account(msg.sender, 0, 0));
         emit AccountRegistered(ret, msg.sender);
@@ -128,16 +128,16 @@ contract Accounts is Data {
      * @dev Deposit tokens into the BatchPayment contract to enable scalable payments
      * @param amount Amount of tokens to deposit on `accountId`. User should have
      *        enough balance and issue an `approve()` method prior to calling this.
-     * @param accountId The id of the user account. In case `newAccountFlag` is used,
+     * @param accountId The id of the user account. In case `NEW_ACCOUNT_FLAG` is used,
      *        a new account will be registered and the requested amount will be
      *        deposited in a single operation.
      */
     function deposit(uint64 amount, uint256 accountId) external {
-        require(accountId < accounts.length || accountId == newAccountFlag, "invalid accountId");
+        require(accountId < accounts.length || accountId == NEW_ACCOUNT_FLAG, "invalid accountId");
         require(amount > 0, "amount should be positive");
         require(token.transferFrom(msg.sender, address(this), amount), "transfer failed");
 
-        if (accountId == newAccountFlag) {
+        if (accountId == NEW_ACCOUNT_FLAG) {
             // new account
             uint newId = register();
             accounts[newId].balance = amount;
