@@ -12,13 +12,13 @@ import "./Challenge.sol";
  */
 contract Payments is Accounts {
     event PaymentRegistered(
-        uint indexed payIndex,
+        uint32 indexed payIndex,
         uint indexed from,
         uint totalNumberOfPayees,
         uint amount
     );
 
-    event PaymentUnlocked(uint indexed payIndex, bytes key);
+    event PaymentUnlocked(uint32 indexed payIndex, bytes key);
     event PaymentRefunded(uint32 beneficiaryAccountId, uint64 amountRefunded);
 
     /**
@@ -29,8 +29,8 @@ contract Payments is Accounts {
         uint indexed delegate,
         uint indexed slot,
         uint indexed to,
-        uint fromPayindex,
-        uint toPayIndex,
+        uint32 fromPayindex,
+        uint32 toPayIndex,
         uint amount
     );
 
@@ -73,6 +73,7 @@ contract Payments is Accounts {
     )
         external
     {
+        require(payments.length < 2**32, "Cannot add more payments");
         require(isAccountOwner(fromId), "Invalid fromId");
         require(amount > 0, "Invalid amount");
         require(newCount == 0 || rootHash > 0, "Invalid root hash"); // although bulkRegister checks this, we anticipate
@@ -111,7 +112,7 @@ contract Payments is Accounts {
         // Save the new Payment
         payments.push(p);
 
-        emit PaymentRegistered(payments.length-1, p.fromAccountId, p.totalNumberOfPayees, p.amount);
+        emit PaymentRegistered(SafeMath.sub32(payments.length, 1), p.fromAccountId, p.totalNumberOfPayees, p.amount);
     }
 
     /**
@@ -140,7 +141,7 @@ contract Payments is Accounts {
      * @param payIndex Index of the payment transaction associated with this request.
      * @return true if the operation succeded.
      */
-    function refundLockedPayment(uint payIndex) external returns (bool) {
+    function refundLockedPayment(uint32 payIndex) external returns (bool) {
         require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(payments[payIndex].lockingKeyHash != 0, "payment is already unlocked");
         require(block.number >= payments[payIndex].lockTimeoutBlockNumber, "Hash lock has not expired yet");
@@ -173,7 +174,7 @@ contract Payments is Accounts {
      * @param delegate id of the delegate account performing the operation on the name of the user.
      * @param slotId Individual slot used for the challenge game.
      * @param toAccountId Destination of the collect operation.
-     * @param payIndex payIndex of the first payment index not covered by this application.
+     * @param maxPayIndex payIndex of the first payment index not covered by this application.
      * @param declaredAmount amount of tokens owed to this user account
      * @param fee fee in tokens to be paid for the end user help.
      * @param destination Address to withdraw the full account balance.
@@ -183,7 +184,7 @@ contract Payments is Accounts {
         uint32 delegate,
         uint32 slotId,
         uint32 toAccountId,
-        uint32 payIndex,
+        uint32 maxPayIndex,
         uint64 declaredAmount,
         uint64 fee,
         address destination,
@@ -207,15 +208,16 @@ contract Payments is Accounts {
             keccak256(
             abi.encodePacked(
                 address(this), delegate, toAccountId, tacc.lastCollectedPaymentId,
-                payIndex, declaredAmount, fee, destination
+                maxPayIndex, declaredAmount, fee, destination
             ));
             require(Challenge.recoverHelper(hash, signature) == tacc.owner, "Bad user signature");
         }
 
-        // Check payIndex is valid
-        require(payIndex > 0 && payIndex <= payments.length, "invalid payIndex, payments is not that long yet");
-        require(payIndex > tacc.lastCollectedPaymentId, "account already collected payments up to payIndex");
-        require(payments[payIndex - 1].lockTimeoutBlockNumber < block.number,
+        // Check maxPayIndex is valid
+        require(maxPayIndex > 0 && maxPayIndex <= payments.length,
+        "invalid maxPayIndex, payments is not that long yet");
+        require(maxPayIndex > tacc.lastCollectedPaymentId, "account already collected payments up to maxPayIndex");
+        require(payments[maxPayIndex - 1].lockTimeoutBlockNumber < block.number,
             "cannot collect payments that can be unlocked");
 
         // Check if declaredAmount and fee are valid
@@ -226,7 +228,7 @@ contract Payments is Accounts {
         CollectSlot storage sl = collects[delegate][slotId];
         sl.delegate = delegate;
         sl.minPayIndex = tacc.lastCollectedPaymentId;
-        sl.maxPayIndex = payIndex;
+        sl.maxPayIndex = maxPayIndex;
         sl.amount = declaredAmount;
         sl.to = toAccountId;
         sl.block = Challenge.getFutureBlock(params.challengeBlocks);
@@ -254,7 +256,7 @@ contract Payments is Accounts {
         require(accounts[delegate].balance >= needed, "not enough funds");
 
         // Update the lastCollectPaymentId for the toAccount
-        accounts[toAccountId].lastCollectedPaymentId = uint32(payIndex);
+        accounts[toAccountId].lastCollectedPaymentId = uint32(maxPayIndex);
 
         // Now the delegate Pays
         balanceSub(delegate, needed);
@@ -266,7 +268,7 @@ contract Payments is Accounts {
             require(token.transfer(destination, toWithdraw), "transfer failed");
         }
 
-        emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, payIndex, declaredAmount);
+        emit Collect(delegate, slotId, toAccountId, tacc.lastCollectedPaymentId, maxPayIndex, declaredAmount);
     }
 
     /**
