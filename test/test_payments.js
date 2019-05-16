@@ -422,7 +422,7 @@ contract('Payments', (accounts) => {
           amount,
           amount / 3,
           accounts[1]),
-        'invalid payIndex, payments is not that long yet'
+        'invalid maxPayIndex, payments is not that long yet'
       )
     })
 
