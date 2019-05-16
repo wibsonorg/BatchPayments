@@ -1,6 +1,6 @@
 const { reverts, ErrorType } = require('truffle-assertions')
 const Challenge = artifacts.require('Challenge')
-const { getChallengeData } = require('../lib/bat')
+const { getChallengeData } = require('../lib/Batpay')
 const { getPayData } = require('../lib/utils')
 
 const assertRevert = (promise, message) => reverts(promise, ErrorType.REVERT, message);

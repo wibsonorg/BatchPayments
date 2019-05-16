@@ -26,6 +26,11 @@ module.exports = {
       network_id: 1,
       gasPrice: 10 * 1000000000,
     },
+    localChain: {
+      host: '127.0.0.1',
+      port: 2545,
+      network_id: 987
+    }
   },
   solc: {
     optimizer: {

@@ -1,4 +1,4 @@
-const { merkle, bat: { toLeftPaddedBytes32 } } = require('../lib')(web3, artifacts)
+const { merkle, Batpay: { toLeftPaddedBytes32 } } = require('../lib')(web3, artifacts)
 const { sha3_1 } = merkle;
 
 var BigNumber = web3.BigNumber
