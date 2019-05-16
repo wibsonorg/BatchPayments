@@ -113,7 +113,6 @@ contract Accounts is Data {
         external
         onlyAccountOwner(accountId)
     {
-        address addr = accounts[accountId].owner;
         uint64 balance = accounts[accountId].balance;
 
         require(balance >= amount, "insufficient funds");
@@ -121,7 +120,7 @@ contract Accounts is Data {
 
         balanceSub(accountId, amount);
 
-        token.transfer(addr, amount);
+        require(token.transfer(msg.sender, amount), "transfer failed");
     }
 
     /**
@@ -135,7 +134,6 @@ contract Accounts is Data {
     function deposit(uint64 amount, uint256 accountId) external {
         require(accountId < accounts.length || accountId == newAccountFlag, "invalid accountId");
         require(amount > 0, "amount should be positive");
-        require(token.transferFrom(msg.sender, address(this), amount), "transfer failed");
 
         if (accountId == newAccountFlag) {
             // new account
@@ -145,6 +143,8 @@ contract Accounts is Data {
             // existing account
             balanceAdd(accountId, amount);
         }
+
+        require(token.transferFrom(msg.sender, address(this), amount), "transfer failed");
     }
 
     /**
