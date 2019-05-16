@@ -105,7 +105,7 @@ contract('Accounts', (addr) => {
       const amount = 100
 
       await st.approve(bp.address, amount)
-      await bp.deposit(amount, newAccountFlag)
+      await bp.deposit(amount, NEW_ACCOUNT_FLAG)
       let id = await bp.getAccountsLength.call()
       id = id.toNumber() - 1
 
