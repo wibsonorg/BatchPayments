@@ -237,7 +237,7 @@ contract Payments is Accounts {
         uint64 needed = params.collectStake;
 
         // check if this is an instant collect
-        if (slotId >= instantSlot) {
+        if (slotId >= INSTANT_SLOT) {
             uint64 declaredAmountLessFee = SafeMath.sub64(declaredAmount, fee);
             sl.delegateAmount = declaredAmount;
             needed = SafeMath.add64(needed, declaredAmountLessFee);
@@ -261,7 +261,7 @@ contract Payments is Accounts {
         balanceSub(delegate, needed);
 
         // Proceed if the user is withdrawing its balance
-        if (destination != address(0) && slotId >= instantSlot) {
+        if (destination != address(0) && slotId >= INSTANT_SLOT) {
             uint64 toWithdraw = accounts[toAccountId].balance;
             accounts[toAccountId].balance = 0;
             require(token.transfer(destination, toWithdraw), "transfer failed");
