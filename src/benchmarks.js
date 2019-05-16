@@ -1,5 +1,5 @@
 var lib = require('../lib')(web3, artifacts)
-var bat = lib.bat
+var bat = lib.Batpay
 var utils = lib.utils
 var bp, st
 var b
@@ -40,9 +40,9 @@ async function init () {
 }
 
 async function register () {
-  let [i0] = await b.register(acc[0])
+  let [i0] = await b.registerAccount(acc[0])
 
-  let [i1, t2] = await b.register(acc[0])
+  let [i1, t2] = await b.registerAccount(acc[0])
   addStat('register', t2.gasUsed)
 
   id = i0
@@ -74,14 +74,20 @@ async function bulkReg (count) {
   let bulk = await b.bulkRegister(list)
   addStat('bulkRegister-' + count, bulk.recp.gasUsed)
 
-  let [,,t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.smallestAccountId)
+  let [,, t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.smallestAccountId)
   addStat('claimBulkRegistrationId', t.gasUsed)
 }
 
 async function registerPayment (amount, fee, count, lockingKeyHash, name) {
   let list = utils.randomIds(count, max, 'batpay tests seed')
 
-  let [, t] = await b.registerPayment(0, 10, fee, list, lockingKeyHash)
+  let [, t] = await b.registerPayment({
+    fromAccountId: 0,
+    amount: 10,
+    unlockerFee: fee,
+    payeesAccountsIds: list,
+    lockingKeyHash: lockingKeyHash
+  })
   addStat(name, t.gasUsed)
 }
 
@@ -89,8 +95,13 @@ async function unlock () {
   let list = []
   for (let i = 0; i < 100; i++) list.push(i)
   let lockingKeyHash = utils.hashLock(id2, passcode)
-  let [pid] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
-
+  let [pid] = await b.registerPayment({
+    fromAccountId: 0,
+    amount: 10,
+    unlockerFee: 1,
+    payeesAccountsIds: list,
+    lockingKeyHash: lockingKeyHash
+  })
   let t2 = await b.unlock(pid, id2, passcode)
   addStat('unlock', t2.gasUsed)
 }
@@ -99,7 +110,13 @@ async function refundLockedPayment () {
   let list = []
   for (let i = 0; i < 100; i++) list.push(i)
   let lockingKeyHash = utils.hashLock(id2, passcode)
-  let [pid] = await b.registerPayment(0, 10, 1, list, lockingKeyHash)
+  let [pid] = await b.registerPayment({
+    fromAccountId: 0,
+    amount: 10,
+    unlockerFee: 1,
+    payeesAccountsIds: list,
+    lockingKeyHash: lockingKeyHash
+  })
 
   await utils.skipBlocks(b.unlockBlocks)
 
@@ -113,13 +130,49 @@ async function withdraw (amount) {
 }
 
 async function collect () {
-  await b.collect(id, 0, id2, 0, 1, 100, 2, 0)
-  let t2 = await b.collect(id, 1, id2, 1, 2, 100, 2, 0)
+  await b.collect({
+    delegate: id,
+    slot: 0,
+    toAccountId: id2,
+    fromPaymentId: 0,
+    toPaymentId: 1,
+    amount: 100,
+    fee: 2,
+    address: 0
+  })
+  let t2 = await b.collect({
+    delegate: id,
+    slot: 1,
+    toAccountId: id2,
+    fromPaymentId: 1,
+    toPaymentId: 2,
+    amount: 100,
+    fee: 2,
+    address: 0
+  })
   addStat('collect-empty-nowd', t2.receipt.gasUsed)
-  let t3 = await b.collect(id, 2, id2, 2, 3, 100, 2, acc[0])
+  let t3 = await b.collect({
+    delegate: id,
+    slot: 2,
+    toAccountId: id2,
+    fromPaymentId: 2,
+    toPaymentId: 3,
+    amount: 100,
+    fee: 2,
+    address: acc[0]
+  })
   addStat('collect-empty-withdraw', t3.receipt.gasUsed)
 
-  let t7 = await b.collect(id, b.INSTANT_SLOT, id2, 3, 4, 100, 2, acc[0])
+  let t7 = await b.collect({
+    delegate: id,
+    slot: b.INSTANT_SLOT,
+    toAccountId: id2,
+    fromPaymentId: 3,
+    toPaymentId: 4,
+    amount: 100,
+    fee: 2,
+    address: acc[0]
+  })
   addStat('collect-empty-instant-withdraw', t7.receipt.gasUsed)
 
   await utils.skipBlocks(b.challengeBlocks)
@@ -129,7 +182,16 @@ async function collect () {
   let t5 = await b.freeSlot(id, 2)
   addStat('freeSlot-withdraw', t5.gasUsed)
 
-  let t6 = await b.collect(id, 1, id2, 4, 5, 100, 2, acc[0])
+  let t6 = await b.collect({
+    delegate: id,
+    slot: 1,
+    toAccountId: id2,
+    fromPaymentId: 4,
+    toPaymentId: 5,
+    amount: 100,
+    fee: 2,
+    address: acc[0]
+  })
   addStat('collect-reuse-nowd', t6.receipt.gasUsed)
 }
 
@@ -146,19 +208,19 @@ async function doStuff () {
     await depositE(depositAmount)
     await bulkReg(100)
     await bulkReg(1000)
-    
+
     await withdraw(10)
-    
+
     let lockingKeyHash = utils.hashLock(0, passcode)
     let run = [10, 50, 100, 250, 500, 1000, 2000, 3000]
-    
+
     for (let i = 0; i < run.length; i++) {
       let count = run[i]
       await registerPayment(1, 0, count, 0, 'registerPayment-' + count + '-nolock')
       await registerPayment(1, 2, count, lockingKeyHash, 'registerPayment-' + count + '-lock')
       console.log(count)
     }
-    
+
     await unlock()
     await refundLockedPayment()
     await collect()
@@ -170,6 +232,7 @@ async function doStuff () {
   }
 }
 
-module.exports = function () {
-  doStuff()
+module.exports = async function (callback) {
+  await doStuff()
+  callback()
 }
