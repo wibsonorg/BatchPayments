@@ -7,7 +7,7 @@ const assertPasses = truffleAssertions.passes
 const eventEmitted = truffleAssertions.eventEmitted
 var BigNumber = web3.BigNumber
 var lib = require('../lib')(web3, artifacts)
-var { utils, bat } = lib
+var { utils, Batpay } = lib
 const merkle = lib.merkle
 var globalDebug = false
 
@@ -39,7 +39,7 @@ async function challenge (delegate, slot, challenger, list, index, payList, stop
 
   let amounts = list.map(x => b.payments[x])
 
-  let data = lib.bat.getChallengeData(amounts, list)
+  let data = lib.Batpay.getChallengeData(amounts, list)
 
   if (debug) {
     await showSlot(delegate, slot)
@@ -99,7 +99,7 @@ contract('challenge', (accounts) => {
     await utils.skipBlocks(1)
     let ins = await utils.newInstances()
 
-    b = new bat.BP(ins.bp, ins.token)
+    b = new Batpay.BP(ins.bp, ins.token)
 
     await b.init()
     let [mainId, receipt] = await b.deposit(100000, -1, accounts[0])
@@ -111,7 +111,7 @@ contract('challenge', (accounts) => {
     challenger = ch
 
     for (let i = 0; i < nUsers; i++) {
-      let [ id, t ] = await b.register(accounts[0])
+      let [ id, t ] = await b.registerAccount(accounts[0])
       userid.push(id)
     }
   })
@@ -123,11 +123,23 @@ contract('challenge', (accounts) => {
     for (let i = 0; i < nPays; i++) {
       let lockingKeyHash = 0
       if (i == 2) lockingKeyHash = 1
-      let [ pid, t ] = await b.registerPayment(id, 10, 0, userid, lockingKeyHash)
+      let [ pid, t ] = await b.registerPayment({
+        fromAccountId: id,
+        amount: 10,
+        unlockerFee: 0,
+        payeesAccountsIds: userid,
+        lockingKeyHash: lockingKeyHash
+      })
       payid.push(pid)
       if (pid > maxPayIndex) maxPayIndex = pid
     }
-    let [ pid, t ] = await b.registerPayment(id, 10, 0, [id], 0)
+    let [ pid, t ] = await b.registerPayment({
+      fromAccountId: id,
+      amount: 10,
+      unlockerFee: 0,
+      payeesAccountsIds: [id],
+      lockingKeyHash: 0
+    })
     if (pid > maxPayIndex) maxPayIndex = pid
     otherIndex = pid
     await utils.skipBlocks(b.unlockBlocks)
@@ -136,7 +148,16 @@ contract('challenge', (accounts) => {
     amount = await b.getCollectAmount(mid, minIndex, maxPayIndex + 1)
     data = b.getCollectData(mid, minIndex, maxPayIndex + 1)
 
-    await b.collect(id, slot, mid, minIndex, maxPayIndex + 1, amount, 0, 0)
+    await b.collect({
+      delegate: id,
+      slot: slot,
+      toAccountId: mid,
+      fromPaymentId: minIndex,
+      toPaymentId: maxPayIndex + 1,
+      amount: amount,
+      fee: 0,
+      address: 0
+    })
   })
 
   it('should complete a full challenge game #0', async () => {
@@ -232,8 +253,16 @@ contract('challenge', (accounts) => {
     let amount = await b.getCollectAmount(toId, 0, pid+1)
     let data = b.getCollectData(toId, 0, pid + 1)
 
-    await b.collect(id, 0, toId, 0, pid + 1, amount, 0, 0)
-
+    await b.collect({
+      delegate: id,
+      slot: 0,
+      toAccountId: toId,
+      fromPaymentId: 0,
+      toPaymentId: pid + 1,
+      amount: amount,
+      fee: 0,
+      address: 0
+    })
 
     let index = 0
     let payIndex = data[index]
