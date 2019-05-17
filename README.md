@@ -169,3 +169,11 @@ In addition, specifying -1 as an account number while sending a token deposit to
 #### Payments funds collection
 
 See [Collect mechanics](docs/collect_mechanics.md).
+
+## Contribute
+Thank you for thinking about contributing to Wibson Core. There are many ways you can participate and help build high quality software. Check out the [contribution guide]!
+
+## License
+Wibson Core is released under the [LGPL-3.0](LICENSE).
+
+[contribution guide]: CONTRIBUTING.md
