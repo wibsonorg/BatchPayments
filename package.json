@@ -2,11 +2,20 @@
   "name": "batch-payments",
   "version": "1.0.0",
   "description": "A batch payments solution for ethereum",
-  "keywords": ["ethereum", "erc20", "token", "payment", "massive", "batch", "gas", "efficient"],
+  "keywords": [
+    "ethereum",
+    "erc20",
+    "token",
+    "payment",
+    "massive",
+    "batch",
+    "gas",
+    "efficient"
+  ],
   "contributors": [
     "Ariel Futoransky <futo@disarmista.com > (http://disarmista.com/)",
     "Agustin Zavalla <agustinz@disarmista.com > (http://disarmista.com/)",
-    "Wibson Development Team <developers@wibson.org> (https://wibson.org)",
+    "Wibson Development Team <developers@wibson.org> (https://wibson.org)"
   ],
   "license": "LGPL-3.0",
   "repository": {
