@@ -3,11 +3,12 @@ const { MAX_UINT32, MAX_UINT256 } = require('./constants')
 const TestHelper = artifacts.require('./TestHelper')
 const { fails, reverts, ErrorType } = require('truffle-assertions')
 
+console.log({BigNumber});
 chai.use(require('chai-bignumber')(BigNumber)).should()
-BigNumber.config({
-  ROUNDING_MODE: BigNumber.ROUND_DOWN, // Rounds towards zero, ie. truncate
-  DECIMAL_PLACES: 0 // Integer results
-})
+// BigNumber.config({
+//   ROUNDING_MODE: BigNumber.ROUND_DOWN, // Rounds towards zero, ie. truncate
+//   DECIMAL_PLACES: 0 // Integer results
+// })
 
 describe('SafeMath', function () {
   var testhelper
@@ -181,7 +182,7 @@ describe('SafeMath', function () {
       })
 
       it('correctly adds up to maximum value', async () => {
-        const a = MAX_UINT32.minus(1)
+        const a = MAX_UINT32.sub(new BigNumber(1))
         const b = new BigNumber('1')
         const c = await testhelper.add32.call(a, b)
         c.should.be.bignumber.equal(a.add(b))
@@ -206,7 +207,7 @@ describe('SafeMath', function () {
       })
 
       it('correctly adds up to maximum value', async () => {
-        const a = MAX_UINT256.minus(1)
+        const a = MAX_UINT256.sub(new BigNumber(1))
         const b = new BigNumber('1')
         const c = a.add(b)
 

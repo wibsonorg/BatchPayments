@@ -1,4 +1,4 @@
-pragma solidity 0.4.25;
+pragma solidity 0.5.7;
 
 
 import "./Data.sol";
@@ -108,14 +108,14 @@ library Challenge {
      * @param payData efficient binary representation of a list of accountIds
      * @return bytes per id in `payData`
      */
-    function getBytesPerId(bytes payData) internal pure returns (uint) {
+    function getBytesPerId(bytes memory payData) internal pure returns (uint) {
         // payData includes a 2 byte header and a list of ids
         // [0xff][bytesPerId]
 
         uint len = payData.length;
         require(len >= 2, "payData length should be >= 2");
         require(uint8(payData[0]) == PAY_DATA_HEADER_MARKER, "payData header missing");
-        uint bytesPerId = uint(payData[1]);
+        uint8 bytesPerId = uint8(payData[1]);
         require(bytesPerId > 0 && bytesPerId < 2**32, "second byte of payData should be positive and less than 32");
 
         // remaining bytes should be a multiple of bytesPerId
@@ -165,7 +165,7 @@ library Challenge {
      * @param payData efficient binary representation of a list of accountIds
      * @return number of accounts present
      */
-    function getPayDataCount(bytes payData) public pure returns (uint) {
+    function getPayDataCount(bytes memory payData) public pure returns (uint) {
         uint bytesPerId = getBytesPerId(payData);
 
         // calculate number of records
@@ -337,7 +337,7 @@ library Challenge {
      * @param sig binary representation of the r, s & v parameters.
      * @return address of the signer if data provided is valid, zero otherwise.
      */
-    function recoverHelper(bytes32 hash, bytes sig) public pure returns (address) {
+    function recoverHelper(bytes32 hash, bytes memory sig) public pure returns (address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
 

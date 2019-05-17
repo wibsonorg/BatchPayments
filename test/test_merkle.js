@@ -1,7 +1,7 @@
 const { merkle, Batpay: { toLeftPaddedBytes32 } } = require('../lib')(web3, artifacts)
 const { sha3_1 } = merkle;
 
-var BigNumber = web3.BigNumber
+var BigNumber = web3.utils.BN
 
 var TestHelper = artifacts.require('./TestHelper')
 

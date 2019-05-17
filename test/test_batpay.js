@@ -5,7 +5,7 @@ const truffleAssertions = require('truffle-assertions')
 const assertRequire = truffleAssertions.reverts
 const assertPasses = truffleAssertions.passes
 const eventEmitted = truffleAssertions.eventEmitted
-var BigNumber = web3.BigNumber
+var BigNumber = web3.utils.BN
 var lib = require('../lib')(web3, artifacts)
 var { utils } = lib
 const TestHelper = artifacts.require('./TestHelper')
@@ -14,7 +14,7 @@ const merkle = lib.merkle
 contract('BatPay', (addr) => {
   describe('input Validation', () => {
     it('cannot create a BatPay with token address at zero', async () => {
-      await assertRequire(utils.newInstances({}, 0x0), 'Token address can\'t be zero');
+      await assertRequire(utils.newInstances({}, "0x0000000000000000000000000000000000000000"), 'Token address can\'t be zero');
     });
     it('cannot create a BatPay with maxBulk at zero', async () => {
       await assertRequire(utils.newInstances({ maxBulk: 0 }), 'Parameter maxBulk can\'t be zero');
@@ -50,7 +50,7 @@ contract('BatPay', (addr) => {
     let a1 = addr[1]
 
     let batPay, tAddress, st
-    const NEW_ACCOUNT_FLAG = new BigNumber(2).pow(256).minus(1)
+    const NEW_ACCOUNT_FLAG = new BigNumber(new BigNumber(2)).pow(new BigNumber(256)).sub(new BigNumber(1))
 
     before(async () => {
       let ret = await utils.newInstances()

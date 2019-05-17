@@ -24,8 +24,9 @@
   "dependencies": {
     "ethereumjs-abi": "^0.6.5",
     "seedrandom": "^3.0.1",
+    "solc": "^0.5.7",
     "solium": "^1.2.3",
-    "truffle": "^4.1.15",
+    "truffle": "^5.0.18",
     "truffle-assertions": "^0.7.2"
   },
   "devDependencies": {

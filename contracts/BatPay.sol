@@ -1,4 +1,4 @@
-pragma solidity 0.4.25;
+pragma solidity 0.5.7;
 
 
 import "./IERC20.sol";
@@ -30,7 +30,7 @@ contract BatPay is Payments {
      *        single transaction
      */
     constructor(
-        IERC20 token_,
+        address token_,
         uint32 maxBulk,
         uint32 maxTransfer,
         uint32 challengeBlocks,

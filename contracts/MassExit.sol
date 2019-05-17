@@ -1,4 +1,4 @@
-pragma solidity 0.4.25;
+pragma solidity 0.5.7;
 
 import "./Payments.sol";
 import "./SafeMath.sol";
@@ -69,12 +69,12 @@ contract MassExit is Payments {
     function startExit(
         uint32 delegate,
         uint32 exitId,
-        bytes sellerList,
+        bytes memory sellerList,
         address destination
     )
         public
         enabled()
-        onlyAccountOwner(delegate) 
+        onlyAccountOwner(delegate)
     {
         MassExitLib.startExit(
             exits[delegate][exitId],
@@ -92,7 +92,7 @@ contract MassExit is Payments {
         uint32 exitId,
         uint32 challenger,
         uint32 seller,
-        bytes  sellerList
+        bytes memory sellerList
     )
         public
         onlyAccountOwner(challenger)
@@ -113,15 +113,15 @@ contract MassExit is Payments {
     function challengeExitId_2(
         uint32 delegate,
         uint32 exitId,
-        bytes sellerSignature,
-        bytes monitorSignature
-    ) 
+        bytes memory sellerSignature,
+        bytes memory monitorSignature
+    )
         public
         onlyAccountOwner(delegate)
     {
         uint32 seller = exits[delegate][exitId].seller;
         address mon = monitor[seller];
-        if (mon == 0) mon = defaultMonitor;
+        if (mon == address(0)) mon = defaultMonitor;
 
         MassExitLib.challengeExitId_2(
             exits[delegate][exitId],
@@ -138,7 +138,7 @@ contract MassExit is Payments {
     function challengeExit_success(
         uint32 delegate,
         uint32 exitId
-    ) 
+    )
         public
         validId(delegate)
     {
@@ -153,7 +153,7 @@ contract MassExit is Payments {
     function challengerTimeout(
         uint32 delegate,
         uint32 exitId
-    ) 
+    )
         public
         validId(delegate)
     {
@@ -183,7 +183,7 @@ contract MassExit is Payments {
         uint32 delegate,
         uint32 exitId,
         uint64 totalBalance
-    ) 
+    )
         public
         onlyAccountOwner(delegate)
     {
@@ -200,7 +200,7 @@ contract MassExit is Payments {
         uint32 delegate,
         uint32 exitId,
         uint32 challenger
-    ) 
+    )
         public
         onlyAccountOwner(challenger)
         validId(delegate)
@@ -218,8 +218,8 @@ contract MassExit is Payments {
     function challengeExitBalance_5(
         uint32 delegate,
         uint32 exitId,
-        bytes balanceList
-    ) 
+        bytes memory balanceList
+    )
         public
         onlyAccountOwner(delegate)
     {
@@ -235,10 +235,10 @@ contract MassExit is Payments {
     function challengeExitBalance_6(
         uint32 delegate,
         uint32 exitId,
-        bytes sellerList,
-        bytes balanceList,
+        bytes memory sellerList,
+        bytes memory balanceList,
         uint32 seller
-    ) 
+    )
         public
         validId(delegate)
     {
@@ -259,9 +259,9 @@ contract MassExit is Payments {
         uint32 delegate,
         uint32 slot,
         uint32 exitDelegate,
-        uint32 exitId    
+        uint32 exitId
     )
-        public 
+        public
         onlyAccountOwner(exitDelegate)
         onlyAccountOwner(delegate)
     {
@@ -281,7 +281,7 @@ contract MassExit is Payments {
         uint32 exitDelegate,
         uint32 exitId,
         uint32 challenger,
-        bytes  sellerList
+        bytes memory sellerList
     )
         public
         validId(delegate)

@@ -1,4 +1,4 @@
-pragma solidity 0.4.25;
+pragma solidity 0.5.7;
 
 import "./Accounts.sol";
 import "./SafeMath.sol";
@@ -86,7 +86,7 @@ library MassExitLib {
         Data.Config storage params,
         Data.Account[] storage accounts,
         uint32  delegate,
-        bytes sellerList,
+        bytes memory sellerList,
         address destination)
         public
     {
@@ -113,7 +113,7 @@ library MassExitLib {
         Data.Account[] storage accounts,
         uint32 challenger,
         uint32 seller,
-        bytes  sellerList
+        bytes memory sellerList
         )
         public
     {
@@ -137,8 +137,8 @@ library MassExitLib {
         ExitSlot storage slot,
         Data.Config storage params,
         Data.Account[] storage accounts,
-        bytes sellerSignature,
-        bytes monitorSignature,
+        bytes memory sellerSignature,
+        bytes memory monitorSignature,
         address monitorAddress
     )
         public
@@ -199,8 +199,8 @@ library MassExitLib {
     }
 
     function startExitBalance(
-        ExitSlot storage slot, 
-        Data.Config storage params  
+        ExitSlot storage slot,
+        Data.Config storage params
     )
         public
     {
@@ -216,8 +216,8 @@ library MassExitLib {
         ExitSlot storage slot,
         Data.Config storage params,
         uint64 totalBalance
-    ) 
-        public 
+    )
+        public
     {
         require(slot.status == 3, "invalid status");
         require(block.number < slot.block, "challenge time has passed");
@@ -233,7 +233,7 @@ library MassExitLib {
         Data.Account[] storage accounts,
         uint32 challenger
     )
-        public 
+        public
     {
         require(slot.status == 4, "invalid status");
         require(block.number < slot.block, "challenge time has passed");
@@ -251,9 +251,9 @@ library MassExitLib {
     function challengeExitBalance_5(
         ExitSlot storage slot,
         Data.Config storage params,
-        bytes balanceList
-    ) 
-        public 
+        bytes memory balanceList
+    )
+        public
     {
         require(slot.status == 5, "invalid status");
         require(block.number < slot.block, "challenge time has passed");
@@ -267,10 +267,10 @@ library MassExitLib {
     function challengeExitBalance_6(
         ExitSlot storage slot,
         Data.Config storage params,
-        bytes sellerList,
-        bytes balanceList,
+        bytes memory sellerList,
+        bytes memory balanceList,
         uint32 seller
-    ) 
+    )
         public
     {
         require(slot.status == 6, "invalid status");
@@ -354,7 +354,7 @@ library MassExitLib {
         Data.Config storage params,
         Data.Account[] storage accounts,
         uint32 challenger,
-        bytes sellerList
+        bytes memory sellerList
     )
         public
     {

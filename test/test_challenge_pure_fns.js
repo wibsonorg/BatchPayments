@@ -56,12 +56,13 @@ contract('Challenge', () => {
   describe('getDataAtIndex', () => {
     it('returns the amount and payIndex in data at the specified index', async () => {
       const data = getChallengeData([0, 10, 100, 1000], [0, 1, 2, 3])
-      const [amount, payIndex] = await challenge.getDataAtIndex(data, 1)
+      console.log({agusTest: await challenge.getDataAtIndex(data, 1)});
+      const {amount, payIndex} = await challenge.getDataAtIndex(data, 1)
       assert.equal(Number(amount), 10, 'wrong amount')
       assert.equal(Number(payIndex), 1, 'wrong payIndex')
     })
     it('returns the amount and payIndex even when there is only one element in data', async () => {
-      const [amount, payIndex] = await challenge.getDataAtIndex(getChallengeData([10], [1]), 0)
+      const {amount, payIndex} = await challenge.getDataAtIndex(getChallengeData([10], [1]), 0)
       assert.equal(Number(amount), 10, 'wrong summarization')
       assert.equal(Number(payIndex), 1, 'wrong summarization')
     })

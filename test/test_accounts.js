@@ -5,7 +5,7 @@ const truffleAssertions = require('truffle-assertions')
 const assertRequire = truffleAssertions.reverts
 const assertPasses = truffleAssertions.passes
 const eventEmitted = truffleAssertions.eventEmitted
-var BigNumber = web3.BigNumber
+var BigNumber = web3.utils.BN
 var lib = require('../lib')(web3, artifacts)
 var { utils } = lib
 const TestHelper = artifacts.require('./TestHelper')
@@ -18,7 +18,7 @@ contract('Accounts', (addr) => {
   let a1 = addr[1]
 
   let bp, tAddress, st
-  const NEW_ACCOUNT_FLAG = new BigNumber(2).pow(256).minus(1)
+  const NEW_ACCOUNT_FLAG = new BigNumber(2).pow(new BigNumber(256)).sub(new BigNumber(1))
 
   before(async () => {
     await utils.skipBlocks(1)
@@ -201,7 +201,7 @@ contract('Accounts', (addr) => {
     it('Bulk registration should reserve new accounts', async () => {
       let v0 = await bp.getAccountsLength.call()
       const amount = 100
-      const rootHash = web3.fromUtf8('1234')
+      const rootHash = web3.utils.fromUtf8('1234')
 
       await bp.bulkRegister(amount, rootHash)
       const v1 = await bp.getAccountsLength.call()
@@ -215,7 +215,7 @@ contract('Accounts', (addr) => {
     it('Bulk registration root hashes should be stored', async () => {
       let v0 = await bp.getBulkLength.call()
       const amount = 100
-      const rootHash = web3.fromUtf8('1234')
+      const rootHash = web3.utils.fromUtf8('1234')
 
       await bp.bulkRegister(amount, rootHash)
       const v1 = await bp.getBulkLength.call()
@@ -228,7 +228,7 @@ contract('Accounts', (addr) => {
 
     it('Bulk registration should respect account limits', async () => {
       let v0 = await bp.getBulkLength.call()
-      const rootHash = web3.fromUtf8('1234')
+      const rootHash = web3.utils.fromUtf8('1234')
       const maxBulk = 2 ** 16
 
       await assertRequire(bp.bulkRegister(maxBulk, rootHash), 'Cannot register this number of ids simultaneously')
@@ -241,7 +241,7 @@ contract('Accounts', (addr) => {
     it('Bulk registration should fail for n == 0', async () => {
       let v0 = await bp.getBulkLength.call()
       const n = 0
-      const rootHash = web3.fromUtf8('1234')
+      const rootHash = web3.utils.fromUtf8('1234')
 
       await assertRequire(bp.bulkRegister(n, rootHash), "Bulk size can't be zero")
     })
@@ -277,7 +277,7 @@ contract('Accounts', (addr) => {
 
   describe('claim', () => {
     const amount = 100
-    const rootHash = web3.fromUtf8('1234')
+    const rootHash = web3.utils.fromUtf8('1234')
     var bulkId = 0
     var proof = [0]
     var id = 0

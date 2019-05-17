@@ -1,4 +1,4 @@
-pragma solidity 0.4.25;
+pragma solidity 0.5.7;
 
 
 import "./SafeMath.sol";
@@ -16,7 +16,7 @@ contract StandardToken is IERC20 {
     mapping (address => uint256) internal balances;
     mapping (address => mapping (address => uint256)) internal allowed;
 
-    constructor(string name, string symbol, uint8 decimals, uint256 totalSupply) public {
+    constructor(string memory name, string memory symbol, uint8 decimals, uint256 totalSupply) public {
         _symbol = symbol;
         _name = name;
         _decimals = decimals;
@@ -70,7 +70,7 @@ contract StandardToken is IERC20 {
     function name()
         external
         view
-        returns (string)
+        returns (string memory)
     {
         return _name;
     }
@@ -78,7 +78,7 @@ contract StandardToken is IERC20 {
     function symbol()
         external
         view
-        returns (string)
+        returns (string memory)
     {
         return _symbol;
     }

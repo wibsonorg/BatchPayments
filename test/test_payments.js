@@ -6,7 +6,7 @@ const truffleAssertions = require('truffle-assertions')
 const assertRequire = truffleAssertions.reverts
 const assertPasses = truffleAssertions.passes
 const eventEmitted = truffleAssertions.eventEmitted
-var BigNumber = web3.BigNumber
+var BigNumber = web3.utils.BN
 var lib = require('../lib')(web3, artifacts)
 var { utils, Batpay } = lib
 const TestHelper = artifacts.require('./TestHelper')
@@ -19,7 +19,7 @@ contract('Payments', (accounts) => {
   let a1 = accounts[1]
 
   let bp, tAddress, st
-  const NEW_ACCOUNT_FLAG = new BigNumber(2).pow(256).minus(1)
+  const NEW_ACCOUNT_FLAG = new BigNumber(new BigNumber(2)).pow(new BigNumber(256)).sub(new BigNumber(1))
 
   before(async function () {
     await utils.skipBlocks(1)
@@ -31,7 +31,7 @@ contract('Payments', (accounts) => {
   })
 
   describe('registerPayment', () => {
-    const rootHash = web3.fromUtf8('1234');
+    const rootHash = web3.utils.fromUtf8('1234');
     const new_count = 0
     const metadata = 0
     const fee = 10
@@ -157,7 +157,7 @@ contract('Payments', (accounts) => {
 
     it('should reject registerPayment if bytes per id is 0', async () => {
       const bytesPerId = 0
-      pay_data = new web3.BigNumber('0xff' + utils.hex(bytesPerId))
+      pay_data = new web3.utils.BN('0xff' + utils.hex(bytesPerId))
 
       await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'second byte of payData should be positive')
 
@@ -169,7 +169,7 @@ contract('Payments', (accounts) => {
     it('should reject registerPayment if bytes payData length is invalid', async () => {
       const bytesPerId = 4
       const data = '0000005'
-      pay_data = new web3.BigNumber('0xff' + utils.hex(bytesPerId) + data)
+      pay_data = new web3.utils.BN('0xff' + utils.hex(bytesPerId) + data)
 
       await assertRequire(bp.registerPayment(from_id, amount_each, fee, pay_data, new_count, rootHash, lockingKeyHash, metadata), 'payData length is invalid, all payees must have same amount of bytes (payData[1])')
 

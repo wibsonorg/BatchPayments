@@ -1,4 +1,4 @@
-BigNumber = web3.BigNumber
+BigNumber = web3.utils.BN
 
 module.exports = {
   MAX_UINT32: new BigNumber('2').pow(new BigNumber('32')).sub(new BigNumber('1')),

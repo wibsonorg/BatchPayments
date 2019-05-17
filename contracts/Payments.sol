@@ -1,4 +1,4 @@
-pragma solidity 0.4.25;
+pragma solidity 0.5.7;
 
 
 import "./Accounts.sol";
@@ -65,7 +65,7 @@ contract Payments is Accounts {
         uint32 fromId,
         uint64 amount,
         uint64 fee,
-        bytes payData,
+        bytes calldata payData,
         uint newCount,
         bytes32 rootHash,
         bytes32 lockingKeyHash,
@@ -121,7 +121,7 @@ contract Payments is Accounts {
      * @param unlockerAccountId id of the party providing the unlocking service. Fees wil be payed to this id.
      * @param key Cryptographic key used to encrypt traded data.
      */
-    function unlock(uint32 payIndex, uint32 unlockerAccountId, bytes memory key) public returns(bool) {
+    function unlock(uint32 payIndex, uint32 unlockerAccountId, bytes calldata key) external returns(bool) {
         require(payIndex < payments.length, "invalid payIndex, payments is not that long yet");
         require(isValidId(unlockerAccountId), "Invalid unlockerAccountId");
         require(block.number < payments[payIndex].lockTimeoutBlockNumber, "Hash lock expired");
@@ -188,9 +188,9 @@ contract Payments is Accounts {
         uint64 declaredAmount,
         uint64 fee,
         address destination,
-        bytes memory signature
+        bytes calldata signature
     )
-    public
+    external
     {
         // Check delegate and toAccountId are valid
         require(isAccountOwner(delegate), "invalid delegate");
@@ -200,7 +200,7 @@ contract Payments is Accounts {
         freeSlot(delegate, slotId);
 
         Account memory tacc = accounts[toAccountId];
-        require(tacc.owner != 0, "account registration has to be completed");
+        require(tacc.owner != address(0), "account registration has to be completed");
 
         if (delegate != toAccountId) {
             // If "toAccountId" != delegate, check who signed this transaction
