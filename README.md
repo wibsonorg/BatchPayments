@@ -38,6 +38,10 @@ In addition, it includes many relevant features, like meta-transactions for end-
 - Plasma Chain: Scalability through child chains, e.g. PlasmaCash or PlasmaDebit. More.
 - Batch-Payments Using zk-Snarks: Scalability through verifiable offchain computation (see [6]).
 
+## Reporting Security Vulnerabilities
+If you think that you have found a security issue in BatchPayments, please **DO NOT** post it as a Github issue and don't publish it publicly. Instead, all security issues must be sent to developers@wibson.org.
+We appreciate your discretion and will give the corresponding credit to the reporter(s).
+
 ## Getting started
 ### Setup
 ##### Using docker
