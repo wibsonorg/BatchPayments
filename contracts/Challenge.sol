@@ -116,7 +116,7 @@ library Challenge {
         require(len >= 2, "payData length should be >= 2");
         require(uint8(payData[0]) == PAY_DATA_HEADER_MARKER, "payData header missing");
         uint bytesPerId = uint(payData[1]);
-        require(bytesPerId > 0 && bytesPerId < 2**32, "second byte of payData should be positive and less than 32");
+        require(bytesPerId > 0 && bytesPerId < 32, "second byte of payData should be positive and less than 32");
 
         // remaining bytes should be a multiple of bytesPerId
         require((len - 2) % bytesPerId == 0,
