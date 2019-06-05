@@ -2,6 +2,7 @@
 [![Build Status](https://travis-ci.com/wibsonorg/BatchPayments.svg?token=k5H2Cw9NKvrr4RbRXrEA&branch=master)](https://travis-ci.com/wibsonorg/BatchPayments)
 [![codecov.io](https://codecov.io/gh/wibsonorg/BatchPayments/branch/master/graphs/badge.svg?token=MBTgdNZ5fr)](https://codecov.io/gh/wibsonorg/BatchPayments/)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 A payment scaling solution to reduce gas costs associated with operating with ERC20 tokens on the ethereum blockchain.
 
@@ -172,8 +173,5 @@ See [Collect mechanics](docs/collect_mechanics.md).
 
 ## Contribute
 Thank you for thinking about contributing to Wibson Core. There are many ways you can participate and help build high quality software. Check out the [contribution guide]!
-
-## License
-Wibson Core is released under the [LGPL-3.0](LICENSE).
 
 [contribution guide]: CONTRIBUTING.md
