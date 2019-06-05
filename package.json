@@ -1,8 +1,31 @@
 {
-  "name": "batchpayments",
+  "name": "batch-payments",
   "version": "1.0.0",
-  "private": true,
   "description": "A batch payments solution for ethereum",
+  "keywords": [
+    "ethereum",
+    "erc20",
+    "token",
+    "payment",
+    "massive",
+    "batch",
+    "gas",
+    "efficient"
+  ],
+  "contributors": [
+    "Ariel Futoransky <futo@disarmista.com > (http://disarmista.com/)",
+    "Agustin Zavalla <agustinz@disarmista.com > (http://disarmista.com/)",
+    "Wibson Development Team <developers@wibson.org> (https://wibson.org)"
+  ],
+  "license": "LGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wibsonorg/BatchPayments.git"
+  },
+  "engines": {
+    "node": "~8.11.3",
+    "npm": ">= 6.1.0"
+  },
   "main": "",
   "directories": {
     "lib": "lib",
@@ -18,9 +41,6 @@
     "test:coverage": "TEST_COVERAGE=true truffle test --network coverage && npm run coverage:report",
     "truffle": "truffle"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "ethereumjs-abi": "^0.6.5",
     "seedrandom": "^3.0.1",
