@@ -58,22 +58,23 @@ library Challenge {
         require(data.length % 12 == 0, "wrong data format, data length should be multiple of 12");
 
         uint n = SafeMath.div(data.length, 12);
-        uint modulus = 2**64;
-
-        sum = 0;
+        uint maxSafeAmount = 2**64;
+        uint maxSafePayIndex = 2**32;
+        int previousPayIndex = -1;
+        int currentPayIndex = 0;
 
         // Get the sum of the stated amounts in data
         // Each entry in data is [8-bytes amount][4-bytes payIndex]
-
+        sum = 0;
         for (uint i = 0; i < n; i++) {
             // solium-disable-next-line security/no-inline-assembly
             assembly {
-                let amount := mod(mload(add(data, add(8, mul(i, 12)))), modulus)
-                let result := add(sum, amount)
-                switch or(gt(result, modulus), eq(result, modulus))
-                case 1 { revert (0, 0) }
-                default { sum := result }
+              sum := add(sum, mod(mload(add(data, add(8, mul(i, 12)))), maxSafeAmount))
+              currentPayIndex := mod(mload(add(data, mul(add(i, 1), 12))), maxSafePayIndex)
             }
+            require(sum < maxSafeAmount, "max cashout exceeded");
+            require(previousPayIndex < currentPayIndex, "wrong data format, data should be ordered by payIndex");
+            previousPayIndex = currentPayIndex;
         }
     }
 

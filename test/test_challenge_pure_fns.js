@@ -45,6 +45,10 @@ contract('Challenge', () => {
         challenge.getDataSum('0x0000000000000000000a000000000005'),
         'must fail when record is greater than expected'
       )
+      await assertRevert(
+        challenge.getDataSum(getChallengeData([10, 15, 20, 25], [0, 1001, 1000, 10000])),
+        'must fail when data isn\'t order by payIndex'
+      )
     })
     it('rejects when the summarization causes an overflow', async () => {
       await assertRevert(
