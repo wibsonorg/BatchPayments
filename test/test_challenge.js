@@ -37,7 +37,7 @@ async function challenge (delegate, slot, challenger, list, index, payList, stop
 
   if (debug) console.log('challenge_1 ' + c1.transactionHash)
 
-  let amounts = list.map(x => b.payments[x])
+  let amounts = list.map(x => b.payments[x].amount)
 
   let data = lib.Batpay.getChallengeData(amounts, list)
 
