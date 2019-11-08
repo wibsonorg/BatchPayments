@@ -14,7 +14,7 @@ const merkle = lib.merkle
 contract('BatPay', (addr) => {
   describe('input Validation', () => {
     it('cannot create a BatPay with token address at zero', async () => {
-      await assertRequire(utils.newInstances({}, 0x0), 'Token address can\'t be zero');
+      await assertRequire(utils.newBatchPayments({}, 0x0), 'Token address can\'t be zero');
     });
     it('cannot create a BatPay with maxBulk at zero', async () => {
       await assertRequire(utils.newInstances({ maxBulk: 0 }), 'Parameter maxBulk can\'t be zero');
