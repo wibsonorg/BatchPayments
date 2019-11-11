@@ -42,6 +42,20 @@
         "unlockBlocks": 5,
         "maxCollectAmount": 1000000
       }
+    },
+    "rsk": {
+      "privateKeys": ["<private-key-without-0x>"],
+      "deployedToken": "",
+      "batPay": {
+        "maxBulk": 5000,
+        "maxTransfer": 3000,
+        "challengeBlocks": 9,
+        "challengeStepBlocks": 9,
+        "collectStake": 500,
+        "challengeStake": 100,
+        "unlockBlocks": 9,
+        "maxCollectAmount": 50000e9
+      }
     }
   }
 }

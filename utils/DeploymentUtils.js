@@ -29,8 +29,17 @@ exports.getEnvConfig = getEnvConfig;
 
 exports.getProvider = function getProvider(network, environment) {
   const config = getConfig();
-  const envConfig = getEnvConfig(environment);
-  const infura = `https://${network}.infura.io/v3/${config.infuraToken}`;
+  const envConfig = config.environments[environment] || {};
+
+  if (environment.includes('rsk')) {
+    const subdomain = network === 'testnet' ? '.testnet' : ''; 
+    publicNode = `https://public-node${subdomain}.rsk.co:443`;
+  } else {
+    publicNode = `https://${network}.infura.io/v3/${config.infuraToken}`;
+  }
+  
   const privKeys = envConfig.privateKeys;
-  return new HDWalletProvider(privKeys, infura, 0, privKeys.length, false);
+
+  const wallet = new HDWalletProvider(privKeys, publicNode, 0, privKeys.length, true);
+  return wallet;
 };
