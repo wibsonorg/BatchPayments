@@ -1,4 +1,5 @@
-const { utils, Batpay, getInstances, newInstances } = require('../lib')(web3, artifacts)
+const semver = require('semver');
+const { utils, Batpay, getInstances, newInstances } = require('../lib')(web3, artifacts);
 
 const log = console.log;
 
@@ -22,8 +23,9 @@ async function main (config = {}) {
     throw new Error('At least 5 acccounts are needed');
   }
 
-  if (/^v[0-9]\./.test(process.version)) {
-    throw new Error(`Node Version v10 or above is required. Found: ${process.version}`);
+  const version = semver.clean(process.version || '');
+  if (!semver.satisfies(version, '>=10')) {
+    throw new Error(`Node Version v10 or above is required. Found: ${process.version || 'unknown'}`);
   }
 
   //
