@@ -30,8 +30,8 @@ exports.getEnvConfig = getEnvConfig;
 exports.getProvider = function getProvider(environment) {
   const config = getConfig();
   const envConfig = config.environments[environment] || {};
-  const { privKeys = [], publicNode = '' } = envConfig;
+  const { privateKeys = [], publicNode = '' } = envConfig;
 
-  const wallet = new HDWalletProvider(privKeys, publicNode, 0, privKeys.length, true);
+  const wallet = new HDWalletProvider(privateKeys, publicNode, 0, privateKeys.length, true);
   return wallet;
 };
