@@ -241,8 +241,8 @@ function demo (callback) {
         unlockerFee: 1,
         collectFee: 1,
         contracts: {
-          tokenAddress: '0x1bd7adf34f1ab0cd62bb3722b9462d30cf91c8f4',
-          batpayAddress: '0x975394d3eef7f6fe14057cb78249c8a1223c5cb4'
+          tokenAddress: undefined,
+          batpayAddress: undefined
         }
       })
       callback()
