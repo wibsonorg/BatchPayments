@@ -13,18 +13,18 @@ module.exports = {
       network_id: '*'
     },
     remoteDevelopment: { // 'development' collides with truffle's default
-      provider: () => DeployUtils.getProvider('ropsten', 'remoteDevelopment'),
+      provider: () => DeployUtils.getProvider('remoteDevelopment'),
       network_id: 3, // official id of the ropsten network
       gasPrice: 1 * 1000000000,
       gas: 7900000
     },
     staging: {
-      provider: () => DeployUtils.getProvider('ropsten', 'staging'),
+      provider: () => DeployUtils.getProvider('staging'),
       network_id: 3, // official id of the ropsten network
       gasPrice: 1 * 1000000000,
     },
     production: {
-      provider: () => DeployUtils.getProvider('mainnet', 'production'),
+      provider: () => DeployUtils.getProvider('production'),
       network_id: 1,
       gasPrice: 3 * 1000000000,
       gas: 7900000,
@@ -35,7 +35,7 @@ module.exports = {
       network_id: 987
     },
     rsk: {
-      provider: () => DeployUtils.getProvider('testnet', 'rsk'),
+      provider: () => DeployUtils.getProvider('rsk'),
       host: 'https://public-node.testnet.rsk.co/',
       port: 443,
       network_id: '*',

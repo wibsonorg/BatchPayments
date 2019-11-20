@@ -27,18 +27,10 @@ function getEnvConfig(environment) {
 
 exports.getEnvConfig = getEnvConfig;
 
-exports.getProvider = function getProvider(network, environment) {
+exports.getProvider = function getProvider(environment) {
   const config = getConfig();
   const envConfig = config.environments[environment] || {};
-
-  if (environment.includes('rsk')) {
-    const subdomain = network === 'testnet' ? '.testnet' : ''; 
-    publicNode = `https://public-node${subdomain}.rsk.co:443`;
-  } else {
-    publicNode = `https://${network}.infura.io/v3/${config.infuraToken}`;
-  }
-  
-  const privKeys = envConfig.privateKeys;
+  const { privKeys = [], publicNode = '' } = envConfig;
 
   const wallet = new HDWalletProvider(privKeys, publicNode, 0, privKeys.length, true);
   return wallet;
