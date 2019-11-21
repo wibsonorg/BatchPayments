@@ -48,7 +48,7 @@ async function doStuff () {
 
     // Reserve accounts.
     // We won't claim the accounts, so we'll use a dummy rootHash for now.
-    let v0 = await bp.bulkRegister(ids - 1, 1)
+    let v0 = await bp.bulkRegister(ids - 1, delegate)
     await v0
 
     let balance = await bp.balanceOf.call(id)

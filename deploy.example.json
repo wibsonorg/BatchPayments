@@ -1,5 +1,4 @@
 {
-  "infuraToken": "<infura-token>",
   "environments": {
     "development": {
       "privateKeys": ["<private-key-without-0x>"],
@@ -30,6 +29,7 @@
       }
     },
     "remoteDevelopment": {
+      "publicNode": "https://ropsten.infura.io/v3/<infura-token>",
       "privateKeys": ["<private-key-without-0x>"],
       "deployedToken": "",
       "batPay": {
@@ -41,6 +41,51 @@
         "challengeStake": 100,
         "unlockBlocks": 5,
         "maxCollectAmount": 1000000
+      }
+    },
+    "staging": {
+      "publicNode": "https://ropsten.infura.io/v3/<infura-token>",
+      "privateKeys": ["<private-key-without-0x>"],
+      "deployedToken": "",
+      "batPay": {
+        "maxBulk": 50001,
+        "maxTransfer": 50001,
+        "challengeBlocks": 816,
+        "challengeStepBlocks": 136,
+        "collectStake": 13000e9,
+        "challengeStake": 10700e9,
+        "unlockBlocks": 272,
+        "maxCollectAmount": 50000e9
+      }
+    },
+    "production": {
+      "publicNode": "https://mainnet.infura.io/v3/<infura-token>",
+      "privateKeys": ["<private-key-without-0x>"],
+      "deployedToken": "0x3f17dd476faf0a4855572f0b6ed5115d9bba22ad",
+      "batPay": {
+        "maxBulk": 50001,
+        "maxTransfer": 50001,
+        "challengeBlocks": 816,
+        "challengeStepBlocks": 136,
+        "collectStake": 13000e9,
+        "challengeStake": 10700e9,
+        "unlockBlocks": 272,
+        "maxCollectAmount": 50000e9
+      }
+    },
+    "rsk": {
+      "publicNode": "https://public-node.testnet.rsk.co:443",
+      "privateKeys": ["<private-key-without-0x>"],
+      "deployedToken": "",
+      "batPay": {
+        "maxBulk": 5000,
+        "maxTransfer": 3000,
+        "challengeBlocks": 9,
+        "challengeStepBlocks": 9,
+        "collectStake": 500,
+        "challengeStake": 100,
+        "unlockBlocks": 9,
+        "maxCollectAmount": 50000e9
       }
     }
   }

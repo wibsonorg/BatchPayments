@@ -27,10 +27,11 @@ function getEnvConfig(environment) {
 
 exports.getEnvConfig = getEnvConfig;
 
-exports.getProvider = function getProvider(network, environment) {
+exports.getProvider = function getProvider(environment) {
   const config = getConfig();
-  const envConfig = getEnvConfig(environment);
-  const infura = `https://${network}.infura.io/v3/${config.infuraToken}`;
-  const privKeys = envConfig.privateKeys;
-  return new HDWalletProvider(privKeys, infura, 0, privKeys.length, false);
+  const envConfig = config.environments[environment] || {};
+  const { privateKeys = [], publicNode = '' } = envConfig;
+
+  const wallet = new HDWalletProvider(privateKeys, publicNode, 0, privateKeys.length, true);
+  return wallet;
 };

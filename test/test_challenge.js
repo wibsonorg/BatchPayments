@@ -37,7 +37,7 @@ async function challenge (delegate, slot, challenger, list, index, payList, stop
 
   if (debug) console.log('challenge_1 ' + c1.transactionHash)
 
-  let amounts = list.map(x => b.payments[x])
+  let amounts = list.map(x => b.payments[x].amount)
 
   let data = lib.Batpay.getChallengeData(amounts, list)
 
@@ -242,19 +242,20 @@ contract('challenge', (accounts) => {
   it('Should challenge inline bulkRegistered accounts', async () => {
     let stake = b.collectStake
     let [id, r0] = await b.deposit(2*stake+1, -1, a0)
+    const delegate = id;
     let [challenger, r2] = await b.deposit(2*stake+1, -1, a0)
-    let [pid, bulk, r1] = await b.registerPaymentWithBulk(id, 1, 0, [id], [a1, a0, a1], 0)
+    let [pid, bulk, r1] = await b.registerPaymentWithBulk(id, 1, 0, [delegate], [a1, a0, a1], 0)
 
     let toId = 1 + bulk.smallestAccountId
 
-    await b.claimBulkRegistrationId(bulk, a0, toId)
+    await b.claimBulkRegistrationId(bulk, a0, toId, delegate)
     await utils.skipBlocks(b.unlockBlocks)
 
     let amount = await b.getCollectAmount(toId, 0, pid+1)
     let data = b.getCollectData(toId, 0, pid + 1)
 
     await b.collect({
-      delegate: id,
+      delegate,
       slot: 0,
       toAccountId: toId,
       fromPaymentId: 0,

@@ -36,6 +36,7 @@ async function init () {
   addStat('massExitLib.deployment', await getDeploymentGas(ins.massExitLib))
 
   b = new bat.BP(ins.bp, ins.token)
+
   await b.init()
 }
 
@@ -50,9 +51,9 @@ async function register () {
 }
 
 async function deposit (amount) {
-  await b.deposit(amount, -1, acc[0])
+  await b.deposit(amount, -1)
 
-  let [, t1, t2] = await b.deposit(amount, -1, acc[0])
+  let [, t1, t2] = await b.deposit(amount, -1)
 
   addStat('deposit', t1.gasUsed + t2.gasUsed)
   addStat('deposit.token.approve', t1.gasUsed)
@@ -66,15 +67,16 @@ async function depositE (amount) {
 }
 
 async function bulkReg (count) {
+  const delegate = id;
   let list = []
   for (let i = 0; i < count; i++) list.push(acc[i % acc.length])
 
-  await b.bulkRegister(list)
+  await b.bulkRegister(list, delegate)
 
-  let bulk = await b.bulkRegister(list)
+  let bulk = await b.bulkRegister(list, delegate)
   addStat('bulkRegister-' + count, bulk.recp.gasUsed)
 
-  let [,, t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.smallestAccountId)
+  let [,, t] = await b.claimBulkRegistrationId(bulk, list[0], bulk.smallestAccountId, delegate)
   addStat('claimBulkRegistrationId', t.gasUsed)
 }
 

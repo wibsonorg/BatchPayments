@@ -1,85 +1,125 @@
-const { utils, Batpay, newInstances } = require('../lib')(web3, artifacts)
+const semver = require('semver');
+const { utils, Batpay, getInstances, newInstances } = require('../lib')(web3, artifacts);
 
-// Globals
-var accounts
-var batpay
+const log = console.log;
 
-async function main () {
+async function main (config = {}) {
+  const {
+    accounts,
+    numberOfAccounts,
+    bulkSize,
+    numberOfPayments,
+    paymentAmount,
+    unlockerFee,
+    collectFee,
+    contracts = {}
+  } = config;
+
+  log('Configs\n');
+  log(config);
+  log();
+
+  if (numberOfAccounts < 5) {
+    throw new Error('At least 5 acccounts are needed');
+  }
+
+  const version = semver.clean(process.version || '');
+  if (!semver.satisfies(version, '>=10')) {
+    throw new Error(`Node Version v10 or above is required. Found: ${process.version || 'unknown'}`);
+  }
+
   //
   // Deploy & initialize BatPay
   //
-  let instances = await newInstances(Batpay.prefs.testing)
-  batpay = new Batpay.BP(instances.bp, instances.token)
+  log('Getting/Creating contracts')
+  let instances = await (contracts.batpayAddress
+    ? getInstances(contracts)
+    : newInstances(Batpay.prefs.testing, contracts.tokenAddress, log)
+  );
+  let batpay = new Batpay.BP(instances.bp, instances.token)
   await batpay.init()
+
+  log(`Token: ${instances.token.address}`);
+  log(`BatPay: ${instances.bp.address}`);
+  log();
 
   //
   // Accounts registration
   //
 
   // Simple registration
-  const numberOfAccounts = 10
-  console.log(`Registering ${numberOfAccounts} accounts`)
+  log(`Registering ${numberOfAccounts} accounts`)
+  const accountIds = [];
   for (let i = 0; i < numberOfAccounts; i++) {
     log(`Registering account ${i + 1} of ${numberOfAccounts}\r`)
-    await batpay.registerAccount(accounts[i])
+    const [id] = await batpay.registerAccount(accounts[i]);
+    accountIds.push(id);
   }
-  await batpay.showBalance()
+  await batpay.showBalance(accountIds, log)
+
+  const delegate = accountIds[0];
+  const payer = accountIds[1];
+  const unlocker = accountIds[2];
+  const challenger = accountIds[3];
+  const payeesAccountsIds = accountIds.slice(4);
+  const numberOfIds = accountIds.length;
 
   // Bulk registration
-  let bulkSize = 100
-  console.log(`Bulk registering ${bulkSize} accounts`)
+  log(`Bulk registering ${bulkSize} accounts\n`)
   let addressesBulk = utils.range(1, bulkSize).map((seed) => `0x${web3.sha3(seed.toString()).slice(-40)}`)
-  let bulk = await batpay.bulkRegister(addressesBulk)
+  let bulk = await batpay.bulkRegister(addressesBulk, delegate)
 
   // Claiming of the bulk registered accounts
-  console.log(`Claiming bulk registered accounts`)
-  let claimedAccountsPromises = utils.range(0, bulkSize - 1).map(
-    (id) => batpay.claimBulkRegistrationId(bulk, addressesBulk[id], id + bulk.smallestAccountId)
-  )
-  await Promise.all(claimedAccountsPromises)
-
-  //
-  // Fund accounts with a good ol' ERC20.transfer
-  //
-  console.log('Funding accounts')
-  for (let i = 1; i < accounts.length; i++) {
-    log(`Transfering to account ${i + 1} of ${accounts.length}\r`)
-    await instances.token.transfer(accounts[i], 1000, { from: accounts[0] })
+  log(`Claiming bulk registered accounts`)
+  for (let i = 0; i < bulkSize; i++) {
+    log(`Claiming account ${i + 1} of ${bulkSize}\r`)
+    await batpay.claimBulkRegistrationId(bulk, addressesBulk[i], i + bulk.smallestAccountId, delegate)
   }
-  await batpay.showBalance()
+  log();
 
   //
-  // Fund BatPay proxy contract to let it manage batch payments.
+  // Fund accounts with a good ol' ERC20.transfer and then fund BatPay
   //
-  console.log('Funding BatPay')
-  await batpay.deposit(10000, 0)
-  await batpay.deposit(500, 8)
-  await batpay.showBalance()
+  log('Funding accounts')
+  const amountToFund = Math.max(
+    (paymentAmount * payeesAccountsIds.length + unlockerFee) * numberOfPayments,
+    (batpay.collectStake + collectFee) * payeesAccountsIds.length,
+    batpay.challengeStake
+  );
+
+  for (let i = 0; i < numberOfIds; i++) {
+    if (i > 0) {
+      log(`Transfering tokens to account ${i + 1} of ${numberOfIds}\r`)
+      await instances.token.transfer(accounts[i], amountToFund, { from: accounts[0] });
+    }
+
+    log(`Depositing tokens in BatPay account ${i + 1} of ${numberOfIds}`)
+    await batpay.deposit(amountToFund, accountIds[i]);
+  }
+  await batpay.showBalance(accountIds, log)
 
   //
   // Register payments.
   //
-  const numberOfPayments = 20
-  const unlockerAccountId = 9
   const secretKey = 'hello world'
   const paymentsIndexes = []
-
-  console.log(`Registering ${numberOfPayments} payments and unlocking them.`)
+  
+  log(`Registering ${numberOfPayments} payments and unlocking them.`)
   for (let i = 0; i < numberOfPayments; i++) {
     log(`Payment ${i + 1} of ${numberOfPayments}\r`)
     const [payIndex] = await batpay.registerPayment({
-      fromAccountId: 0,
-      amount: 10,
-      unlockerFee: 1,
-      payeesAccountsIds: [1, 2, 3, 4, 5],
-      lockingKeyHash: utils.hashLock(unlockerAccountId, secretKey)
+      fromAccountId: payer,
+      amount: paymentAmount,
+      unlockerFee,
+      payeesAccountsIds,
+      lockingKeyHash: utils.hashLock(unlocker, secretKey)
     })
     paymentsIndexes.push(payIndex)
 
     // Unlocker provides their secret to unlock the payment and collect the fee.
-    await batpay.unlock(payIndex, unlockerAccountId, secretKey)
+    await batpay.unlock(payIndex, unlocker, secretKey)
   }
-  await batpay.showBalance()
+  await batpay.showBalance(accountIds, log)
 
   // Registered payments can timeout if no one unlocks them. This way, payers
   // can recover the funds they vouched. Collection of payments is blocked
@@ -95,34 +135,34 @@ async function main () {
   // transfer the tokens corresponding to all payments between those indexes.
   // Our first payment to collect will be the one right after the last previously
   // collected payment.
-  const collectFromPaymentId = await batpay.getCollectedIndex(3)
-  let collectUntilPaymentId = paymentsIndexes[(paymentsIndexes.length / 2) - 1] + 1
-  const collectors = [1, 2, 3, 4, 5]
+  const collectFromPaymentId = await batpay.getCollectedIndex(payeesAccountsIds[0])
+  const collectUntilPaymentId = paymentsIndexes.slice(-1)[0] + 1;
+  const collectors = payeesAccountsIds
 
-  console.log(`Collecting payments ${collectFromPaymentId} to ${collectUntilPaymentId}\
-  for accounts ${collectors[0]} to ${collectors.slice(-1)[0]}.`)
-  collectors.forEach(async (collector) => {
+  log(`Collecting payments ${collectFromPaymentId} to ${collectUntilPaymentId} for accounts ${collectors[0]} to ${collectors.slice(-1)[0]}.`);
+
+  for (let i = 0; i < collectors.length; i++) {
+    const collector = collectors[i];
+    log(`Account ${collector}`);
+
     let [collectorAddress, , lastCollectedPaymentId] = await batpay.getAccount(collector)
     lastCollectedPaymentId = lastCollectedPaymentId.toNumber()
-    collectorAddress = 0
-    // Account #5 withdraws to #6
-    if (collector == 5) collectorAddress = batpay.ids[6]
 
     // Get the sum of tokens corresponding to the payments we chose to collect.
     const amount = await batpay.getCollectAmount(collector, lastCollectedPaymentId, collectUntilPaymentId)
 
     await batpay.collect({
-      delegate: 0,
+      delegate,
       slot: collector,
       toAccountId: collector,
       fromPaymentId: lastCollectedPaymentId,
       toPaymentId: collectUntilPaymentId,
-      amount: amount,
-      fee: 2,
+      amount,
+      fee: collectFee,
       address: collectorAddress
     })
-  })
-  await batpay.showBalance()
+  }
+  await batpay.showBalance(accountIds, log)
 
   //
   // Challenges
@@ -132,89 +172,81 @@ async function main () {
   // introducing a challenge game that allows the payer to repudiate payments
   // if the `collect` amount requested is incorrect.
   //
-  console.log('Challenging account #3.')
-  let data = batpay.getCollectData(3, collectFromPaymentId, collectUntilPaymentId)
-  await challenge(0, 3, 8, data)
-  await utils.skipBlocks(batpay.challengeBlocks)
+  const challengee = collectors[0];
+  const challengedSlot = challengee; // we are using challengees ids as slots as well
+  const data = batpay.getCollectData(challengee, collectFromPaymentId, collectUntilPaymentId);
+
+  log(`Challenging account #${challengee}\n`)
+  await challenge(batpay, delegate, challengedSlot, challenger, data);
+  await utils.skipBlocks(batpay.challengeBlocks);
 
   //
   // Free slot, pay the delegate and the destination account.
   //
-  console.log('Freeing collect slots.')
-  for (let i = 1; i <= 5; i++) {
-    await batpay.freeSlot(0, i)
+  log('Freeing collect slots.')
+  for (let i = 0; i < collectors.length; i++) {
+    const slot = collectors[i];
+    await batpay.freeSlot(delegate, slot);
   }
-  await batpay.showBalance()
-
-  //
-  // Collect remaining payments.
-  //
-  collectUntilPaymentId = paymentsIndexes[paymentsIndexes.length - 1] + 1
-  console.log(`Collecting remaining payments for accounts\
-  ${collectors[0]} to ${collectors.slice(-1)[0]}.`)
-  console.log('Collecting with instant slot.')
-  collectors.forEach(async (accountId) => {
-    let [, , lastCollectedPaymentId] = await batpay.getAccount(accountId)
-    let address = 0
-    let amount = await batpay.getCollectAmount(accountId, lastCollectedPaymentId, collectUntilPaymentId)
-
-    // Account #5 withdraws to #6
-    if (accountId === 5) address = batpay.ids[6]
-    if (accountId === 3) amount = amount + 100
-
-    await batpay.collect({
-      delegate: 0,
-      slot: accountId + batpay.INSTANT_SLOT,
-      toAccountId: accountId,
-      fromPaymentId: lastCollectedPaymentId.toNumber(),
-      toPaymentId: collectUntilPaymentId,
-      amount: amount,
-      fee: 1,
-      address: address
-    })
-  })
-  await batpay.showBalance()
-
-  // In order to free the slots and forward the funds we need to wait for the
-  // challenge timeout to be over.
-  await utils.skipBlocks(batpay.challengeBlocks + 1)
-  console.log('Freeing collect slots.')
-  for (let i = 1; i <= 5; i++) {
-    await batpay.freeSlot(0, i + batpay.INSTANT_SLOT)
-  }
-  await batpay.showBalance()
+  await batpay.showBalance(accountIds, log)
 }
 
-const log = (obj) => process.stdout.write(obj)
-
-async function showSlot (delegate, slot) {
+async function showSlot(batpay, delegate, slot) {
   let x = await batpay.bp.collects.call(delegate, slot)
   x = x.map(x => x.toNumber ? x.toNumber() : x)
-  console.log('state=' + x[6])
+  log('state=' + x[6])
 }
 
-async function challenge (delegate, slot, challenger, list) {
+async function challenge(batpay, delegate, slot, challenger, list) {
+  const disputedPaymentIndex = 0;
+  const challengedPayment = list[disputedPaymentIndex];
+  const amounts = list.map(x => batpay.payments[x].amount);
+  const data = Batpay.getChallengeData(amounts, list);
+  const payData = batpay.getPayData(challengedPayment);
+
+  log(`Delegate: ${delegate}`);
+  log(`Challenged Slot: ${slot}`);
+  log(`Challenger: ${challenger}`);
+  log(`Collected Payments: ${list}`);
+  log(`Collected Amounts: ${amounts}`);
+  log(`Challenged Payment Index: ${challengedPayment}`);
+
+  log('\nPerforming challenge step #1');
   await batpay.challenge_1(delegate, slot, challenger)
 
-  let amounts = list.map(x => batpay.payments[x])
-  let data = Batpay.getChallengeData(amounts, list)
-
+  log('Performing challenge step #2'); 
   await batpay.challenge_2(delegate, slot, data)
 
-  await batpay.challenge_3(delegate, slot, data, 1, challenger)
-  let payData = utils.getPayData([1, 2, 3, 4, 5])
+  log('Performing challenge step #3');
+  await batpay.challenge_3(delegate, slot, data, disputedPaymentIndex, challenger)
 
+  log('Performing challenge step #4');
   await batpay.challenge_4(delegate, slot, payData)
 
+  log('Finishing Challenge');
   await batpay.challenge_failed(delegate, slot)
+
+  log('Challenge Finished!\n');
 }
 
 function demo (callback) {
-  web3.eth.getAccounts(async (error, acc) => {
-    accounts = acc
+  web3.eth.getAccounts(async (error, accounts) => {
     if (error) throw new Error('Could not get accounts')
     try {
-      await main()
+      // TODO: This parameters were hardcoded in logic, now taken out, but we still need to improve this.
+      await main({
+        accounts,
+        numberOfAccounts: Math.min(accounts.length, 10),
+        bulkSize: 5,
+        numberOfPayments: 4,
+        paymentAmount: 100,
+        unlockerFee: 1,
+        collectFee: 1,
+        contracts: {
+          tokenAddress: undefined,
+          batpayAddress: undefined
+        }
+      })
       callback()
     } catch (e) {
       callback(e)
